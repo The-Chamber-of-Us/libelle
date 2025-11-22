@@ -1,0 +1,111 @@
+# ========================================
+# OS / Editor
+# ========================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ========================================
+# Node / Frontend
+# ========================================
+**/node_modules/
+**/dist/
+**/build/
+**/.parcel-cache/
+**/.next/
+**/out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files (frontend)
+**/.env
+**/.env.local
+**/.env.production
+**/.env.development
+
+# ========================================
+# Python / Backend
+# ========================================
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.pyd
+**/.Python
+
+# Virtual environments (VERY IMPORTANT)
+**/venv/
+**/.venv/
+**/env/
+**/ENV/
+
+# Python build / package
+**/build/
+**/dist/
+**/*.egg-info/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
+
+# Token & credential files
+**/token.json
+**/org_credentials.json
+**/credentials.json
+**/*secret*.json
+
+# Python env files
+**/.env
+**/.env.*
+
+# ========================================
+# Google / Auth / Service Account
+# ========================================
+**/client_secret*.json
+**/service_account*.json
+**/*oauth*.json
+
+# ========================================
+# Logs
+# ========================================
+**/*.log
+**/logs/
+**/log/
+**/nohup.out
+
+# ========================================
+# Infrastructure / Sensitive Material
+# ========================================
+libelle-infra-private/
+**/*tunnel*.json
+**/*cloudflare*.json
+**/ngrok*.yml
+
+# Prevent accidental certs or keys
+**/*.pem
+**/*.key
+**/*.crt
+
+# ========================================
+# System / Deployment
+# ========================================
+**/.ssh/
+**/ssh_keys/
+**/authorized_keys
+**/known_hosts
+
+# ========================================
+# SQLite / Dev DBs (if added later)
+# ========================================
+**/*.sqlite
+**/*.db
+
+# ========================================
+# Testing / Sandbox junk
+# ========================================
+**/sandbox/
+**/mock_data/
+**/test_output/
