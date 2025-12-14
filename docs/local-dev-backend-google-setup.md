@@ -64,6 +64,14 @@ You now have a service account email that looks like:
 `something@your-project.iam.gserviceaccount.com`
 
 ## Step 5: Create a test Google Sheet
+
+### ✅ Use the Libelle Sheet Template (recommended)
+To avoid header / column mismatch issues, copy the official Libelle template first:
+
+Template folder (Sheet + README):  
+https://drive.google.com/drive/folders/1YSqZOb0_djpbXIrJ23oIOlpDT4sucmD4?usp=sharing
+
+After you copy it, use the **new** sheet’s ID for `GOOGLE_SHEET_ID`.
 1) Create a Google Sheet in your Drive, for example “Libelle Dev Applicants”  
 2) Add a sheet tab named `applicantsInfo` (or choose your own and set `SHEET_NAME`)  
 3) Share the sheet with the service account email as **Editor**  
