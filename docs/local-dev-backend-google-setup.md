@@ -138,20 +138,35 @@ If successful, the backend will save:
 token.json
 
 Important clarification
+
 	•	/authorize connects your local server to Google Drive (OAuth).
 	•	Sheets access is not granted by /authorize. Sheets writes work via the Service Account configured in your .env.
 
-## Step 9: Test end-to-end
+## Step 9: Test End-to-End
 
-Once you have:
-	•	token.json created
-	•	DRIVE_ROOT_FOLDER_ID set
-	•	GOOGLE_SHEET_ID set and shared with the service account
+**Prerequisites:**
+Ensure you have the following ready before testing:
+* [ ] `token.json` created (via `/authorize`).
+* [ ] `DRIVE_ROOT_FOLDER_ID` set in `.env`.
+* [ ] `GOOGLE_SHEET_ID` set in `.env` and shared with the Service Account.
 
-Then POST a PDF to:
-POST http://127.0.0.1:8000/api/upload
+**Easiest way to test:**
 
-# You should see:
-	•	file uploaded into your Drive folder
-	•	a new row appended in your test sheet
-	•	a success JSON response from the API
+1.  Open **Swagger UI**: `http://127.0.0.1:8000/docs`
+2.  Expand `POST /api/upload` → click **Try it out**.
+3.  Fill in the fields with dummy data:
+    * **file:** A PDF resume (<= 5MB)
+    * **full_name:** Test Volunteer
+    * **email:** test@example.com
+    * **location:** Localhost
+    * **interests:** Coding, Testing
+    * **availability:** 5-10 hours/week
+    * **experience_level:** Junior
+    * **consent:** `true`
+4.  Click **Execute**.
+
+You should see:
+- The PDF uploaded into your Drive folder
+- A new row appended in your test sheet
+- A success JSON response from the API
+
