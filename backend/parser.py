@@ -1,6 +1,7 @@
 from nameparser import HumanName
 from names_dataset import NameDataset
 import re
+import us
 from typing import List, Dict, Tuple, Any
 
 nd = NameDataset()
@@ -106,12 +107,23 @@ def extract_name(text: str) -> Tuple[str, float]:
     return "Name Not Found", 0.0
 
 def extract_location(text: str) -> Tuple[List[str], float]:
+    job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]   ## Potential Job Titles  
+    state_codes = set(s.abbr for s in us.states.STATES_AND_TERRITORIES)            ## All 50 States + Abbreviations
+
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    candidate_lines = [l for l in lines[:5] if not re.search(r"[a-zA-Z0-9._%+-]+@|\\+?\\d[\\d\\s().-]{8,}\\d", l)]
+    candidate_lines = [l for l in lines[:15] if not re.search(r"[a-zA-Z0-9._%+-]+@|\\+?\\d[\\d\\s().-]{8,}\\d|https?://\S+", l)]   ##Filtering out email, phone numbers, or URLs
     for line in candidate_lines:
-        parts = line.split(",")
-        if len(parts) >= 2:
+        if re.search(r'\b(remote|hybrid)\b', line, re.IGNORECASE):
             return [line.strip()], 1.0
+    
+        if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
+            continue
+        
+        parts = line.split(",")
+        if (len(parts) >= 2):
+            state_candidate = parts[1].strip().upper()
+            if (state_candidate in state_codes):
+                return [line.strip()], 1.0
     return [], 0.0
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
