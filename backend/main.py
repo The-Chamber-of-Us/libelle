@@ -1,6 +1,7 @@
-from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Form, Request
 from typing import Union
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.exceptions import RequestValidationError
 import fitz, traceback, os
 from parser import parse_resume
 from sheets_sync import write_base_row, update_resume_in_sheet
@@ -12,6 +13,46 @@ import uuid
 
 app = FastAPI(title="Resume Intake & Parser API")
 RESUME_COUNTER = 0
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": "error",
+            "code": detail.get("code", "HTTP_ERROR"),
+            "message": detail.get("message", "Request failed"),
+            "fields": detail.get("fields", {}),
+        },
+    )
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError
+):
+    fields = {}
+
+    for error in exc.errors():
+        loc = error.get("loc", [])
+        msg = error.get("msg", "Invalid value")
+
+        # Example loc: ("body", "email")
+        if len(loc) >= 2:
+            fields[loc[-1]] = msg
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "code": "VALIDATION_ERROR",
+            "message": "Invalid request data",
+            "fields": fields,
+        },
+    )
+
 
 @app.get("/health")
 def health():
@@ -89,9 +130,14 @@ async def upload_volunteer_application(
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "message": "Only PDF files supported"},
+            status_code=422,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "Only PDF files supported",
+                "fields": {"file": "Only PDF files supported"},
+            },
         )
+
     
 
     # 3) Add validation for email and extra security for each field 
@@ -116,7 +162,7 @@ async def upload_volunteer_application(
     
     if missing_fields:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
             detail={
                 "status": "error",
                 "code": "VALIDATION_ERROR",
