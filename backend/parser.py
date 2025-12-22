@@ -116,14 +116,13 @@ def extract_location(text: str) -> Tuple[List[str], float]:
         if re.search(r'\b(remote|hybrid)\b', line, re.IGNORECASE):
             return [line.strip()], 1.0
     
-        if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
-            continue
-        
         parts = line.split(",")
         if (len(parts) >= 2):
-            state_candidate = parts[1].strip().upper()
+            state_candidate = parts[1].strip().upper().split()[0]
             if (state_candidate in state_codes):
                 return [line.strip()], 1.0
+        if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
+                continue
     return [], 0.0
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
