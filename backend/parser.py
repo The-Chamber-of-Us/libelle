@@ -74,9 +74,36 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
     return entries
 
 def extract_email(text: str) -> Tuple[List[str], float]:
-    matches = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
-    confidence = 1.0 if matches else min(1.0, sum(1 for w in text.split() if "@" in w) / 2)
-    return matches, confidence
+    EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+    REFERENCES_RE = re.compile(
+        r"^\s*(references?|referees?|professional\s+references?)\s*:?\s*$",
+        re.IGNORECASE
+    )
+
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+
+    # first ten lines
+    header_text = "\n".join(lines[:10])
+    header_matches = EMAIL_RE.findall(header_text)
+    if header_matches:
+        return [header_matches[0]], 1.0
+    
+    # scanning the rest and excluding any reference related emails
+    cutoff = len(lines)
+    for i, line in enumerate(lines):
+        if REFERENCES_RE.match(line):
+            cutoff = i
+            break
+    body_text = "\n".join(lines[:cutoff])
+    body_matches = EMAIL_RE.findall(body_text)
+    if body_matches:
+        return [body_matches[0]], 1.0
+    
+    # fallback
+    at_count = sum(1 for w in body_text.split() if "@" in w)
+    confidence = min(1.0, at_count / 2)
+
+    return [], confidence
 
 def extract_phone(text: str) -> Tuple[List[str], float]:
     pattern = r"(\+?\d[\d\s().-]{8,}\d)"
