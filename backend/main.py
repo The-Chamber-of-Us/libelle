@@ -89,8 +89,11 @@ async def upload_volunteer_application(
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "message": "Only PDF files supported"},
+            status_code=422,
+            detail={"status": "error", 
+                    "code": "VALIDATION_ERROR",
+                    "fields": {"file":"Only PDF files are supported."},
+                    },
         )
     
 
@@ -116,7 +119,7 @@ async def upload_volunteer_application(
     
     if missing_fields:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
             detail={
                 "status": "error",
                 "code": "VALIDATION_ERROR",
@@ -143,16 +146,33 @@ async def upload_volunteer_application(
         file_bytes = await file.read()
         filename = file.filename
 
+        # File size validation (5MB)
+        MAX_FILE_SIZE_MB = 5
+        MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+        if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "status": "error",
+                    "code": "VALIDATION_ERROR",
+                    "fields": {"file": "Max file size is 5MB.",
+                               },
+                },
+            )
+
         # 5) Basic PDF sanity check
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
         except Exception:
             traceback.print_exc()
             raise HTTPException(
-                status_code=400,
+                status_code=422,
                 detail={
                     "status": "error",
-                    "message": "PDF parsing failed: no text extracted",
+                    "code": "VALIDATION_ERROR",
+                    "fields": {"file": "PDF parsing failed: no text extracted",
+                               },
                 },
             )
 
