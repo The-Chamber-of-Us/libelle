@@ -331,14 +331,18 @@ export const IntakeForm: React.FC = () => {
       <div className="h-2 bg-libelle-indigo w-full"></div>
       
       {/* Form Card Header */}
-      <div className="p-6 sm:p-10 border-b border-gray-100">
+      <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
           We help you plug in fast.
         </h2>
         <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
-          You found us for a reason. Create your volunteer profile, and we’ll match you to real needs across TCUS projects.
+          You found us for a reason. You're ready to put your talent toward something that matters.<br/>
+          You won't just be another volunteer-you'll be a co-founder in a new kind of organization.<br/>
+          Here's our promise: We'll connect you with a team, give you a clear mission, 
+          and put your skills to work on a project with real-world stakes. No more wasted time. 
+          Just meaningful work, with people aligned on mission.<br/>
         </p>
-        <p className="text-sm text-gray-500 italic">
+        <p className="text-base sm:text-lg text-gray-500 font-medium">
           Most people finish in under 5 minutes.
         </p>
       </div>
@@ -545,19 +549,36 @@ export const IntakeForm: React.FC = () => {
         </section>
 
         {/* Privacy & Consent Section */}
-        <section aria-labelledby="privacy-heading" className="bg-gray-50 rounded-lg p-6 sm:p-8 border border-gray-200">
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h2 id="privacy-heading" className="text-lg font-bold text-gray-900 font-sans">
-                Privacy and Consent
-              </h2>
-              <a href="#" className="text-sm font-medium text-libelle-indigo hover:text-indigo-800 underline">
-                Privacy Policy
-              </a>
-            </div>
+        <section aria-labelledby="privacy-heading" className="rounded-lg border border-gray-200 overflow-hidden">
+        {/* Section Header */}
+          <div
+            className="
+              bg-[#4F46E5]
+              h-[59px]
+              px-8
+              flex items-center
+              gap-[10px]
+              rounded-t-lg
+            "
+          >
+            <h2
+              id="privacy-heading"
+              className="text-white text-lg font-bold font-sans"
+            >
+              Privacy and Consent
+            </h2>
+          </div>
 
+          <div className="p-6 sm:p-8 flex flex-col space-y-4">
             <p className="text-sm text-gray-600 leading-relaxed">
-              At The Chamber of Us (TCUS), we use the information you submit to create your volunteer profile and match you with opportunities aligned with your skills, interests, and availability. This can include processing details from your resume such as roles, education, and skills. We do not sell your information or use it for advertising.
+              At The Chamber of Us (TCUS), we take your privacy seriously.<br/>
+              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.<br/>
+              <br/>
+              This may include reviewing the experience you choose to share (e.g. resumes, portfolios, LinkedIn or GitHub profiles), and processing it using secure tools to help us understand how best to include you in mission-aligned projects.<br/>
+              <br/>
+              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.<br/>
+              <br/>
+              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA. See our full <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">Privacy Policy</a>.<br/>
             </p>
 
             <div className="space-y-4 pt-4">
@@ -578,8 +599,8 @@ export const IntakeForm: React.FC = () => {
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="consentProfile" className={`font-medium text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    I consent to TCUS using my information to create my volunteer profile and match me with opportunities. <span className="text-libelle-rose">*</span>
+                  <label htmlFor="consentProfile" className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
+                    I understand and consent to TCUS using the information l've provided to match me with volunteer opportunities in alignment with the mission. <span className="text-libelle-rose">*</span>
                   </label>
                   {errors.consentProfile && (
                     <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">{errors.consentProfile}</p>
@@ -588,32 +609,6 @@ export const IntakeForm: React.FC = () => {
               </div>
 
               {/* Checkbox 2 */}
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="consentGuidelines"
-                    name="consentGuidelines"
-                    type="checkbox"
-                    required
-                    checked={formData.consentGuidelines}
-                    onChange={handleCheckboxChange}
-                    disabled={isSubmitting}
-                    className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
-                    aria-invalid={!!errors.consentGuidelines}
-                    aria-describedby={errors.consentGuidelines ? "consentGuidelines-error" : undefined}
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="consentGuidelines" className={`font-medium text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    I agree to the <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">Community Guidelines</a> and <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">Code of Conduct</a>. <span className="text-libelle-rose">*</span>
-                  </label>
-                  {errors.consentGuidelines && (
-                    <p id="consentGuidelines-error" className="text-libelle-rose text-xs mt-1">{errors.consentGuidelines}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Checkbox 3 */}
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
@@ -628,58 +623,75 @@ export const IntakeForm: React.FC = () => {
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="consentDataUse" className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    <span className="font-bold">Optional:</span> TCUS may use de-identified, aggregated data (with personal details removed) to improve Libelle’s matching and reporting.
+                    We're building something big and experimental at TCUS, and we'd love to keep you in the loop as new projects and volunteer opportunities emerge. <span className="italic text-[#72727B]">(optional)</span>
                   </label>
                 </div>
               </div>
             </div>
-
-            <p className="text-xs text-gray-500 pt-2 border-t border-gray-200 mt-2">
-              You can request deletion at any time at <a href="mailto:privacy@thechamberofus.org" className="text-gray-700 underline hover:text-gray-900">privacy@thechamberofus.org</a>.
-            </p>
           </div>
         </section>
 
         {/* Submit Actions */}
-        <div className="pt-4">
-            <div className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 sm:flex-none flex justify-center items-center px-8 py-4 border border-transparent rounded-lg shadow-sm text-base font-semibold text-white bg-libelle-indigo hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-libelle-indigo disabled:opacity-70 disabled:cursor-not-allowed transition-all transform active:scale-[0.98]"
-                >
-                    {isSubmitting ? (
-                    <>
-                        <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-                        Submitting...
-                    </>
-                    ) : (
-                    <>
-                        Submit Application
-                        <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
-                    </>
-                    )}
-                </button>
+<div className="pt-4 flex justify-center">
+  {/* Buttons row: width 286, height 70, gap 32 */}
+  <div className="w-[286px] h-[70px] flex items-center gap-8">
+    {/* Submit (Primary) */}
+    <button
+      type="submit"
+      disabled={isSubmitting}
+      className="
+        w-[107px] h-[50px]
+        px-7 py-[13px]
+        flex items-center justify-center gap-[10px]
+        rounded-[6px]
+        bg-[#4F46E5] text-white
+        text-sm font-semibold
+        hover:opacity-90
+        disabled:opacity-70 disabled:cursor-not-allowed
+        transition
+      "
+    >
+      {isSubmitting ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Submitting...
+        </>
+      ) : (
+        "Submit"
+      )}
+    </button>
 
-                <button
-                    type="button"
-                    onClick={handleClear}
-                    disabled={isSubmitting}
-                    className="flex-1 sm:flex-none flex justify-center items-center px-6 py-4 border border-transparent rounded-lg text-base font-medium text-gray-500 bg-transparent hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Clear Form
-                </button>
-                </div>
-                
-                {isSubmitting && (
-                    <p className="text-sm text-gray-500 text-center sm:text-left animate-pulse">
-                        Uploading resume and creating your volunteer profile...
-                    </p>
-                )}
-            </div>
-        </div>
+    {/* Clear form (Secondary) */}
+    <button
+  type="button"
+  onClick={handleClear}
+  disabled={isSubmitting}
+  className="
+    w-[107px] h-[50px]
+    px-7 py-[13px]
+    inline-flex items-center justify-center gap-[10px]
+    rounded-[6px]
+    border border-[#4F46E5]
+    font-inter font-medium
+    text-[16px] leading-[24px]
+    text-[#4F46E5]
+    text-center
+    bg-white
+    whitespace-nowrap
+    disabled:opacity-50 disabled:cursor-not-allowed
+  "
+>
+  Clear form
+</button>
+  </div>
+
+  {isSubmitting && (
+    <p className="mt-3 text-sm text-gray-500 animate-pulse">
+      Uploading resume and creating your volunteer profile...
+    </p>
+  )}
+</div>
+
       </form>
     </div>
   );
