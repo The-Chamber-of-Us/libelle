@@ -632,65 +632,65 @@ export const IntakeForm: React.FC = () => {
         </section>
 
         {/* Submit Actions */}
-<div className="pt-4 flex justify-center">
-  {/* Buttons row: width 286, height 70, gap 32 */}
-  <div className="w-[286px] h-[70px] flex items-center gap-8">
-    {/* Submit (Primary) */}
-    <button
-      type="submit"
-      disabled={isSubmitting}
-      className="
-        w-[107px] h-[50px]
-        px-7 py-[13px]
-        flex items-center justify-center gap-[10px]
-        rounded-[6px]
-        bg-[#4F46E5] text-white
-        text-sm font-semibold
-        hover:opacity-90
-        disabled:opacity-70 disabled:cursor-not-allowed
-        transition
-      "
-    >
-      {isSubmitting ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Submitting...
-        </>
-      ) : (
-        "Submit"
-      )}
-    </button>
+        <div className="pt-4 flex justify-center">
+        {/* Buttons row: width 286, height 70, gap 32 */}
+          <div className="w-[286px] h-[70px] flex items-center gap-8">
+          {/* Submit (Primary) */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="
+            w-[107px] h-[50px]
+            px-7 py-[13px]
+            flex items-center justify-center gap-[10px]
+            rounded-[6px]
+            bg-[#4F46E5] text-white
+            text-sm font-semibold
+            hover:opacity-90
+            disabled:opacity-70 disabled:cursor-not-allowed
+            transition
+            "
+          >
+            {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Submitting...
+            </>
+            ) : (
+              "Submit"
+            )}
+          </button>
 
-    {/* Clear form (Secondary) */}
-    <button
-  type="button"
-  onClick={handleClear}
-  disabled={isSubmitting}
-  className="
-    w-[107px] h-[50px]
-    px-7 py-[13px]
-    inline-flex items-center justify-center gap-[10px]
-    rounded-[6px]
-    border border-[#4F46E5]
-    font-inter font-medium
-    text-[16px] leading-[24px]
-    text-[#4F46E5]
-    text-center
-    bg-white
-    whitespace-nowrap
-    disabled:opacity-50 disabled:cursor-not-allowed
-  "
->
-  Clear form
-</button>
-  </div>
+        {/* Clear form (Secondary) */}
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={isSubmitting}
+            className="
+            w-[107px] h-[50px]
+            px-7 py-[13px]
+            inline-flex items-center justify-center gap-[10px]
+            rounded-[6px]
+            border border-[#4F46E5]
+            font-inter font-medium
+            text-[16px] leading-[24px]
+            text-[#4F46E5]
+            text-center
+            bg-white
+            whitespace-nowrap
+            disabled:opacity-50 disabled:cursor-not-allowed
+            "
+          >
+            Clear form
+          </button>
+        </div>
 
-  {isSubmitting && (
-    <p className="mt-3 text-sm text-gray-500 animate-pulse">
-      Uploading resume and creating your volunteer profile...
-    </p>
-  )}
-</div>
+        {isSubmitting && (
+        <p className="mt-3 text-sm text-gray-500 animate-pulse">
+          Uploading resume and creating your volunteer profile...
+        </p>
+        )}
+      </div>
 
       </form>
     </div>
