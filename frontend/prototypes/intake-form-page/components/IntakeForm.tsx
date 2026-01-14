@@ -690,7 +690,7 @@ export const IntakeForm: React.FC = () => {
           Uploading resume and creating your volunteer profile...
         </p>
         )}
-      </div>
+        </div>
 
       </form>
     </div>
