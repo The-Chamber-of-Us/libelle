@@ -89,8 +89,11 @@ async def upload_volunteer_application(
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "message": "Only PDF files supported"},
+            status_code=422,
+            detail={"status": "error", 
+                    "code": "VALIDATION_ERROR",
+                    "fields": {"file":"Only PDF files are supported."},
+                    },
         )
     
 
@@ -116,7 +119,7 @@ async def upload_volunteer_application(
     
     if missing_fields:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
             detail={
                 "status": "error",
                 "code": "VALIDATION_ERROR",
@@ -143,28 +146,28 @@ async def upload_volunteer_application(
         file_bytes = await file.read()
         filename = file.filename
 
-        # 5) Basic PDF sanity check
-        try:
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
-        except Exception:
-            traceback.print_exc()
+        # File size validation (5MB)
+        MAX_FILE_SIZE_MB = 5
+        MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+        if len(file_bytes) > MAX_FILE_SIZE_BYTES:
             raise HTTPException(
-                status_code=400,
+                status_code=413,
                 detail={
                     "status": "error",
-                    "message": "PDF parsing failed: no text extracted",
+                    "code": "PAYLOAD_TOO_LARGE",
+                    "message": "Max file size is 5MB.",
                 },
             )
 
-        pre_text = "\n".join([p.get_text("text") for p in doc])
-        doc.close()
-
-        if not pre_text.strip():
+        # 5) PDF Signature Validation
+        if len(file_bytes) < 4 or file_bytes[:4] != b"%PDF":
             raise HTTPException(
                 status_code=400,
                 detail={
                     "status": "error",
-                    "message": "PDF parsing failed: no text extracted",
+                    "code": "BAD_REQUEST",
+                    "message": "Uploaded file is not a valid PDF.",
                 },
             )
 
@@ -180,7 +183,7 @@ async def upload_volunteer_application(
 
         # 8) Background parsing
         background_tasks.add_task(
-            _parse_and_update, RESUME_COUNTER, drive_file_id, pre_text
+            _parse_and_update, RESUME_COUNTER, drive_file_id
         )
 
         # 9) Success response (matches API spec)
@@ -207,12 +210,29 @@ async def upload_volunteer_application(
         )
 
 
-def _parse_and_update(resume_id: int, drive_file_id: str, pre_extracted_text: str = ""):
+def _parse_and_update(resume_id: int, drive_file_id: str):
     try:
-        text = pre_extracted_text or "\n".join([p.get_text("text") for p in fitz.open(stream=download_file(drive_file_id), filetype="pdf")])
+        # Downloading PDF bytes
+        file_bytes = download_file(drive_file_id)
+
+        # Opening PDF and extract text (using fitz)
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        text = "\n".join(page.get_text("text") for page in doc)
+        doc.close()
+
+        if not text.strip():
+            raise ValueError("PDF opened but no extracted text can be found")
+        
+        # Parsing resume text
         parsed = parse_resume(text)
         parsed["drive_file_id"] = drive_file_id
+
+        # Updating google sheet
         update_resume_in_sheet(resume_id, parsed)
+    
     except Exception as e:
-        print(f"[JOB] Error parsing resume_id={resume_id}: {e}")
+        # Avoiding crash
+        print(f"[JOB] Resume parsing failed for resume_id={resume_id}")
+        print(f"[JOB] Reason: {e}")
         traceback.print_exc()
+        
