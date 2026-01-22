@@ -1,10 +1,7 @@
-from nameparser import HumanName
-from names_dataset import NameDataset
 import re
 import us
 from typing import List, Dict, Tuple, Any
 
-nd = NameDataset()
 
 def _get_lines(text: str) -> List[str]:
     return [line.rstrip() for line in text.splitlines()]
@@ -74,37 +71,6 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
     flush_current()
     return entries
 
-def extract_email(text: str) -> Tuple[List[str], float]:
-    EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-    REFERENCES_RE = re.compile(
-        r"^\s*(references?|referees?|professional\s+references?)\s*:?\s*$",
-        re.IGNORECASE
-    )
-
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-
-    # first ten lines
-    header_text = "\n".join(lines[:10])
-    header_matches = EMAIL_RE.findall(header_text)
-    if header_matches:
-        return [header_matches[0]], 1.0
-    
-    # scanning the rest and excluding any reference related emails
-    cutoff = len(lines)
-    for i, line in enumerate(lines):
-        if REFERENCES_RE.match(line):
-            cutoff = i
-            break
-    body_text = "\n".join(lines[:cutoff])
-    body_matches = EMAIL_RE.findall(body_text)
-    if body_matches:
-        return [body_matches[0]], 1.0
-    
-    # fallback
-    at_count = sum(1 for w in body_text.split() if "@" in w)
-    confidence = min(1.0, at_count / 2)
-
-    return [], confidence
 
 def extract_phone(text: str) -> Tuple[List[str], float]:
     pattern = r"(\+?\d[\d\s().-]{8,}\d)"
@@ -112,26 +78,6 @@ def extract_phone(text: str) -> Tuple[List[str], float]:
     cleaned = [re.sub(r"[^\d]", "", n) for n in raw_matches if 9 <= len(re.sub(r"[^\d]", "", n)) <= 15]
     confidence = 1.0 if cleaned else min(1.0, sum(1 for _ in re.findall(r"\d{5,}", text)) / 2)
     return cleaned, confidence
-
-def extract_name(text: str) -> Tuple[str, float]:
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    stop_headers = ["education", "work", "experience", "employment", "projects", "skills", "summary", "objective", "volunteer", "leadership"]
-    for line in lines:
-        if any(h in line.lower() for h in stop_headers):
-            break
-        line_no_email = re.sub(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "", line).strip()
-        line_no_contact = re.sub(r"\+?\d[\d\s().-]{8,}\d", "", line_no_email).strip()
-        if not line_no_contact:
-            continue
-        candidate = HumanName(line_no_contact)
-        score = 0.0
-        if candidate.first and nd.first_names.get(candidate.first.lower()):
-            score += 0.5
-        if candidate.last and nd.last_names.get(candidate.last.lower()):
-            score += 0.5
-        if score > 0:
-            return str(candidate).strip(), min(score, 1.0)
-    return "Name Not Found", 0.0
 
 def extract_location(text: str) -> Tuple[List[str], float]:
     job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]   ## Potential Job Titles  
@@ -195,8 +141,6 @@ def extract_project_experience(text: str, start_index: int) -> Tuple[List[str], 
     return entries, conf
 
 def parse_resume(text: str) -> Dict[str, Any]:
-    name, name_conf = extract_name(text)
-    emails, email_conf = extract_email(text)
     phones, phone_conf = extract_phone(text)
     locations, loc_conf = extract_location(text)
     skills, skills_conf = extract_skills(text)
@@ -204,8 +148,8 @@ def parse_resume(text: str) -> Dict[str, Any]:
     work_experience, work_conf, work_end_index = extract_work_experience(text)
     project_experience, project_conf = extract_project_experience(text, work_end_index)
     return {
-        "name": {"value": name, "confidence": name_conf},
-        "emails": {"value": emails, "confidence": email_conf},
+        "name": {"value": "", "confidence": 0.0},
+        "emails": {"value": "", "confidence": 0.0},
         "phones": {"value": phones, "confidence": phone_conf},
         "locations": {"value": locations, "confidence": loc_conf},
         "skills": {"value": skills, "confidence": skills_conf},
