@@ -1,0 +1,21 @@
+{
+  "submission_id": "test-submission-001",
+  "skills": [
+    "React.js",
+    "REACT",
+    "react js",
+    "Python 3",
+    "python",
+    "SQL",
+    "NodeJS",
+    "node js",
+    "Next.js",
+    "Project MGMT"
+  ],
+  "location_raw": "Raleigh, NC",
+  "meta": {
+    "extractor_version": "v0.1",
+    "fixture_version": "1.0.0",
+    "notes": "Fixture includes duplicates + alias variants. Includes unknown skills: Next.js, Project MGMT"
+  }
+}
