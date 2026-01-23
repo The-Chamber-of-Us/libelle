@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "aliases": {
+    "react": "react",
+    "reactjs": "react",
+    "react.js": "react",
+    "python": "python",
+    "python3": "python",
+    "python 3": "python"
+  }
+}
