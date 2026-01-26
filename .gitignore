@@ -109,3 +109,4 @@ libelle-infra-private/
 **/sandbox/
 **/mock_data/
 **/test_output/
+backend/.python-version
