@@ -1,9 +1,10 @@
+// IntakeForm.tsx
 import React, { useState } from 'react';
 import { IntakeFormData, FormErrors, FormStatus } from '../types';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { FileUpload } from './ui/FileUpload';
-import { Check, ArrowRight, Loader2, AlertCircle, RotateCcw, ExternalLink } from 'lucide-react';
+import { Check, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 
 const INITIAL_FORM_DATA: IntakeFormData = {
   firstName: '',
@@ -96,18 +97,17 @@ export const IntakeForm: React.FC = () => {
         newErrors.resume = 'Only PDF files are allowed';
         isValid = false;
       }
-      if (formData.resume.size > 5 * 1024 * 1024) { // 5MB
+      if (formData.resume.size > 5 * 1024 * 1024) {
         newErrors.resume = 'File size must be less than 5MB';
         isValid = false;
       }
     }
 
-    // Consent Logic: Both must be checked to proceed
+    // Consent Logic: both must be checked to proceed
     if (!formData.consentProfile) {
       newErrors.consentProfile = 'This consent is required to proceed';
       isValid = false;
     }
-
     if (!formData.consentGuidelines) {
       newErrors.consentGuidelines = 'You must agree to the guidelines';
       isValid = false;
@@ -119,7 +119,6 @@ export const IntakeForm: React.FC = () => {
 
   // --- Scroll Helper ---
   const scrollToError = () => {
-    // Small timeout to allow DOM to update with error states
     setTimeout(() => {
       const firstError = document.querySelector('[aria-invalid="true"]');
       if (firstError) {
@@ -130,76 +129,84 @@ export const IntakeForm: React.FC = () => {
     }, 10);
   };
 
-  // --- Submit Handler ---
+  // --- Submit Handler (API-spec compliant multipart/form-data) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 1. Client Validation
+
+    // 1) Client Validation
     if (!validate()) {
-        scrollToError();
-        return;
+      scrollToError();
+      return;
     }
 
-    // 2. Set State: Submitting
+    // 2) Set State: Submitting
     setStatus({ state: 'submitting' });
-    setErrors({}); 
+    setErrors({});
 
-    // 3. Prepare Payload (Strict Mapping)
+    // 3) Prepare Payload (per API spec)
+    // Keys MUST match backend:
+    // file, full_name, email, location, interests, availability, experience_level, linkedin_url, github_url, motivation, consent
     const payload = new FormData();
-    
-    // Logic: Concatenate First + Last name for API 'full_name' key
-    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-    payload.append('full_name', fullName);
 
-    payload.append('email', formData.email);
-    payload.append('location', formData.location);
-    payload.append('interests', formData.interests);
-    payload.append('availability', formData.availability);
-    payload.append('experience_level', formData.experienceLevel);
-    
-    // Logic: Consent is effectively true here because of client validation
-    payload.append('consent', 'true');
-    
-    // File is guaranteed to exist and be valid here
+    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+    // file (required)
     if (formData.resume) {
       payload.append('file', formData.resume);
     }
-    
-    // Optional fields
+
+    // required text fields
+    payload.append('full_name', fullName);
+    payload.append('email', formData.email);
+    payload.append('location', formData.location);
+
+    // interests can be string or string[]; your UI is a string input, so send string (CSV accepted)
+    payload.append('interests', formData.interests);
+
+    payload.append('availability', formData.availability);
+    payload.append('experience_level', formData.experienceLevel);
+
+    // required consent must be true
+    // IMPORTANT: FormData values are strings/blobs; send "true" (backend using Form(bool) should parse)
+    payload.append('consent', 'true');
+
+    // optional fields
     if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl);
     if (formData.githubUrl) payload.append('github_url', formData.githubUrl);
     if (formData.motivation) payload.append('motivation', formData.motivation);
 
     try {
-      const apiBase = (import.meta as any).env?.VITE_API_URL || '';
+      // Base URL per spec: local http://localhost:8000, prod https://api.libelle.io
+      // Keep env override if present; otherwise default to local.
+      const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+
       const response = await fetch(`${apiBase}/api/upload`, {
         method: 'POST',
         body: payload,
       });
 
-      // 4. Handle Response
+      // 4) Handle Response
       if (response.ok) {
         const data = await response.json();
-        // Success State
-        setStatus({ 
-          state: 'success', 
-          message: data.message || 'Application received',
-          submissionId: data.submission_id 
+        setStatus({
+          state: 'success',
+          message: data.message || 'Your application has been received',
+          submissionId: data.submission_id,
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
-      // 5. Handle Errors
+      // 5) Handle Errors (per spec)
       const data = await response.json().catch(() => ({}));
 
-      // 422 Validation Error
-      if (response.status === 422 && data.fields) {
+      // Validation Error (422): { status, code, fields: {...} }
+      if (response.status === 422 && data?.code === 'VALIDATION_ERROR' && data?.fields) {
         const apiErrors: FormErrors = {};
-        
-        // Map snake_case API keys to camelCase state keys
+
+        // Map API keys -> UI fields
         const fieldMap: Record<string, keyof IntakeFormData> = {
-          full_name: 'firstName', // Map full_name error to firstName for visibility
+          full_name: 'firstName',
           email: 'email',
           location: 'location',
           interests: 'interests',
@@ -209,48 +216,54 @@ export const IntakeForm: React.FC = () => {
           linkedin_url: 'linkedinUrl',
           github_url: 'githubUrl',
           motivation: 'motivation',
-          consent: 'consentProfile'
+          consent: 'consentProfile',
         };
 
         Object.keys(data.fields).forEach((apiKey) => {
           const stateKey = fieldMap[apiKey];
-          if (stateKey) {
-            apiErrors[stateKey] = data.fields[apiKey];
-          }
+          if (stateKey) apiErrors[stateKey] = data.fields[apiKey];
         });
 
         setErrors(apiErrors);
-        setStatus({ 
-            state: 'error', 
-            message: "Please fix the highlighted fields and try again." 
+        setStatus({
+          state: 'error',
+          message: 'Please fix the highlighted fields and try again.',
         });
         scrollToError();
         return;
       }
 
-      // 400 File Missing (Specific API Error)
-      if (response.status === 400 && data.code === 'FILE_REQUIRED') {
-         setErrors({ resume: data.message || "A resume file is required." });
-         setStatus({ state: 'error', message: "Please upload your resume to continue." });
-         scrollToError();
-         return;
+      // Missing File (400): { status, code: FILE_REQUIRED, message }
+      if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
+        setErrors({ resume: data?.message || 'A resume file is required to complete this submission.' });
+        setStatus({ state: 'error', message: 'Please upload your resume to continue.' });
+        scrollToError();
+        return;
       }
 
-      // 500 or other errors
-      throw new Error(data.message || 'We hit a snag while processing your submission. Please try again or reach out to support.');
+      // Internal Failure (500): { status, code: PROCESSING_FAILED, message }
+      if (response.status === 500 && data?.code === 'PROCESSING_FAILED') {
+        throw new Error(
+          data?.message ||
+            'We hit a snag while processing your submission. Please try again or reach out to support.'
+        );
+      }
 
+      // Fallback
+      throw new Error(data?.message || 'Request failed. Please try again.');
     } catch (error: any) {
-      // Network errors or generic 500s
-      setStatus({ 
-        state: 'error', 
-        message: error.message || 'We hit a snag... please try again. If it keeps happening, email privacy@thechamberofus.org.' 
+      setStatus({
+        state: 'error',
+        message:
+          error?.message ||
+          'We hit a snag... please try again. If it keeps happening, email privacy@thechamberofus.org.',
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleClear = () => {
-    if (window.confirm("Are you sure you want to clear the form? All entered data will be lost.")) {
+    if (window.confirm('Are you sure you want to clear the form? All entered data will be lost.')) {
       setFormData(INITIAL_FORM_DATA);
       setErrors({});
       setStatus({ state: 'idle' });
@@ -263,28 +276,28 @@ export const IntakeForm: React.FC = () => {
     setErrors({});
     setStatus({ state: 'idle' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof IntakeFormData]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: checked }));
+    setFormData((prev) => ({ ...prev, [name]: checked }));
     if (errors[name as keyof IntakeFormData]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
   const handleFileChange = (file: File | null) => {
-    setFormData(prev => ({ ...prev, resume: file }));
+    setFormData((prev) => ({ ...prev, resume: file }));
     if (errors.resume) {
-      setErrors(prev => ({ ...prev, resume: undefined }));
+      setErrors((prev) => ({ ...prev, resume: undefined }));
     }
   };
 
@@ -301,25 +314,23 @@ export const IntakeForm: React.FC = () => {
         <p className="text-gray-600 mb-8 max-w-lg mx-auto text-lg leading-relaxed">
           Thanks. We’ve received your profile and will review it for matching across TCUS projects.
         </p>
-        
-        {status.submissionId && (
-            <p className="text-xs text-gray-400 mb-8 font-mono">ID: {status.submissionId}</p>
-        )}
+
+        {status.submissionId && <p className="text-xs text-gray-400 mb-8 font-mono">ID: {status.submissionId}</p>}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-             <a
-              href="https://libelle.io"
-              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              Back to Libelle
-              <ExternalLink className="ml-2 w-4 h-4" />
-            </a>
-            <button
-              onClick={handleReset}
-              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-            >
-              Submit another
-            </button>
+          <a
+            href="https://libelle.io"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            Back to Libelle
+            <ExternalLink className="ml-2 w-4 h-4" />
+          </a>
+          <button
+            onClick={handleReset}
+            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            Submit another
+          </button>
         </div>
       </div>
     );
@@ -329,37 +340,39 @@ export const IntakeForm: React.FC = () => {
   return (
     <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 relative">
       <div className="h-2 bg-libelle-indigo w-full"></div>
-      
+
       {/* Form Card Header */}
       <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
           We help you plug in fast.
         </h2>
         <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
-          You found us for a reason. You're ready to put your talent toward something that matters.<br/>
-          You won't just be another volunteer-you'll be a co-founder in a new kind of organization.<br/>
-          Here's our promise: We'll connect you with a team, give you a clear mission, 
-          and put your skills to work on a project with real-world stakes. No more wasted time. 
-          Just meaningful work, with people aligned on mission.<br/>
+          You found us for a reason. You're ready to put your talent toward something that matters.<br />
+          You won't just be another volunteer-you'll be a co-founder in a new kind of organization.<br />
+          Here's our promise: We'll connect you with a team, give you a clear mission, and put your skills to work on a
+          project with real-world stakes. No more wasted time. Just meaningful work, with people aligned on mission.<br />
         </p>
-        <p className="text-base sm:text-lg text-gray-500 font-medium">
-          Most people finish in under 5 minutes.
-        </p>
+        <p className="text-base sm:text-lg text-gray-500 font-medium">Most people finish in under 5 minutes.</p>
       </div>
-      
+
       <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-10" noValidate>
-        
         {/* Global Error Banner */}
         {status.state === 'error' && status.message && (
-             <div className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start animate-fade-in" role="alert">
-                <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
-                <p className="font-medium">{status.message}</p>
-            </div>
+          <div
+            className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start animate-fade-in"
+            role="alert"
+          >
+            <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+            <p className="font-medium">{status.message}</p>
+          </div>
         )}
 
         {/* Personal Information Section */}
         <section aria-labelledby="personal-info-heading">
-          <h2 id="personal-info-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
+          <h2
+            id="personal-info-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
             Personal Information
           </h2>
           <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
@@ -419,11 +432,15 @@ export const IntakeForm: React.FC = () => {
 
         {/* Experience & Motivation Section */}
         <section aria-labelledby="experience-heading">
-           <h2 id="experience-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
+          <h2
+            id="experience-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
             Experience & Details
           </h2>
+
           <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2 mb-6">
-             <div className="sm:col-span-2">
+            <div className="sm:col-span-2">
               <Input
                 label="Availability"
                 name="availability"
@@ -436,9 +453,9 @@ export const IntakeForm: React.FC = () => {
                 disabled={isSubmitting}
               />
             </div>
-            
+
             <div className="sm:col-span-2">
-               <div className="w-full">
+              <div className="w-full">
                 <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1 font-sans">
                   Experience Level <span className="text-libelle-rose">*</span>
                 </label>
@@ -457,14 +474,16 @@ export const IntakeForm: React.FC = () => {
                       ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
                     `}
                     aria-invalid={!!errors.experienceLevel}
-                    aria-describedby={errors.experienceLevel ? "experienceLevel-error" : undefined}
+                    aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
                   >
-                    <option value="" disabled>Select your level</option>
+                    <option value="" disabled>
+                      Select your level
+                    </option>
                     <option value="Beginner">Beginner</option>
                     <option value="Mid">Mid</option>
                     <option value="Senior">Senior</option>
                   </select>
-                   {errors.experienceLevel && (
+                  {errors.experienceLevel && (
                     <div className="pointer-events-none absolute inset-y-0 right-8 flex items-center">
                       <AlertCircle className="h-5 w-5 text-libelle-rose" aria-hidden="true" />
                     </div>
@@ -520,8 +539,8 @@ export const IntakeForm: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <div className={isSubmitting ? "opacity-60 pointer-events-none" : ""}>
-                <FileUpload
+            <div className={isSubmitting ? 'opacity-60 pointer-events-none' : ''}>
+              <FileUpload
                 label="Resume (PDF Only)"
                 name="resume"
                 accept=".pdf"
@@ -530,7 +549,7 @@ export const IntakeForm: React.FC = () => {
                 onChange={handleFileChange}
                 error={errors.resume}
                 description="PDF up to 5MB"
-                />
+              />
             </div>
 
             <Textarea
@@ -550,35 +569,26 @@ export const IntakeForm: React.FC = () => {
 
         {/* Privacy & Consent Section */}
         <section aria-labelledby="privacy-heading" className="rounded-lg border border-gray-200 overflow-hidden">
-        {/* Section Header */}
-          <div
-            className="
-              bg-[#4F46E5]
-              h-[59px]
-              px-8
-              flex items-center
-              gap-[10px]
-              rounded-t-lg
-            "
-          >
-            <h2
-              id="privacy-heading"
-              className="text-white text-lg font-bold font-sans"
-            >
+          <div className="bg-[#4F46E5] h-[59px] px-8 flex items-center gap-[10px] rounded-t-lg">
+            <h2 id="privacy-heading" className="text-white text-lg font-bold font-sans">
               Privacy and Consent
             </h2>
           </div>
 
           <div className="p-6 sm:p-8 flex flex-col space-y-4">
             <p className="text-sm text-gray-600 leading-relaxed">
-              At The Chamber of Us (TCUS), we take your privacy seriously.<br/>
-              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.<br/>
-              <br/>
-              This may include reviewing the experience you choose to share (e.g. resumes, portfolios, LinkedIn or GitHub profiles), and processing it using secure tools to help us understand how best to include you in mission-aligned projects.<br/>
-              <br/>
-              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.<br/>
-              <br/>
-              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA. See our full <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">Privacy Policy</a>.<br/>
+              At The Chamber of Us (TCUS), we take your privacy seriously.<br />
+              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.<br />
+              <br />
+              This may include reviewing the experience you choose to share (e.g. resumes, portfolios, LinkedIn or GitHub profiles), and processing it using secure tools to help us understand how best to include you in mission-aligned projects.<br />
+              <br />
+              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.<br />
+              <br />
+              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA. See our full{' '}
+              <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">
+                Privacy Policy
+              </a>
+              .<br />
             </p>
 
             <div className="space-y-4 pt-4">
@@ -595,7 +605,7 @@ export const IntakeForm: React.FC = () => {
                     disabled={isSubmitting}
                     className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
                     aria-invalid={!!errors.consentProfile}
-                    aria-describedby={errors.consentProfile ? "consentProfile-error" : undefined}
+                    aria-describedby={errors.consentProfile ? 'consentProfile-error' : undefined}
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -603,7 +613,9 @@ export const IntakeForm: React.FC = () => {
                     I understand and consent to TCUS using the information l've provided to match me with volunteer opportunities in alignment with the mission. <span className="text-libelle-rose">*</span>
                   </label>
                   {errors.consentProfile && (
-                    <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">{errors.consentProfile}</p>
+                    <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">
+                      {errors.consentProfile}
+                    </p>
                   )}
                 </div>
               </div>
@@ -632,66 +644,62 @@ export const IntakeForm: React.FC = () => {
         </section>
 
         {/* Submit Actions */}
-<div className="pt-4 flex justify-center">
-  {/* Buttons row: width 286, height 70, gap 32 */}
-  <div className="w-[286px] h-[70px] flex items-center gap-8">
-    {/* Submit (Primary) */}
-    <button
-      type="submit"
-      disabled={isSubmitting}
-      className="
-        w-[107px] h-[50px]
-        px-7 py-[13px]
-        flex items-center justify-center gap-[10px]
-        rounded-[6px]
-        bg-[#4F46E5] text-white
-        text-sm font-semibold
-        hover:opacity-90
-        disabled:opacity-70 disabled:cursor-not-allowed
-        transition
-      "
-    >
-      {isSubmitting ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Submitting...
-        </>
-      ) : (
-        "Submit"
-      )}
-    </button>
+        <div className="pt-4 flex justify-center">
+          <div className="w-[286px] h-[70px] flex items-center gap-8">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="
+                w-[107px] h-[50px]
+                px-7 py-[13px]
+                flex items-center justify-center gap-[10px]
+                rounded-[6px]
+                bg-[#4F46E5] text-white
+                text-sm font-semibold
+                hover:opacity-90
+                disabled:opacity-70 disabled:cursor-not-allowed
+                transition
+              "
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit'
+              )}
+            </button>
 
-    {/* Clear form (Secondary) */}
-    <button
-  type="button"
-  onClick={handleClear}
-  disabled={isSubmitting}
-  className="
-    w-[107px] h-[50px]
-    px-7 py-[13px]
-    inline-flex items-center justify-center gap-[10px]
-    rounded-[6px]
-    border border-[#4F46E5]
-    font-inter font-medium
-    text-[16px] leading-[24px]
-    text-[#4F46E5]
-    text-center
-    bg-white
-    whitespace-nowrap
-    disabled:opacity-50 disabled:cursor-not-allowed
-  "
->
-  Clear form
-</button>
-  </div>
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={isSubmitting}
+              className="
+                w-[107px] h-[50px]
+                px-7 py-[13px]
+                inline-flex items-center justify-center gap-[10px]
+                rounded-[6px]
+                border border-[#4F46E5]
+                font-inter font-medium
+                text-[16px] leading-[24px]
+                text-[#4F46E5]
+                text-center
+                bg-white
+                whitespace-nowrap
+                disabled:opacity-50 disabled:cursor-not-allowed
+              "
+            >
+              Clear form
+            </button>
+          </div>
 
-  {isSubmitting && (
-    <p className="mt-3 text-sm text-gray-500 animate-pulse">
-      Uploading resume and creating your volunteer profile...
-    </p>
-  )}
-</div>
-
+          {isSubmitting && (
+            <p className="mt-3 text-sm text-gray-500 animate-pulse">
+              Uploading resume and creating your volunteer profile...
+            </p>
+          )}
+        </div>
       </form>
     </div>
   );
