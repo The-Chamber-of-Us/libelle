@@ -17,7 +17,7 @@ app = FastAPI(title="Libelle Backend API")
 # -----------------------------
 # Env + Config
 # -----------------------------
-MAX_PDF_MB = int(os.getenv("MAX_PDF_MB", "10"))
+MAX_PDF_MB = int(os.getenv("MAX_PDF_MB", "5"))
 ALLOWED_PDF_MIMES = {"application/pdf", "application/x-pdf"}
 
 # CORS: restricted to approved origins
