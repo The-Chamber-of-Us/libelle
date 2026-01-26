@@ -91,9 +91,12 @@ def extract_location(text: str) -> Tuple[List[str], float]:
     
         parts = line.split(",")
         if (len(parts) >= 2):
-            state_candidate = parts[1].strip().upper().split()[0]
-            if (state_candidate in state_codes):
-                return [line.strip()], 1.0
+            tokens = parts[1].strip().upper().split() # safely tokenize state segment - might be empty or malformed
+            if tokens:
+                state_candidate = tokens[0]
+                if state_candidate in state_codes: # validate against known US state abbreviations
+                    return [line.strip()], 1.0
+    
         if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
                 continue
     return [], 0.0
