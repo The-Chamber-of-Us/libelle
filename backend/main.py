@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, F
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List, Union, Tuple
 import fitz
 import traceback
 import os
@@ -37,13 +37,20 @@ if ALLOWED_ORIGINS:
         allow_headers=["*"],
     )
 
-RESUME_COUNTER = 0
+
+@app.on_event("startup")
+def _startup_log():
+    print("[STARTUP] Libelle backend booted")
+    print(f"[STARTUP] MAX_PDF_MB={MAX_PDF_MB}")
+    print(f"[STARTUP] ALLOWED_ORIGINS={ALLOWED_ORIGINS}")
+
 
 # -----------------------------
 # Error Handling (JSON only)
 # -----------------------------
 def _json_error(status_code: int, payload: Dict[str, Any]) -> JSONResponse:
     return JSONResponse(status_code=status_code, content=payload)
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -53,6 +60,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         exc.status_code,
         {"status": "error", "code": "HTTP_EXCEPTION", "message": str(exc.detail)},
     )
+
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_handler(request: Request, exc: RequestValidationError):
@@ -70,10 +78,12 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
         {"status": "error", "code": "VALIDATION_ERROR", "fields": fields or {"request": "Invalid request"}},
     )
 
+
 # -----------------------------
 # Helpers
 # -----------------------------
 EMAIL_IN_TEXT_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+
 
 def _is_placeholder_email(value: str) -> bool:
     if not value:
@@ -81,16 +91,19 @@ def _is_placeholder_email(value: str) -> bool:
     v = value.strip().lower()
     return v in {"string", "email", "example", "test", "none", "null", "undefined", "-"}
 
+
 def _validate_email(email: str) -> bool:
     if not email or _is_placeholder_email(email):
         return False
     return EMAIL_IN_TEXT_RE.search(email.strip()) is not None
+
 
 def _normalize_email(email: str) -> str:
     if not email:
         return ""
     m = EMAIL_IN_TEXT_RE.search(email.strip())
     return m.group(0) if m else email.strip()
+
 
 def _parse_interests(raw: Union[str, List[str], None]) -> str:
     if raw is None:
@@ -116,7 +129,6 @@ def _parse_interests(raw: Union[str, List[str], None]) -> str:
 
 
 def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """Shared helper used by both /api/upload and /api/parse-only."""
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         text = "\n".join([p.get_text("text") for p in doc])
@@ -129,6 +141,14 @@ def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
             detail={"status": "error", "code": "PDF_PARSE_FAILED", "message": "PDF parsing failed"},
         )
 
+
+def _make_resume_id() -> int:
+    """
+    Safer than a global counter: unique-ish and monotonic in practice.
+    """
+    return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
 # -----------------------------
 # Endpoints
 # -----------------------------
@@ -140,33 +160,20 @@ def health():
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
-# ✅ parser-only endpoint: no Sheets/Drive/OAuth
-@app.post("/api/parse-only")
-async def parse_only(file: UploadFile = File(...)):
-    if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "code": "INVALID_FILE_TYPE", "message": "Only PDF files supported"},
-        )
 
-    pdf_bytes = await file.read()
-
-    if len(pdf_bytes) > MAX_PDF_MB * 1024 * 1024:
-        raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "code": "FILE_TOO_LARGE", "message": f"PDF too large (>{MAX_PDF_MB}MB)"},
-        )
-
-    text = _extract_text_from_pdf(pdf_bytes)
-
-    if not text.strip():
-        raise HTTPException(
-            status_code=400,
-            detail={"status": "error", "code": "NO_TEXT_EXTRACTED", "message": "PDF has no extractable text"},
-        )
-
-    parsed = parse_resume(text)
-    return {"status": "ok", "parsed": parsed}
+@app.get("/debug/config")
+def debug_config():
+    """
+    Returns non-sensitive config to confirm your env is wired.
+    Do NOT include secrets here.
+    """
+    return {
+        "status": "ok",
+        "MAX_PDF_MB": MAX_PDF_MB,
+        "ALLOWED_ORIGINS": ALLOWED_ORIGINS,
+        "has_google_oauth_client": bool(os.getenv("GOOGLE_OAUTH_CLIENT")),
+        "has_token_file": bool(os.getenv("TOKEN_FILE")),
+    }
 
 
 @app.post("/api/upload")
@@ -186,9 +193,7 @@ async def upload_volunteer_application(
 
     consent: Optional[bool] = Form(None),
 ):
-    global RESUME_COUNTER
-
-    # 1) Missing file -> 400 FILE_REQUIRED (spec)
+    # 1) Missing file -> 400 FILE_REQUIRED
     if not file or not file.filename:
         raise HTTPException(
             status_code=400,
@@ -221,7 +226,7 @@ async def upload_volunteer_application(
     if consent is not True:
         fields["consent"] = "Must be true to submit"
 
-    # We DO NOT reject email yet; allow fallback to PDF extraction if invalid.
+    # Allow fallback to PDF extraction if invalid
     email_is_valid = _validate_email(email or "")
 
     if fields:
@@ -238,6 +243,7 @@ async def upload_volunteer_application(
         )
 
     submission_id = str(uuid.uuid4())[:8]
+    resume_id = _make_resume_id()
 
     try:
         pdf_bytes = await file.read()
@@ -257,7 +263,7 @@ async def upload_volunteer_application(
                 detail={"status": "error", "code": "NO_TEXT_EXTRACTED", "message": "PDF has no extractable text"},
             )
 
-        # 5) Email fallback: if form email invalid, try extracting from PDF
+        # 5) Email fallback
         final_email = ""
         if email_is_valid:
             final_email = _normalize_email(email or "")
@@ -277,9 +283,10 @@ async def upload_volunteer_application(
             )
 
         # 6) Upload to Drive
-        RESUME_COUNTER += 1
+        print(f"[UPLOAD] submission_id={submission_id} resume_id={resume_id} uploading to Drive...")
         folder_id = get_target_folder_id()
-        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{RESUME_COUNTER}-{filename}", folder_id)
+        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{resume_id}-{filename}", folder_id)
+        print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
 
         # 7) Write base row (Sheets)
         ui_data = {
@@ -294,16 +301,20 @@ async def upload_volunteer_application(
             "motivation": (motivation or "").strip(),
         }
 
-        write_base_row(RESUME_COUNTER, drive_file_id, drive_file_url, submission_id, ui_data)
+        print(f"[SHEETS] Writing base row resume_id={resume_id} ...")
+        write_base_row(resume_id, drive_file_id, drive_file_url, submission_id, ui_data)
+        print(f"[SHEETS] Base row written resume_id={resume_id}")
 
         # 8) Background parsing (async)
-        background_tasks.add_task(_parse_and_update, RESUME_COUNTER, drive_file_id, pre_text)
+        background_tasks.add_task(_parse_and_update, resume_id, drive_file_id, pre_text)
 
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
                 "submission_id": submission_id,
+                "resume_id": resume_id,
+                "drive_file_url": drive_file_url,
                 "message": "Your application has been received",
             },
         )
@@ -324,9 +335,11 @@ async def upload_volunteer_application(
 
 def _parse_and_update(resume_id: int, drive_file_id: str, pre_extracted_text: str = ""):
     try:
+        print(f"[JOB] Parsing resume_id={resume_id} ...")
         parsed = parse_resume(pre_extracted_text or "")
         parsed["drive_file_id"] = drive_file_id
         update_resume_in_sheet(resume_id, parsed)
+        print(f"[JOB] Parsed + updated sheet resume_id={resume_id}")
     except Exception as e:
         print(f"[JOB] Error parsing resume_id={resume_id}: {e}")
         traceback.print_exc()
@@ -348,6 +361,7 @@ def authorize():
         prompt="consent",
     )
     return {"status": "ok", "auth_url": auth_url}
+
 
 @app.get("/oauth2callback")
 def oauth2callback(code: str):

@@ -28,7 +28,6 @@ export const IntakeForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<FormStatus>({ state: 'idle' });
 
-  // --- Validation Logic ---
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
     let isValid = true;
@@ -71,7 +70,6 @@ export const IntakeForm: React.FC = () => {
       isValid = false;
     }
 
-    // Optional URL validation
     if (formData.linkedinUrl && !/^https?:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedinUrl)) {
       newErrors.linkedinUrl = 'Invalid LinkedIn URL';
       isValid = false;
@@ -82,7 +80,6 @@ export const IntakeForm: React.FC = () => {
       isValid = false;
     }
 
-    // Motivation Max Length (Strict 280 chars)
     if (formData.motivation.length > 280) {
       newErrors.motivation = 'Motivation must be 280 characters or less';
       isValid = false;
@@ -103,21 +100,16 @@ export const IntakeForm: React.FC = () => {
       }
     }
 
-    // Consent Logic
     if (!formData.consentProfile) {
       newErrors.consentProfile = 'This consent is required to proceed';
       isValid = false;
     }
-    if (!formData.consentGuidelines) {
-      newErrors.consentGuidelines = 'You must agree to the guidelines';
-      isValid = false;
-    }
+    
 
     setErrors(newErrors);
     return isValid;
   };
 
-  // --- Scroll Helper ---
   const scrollToError = () => {
     setTimeout(() => {
       const firstError = document.querySelector('[aria-invalid="true"]');
@@ -129,91 +121,73 @@ export const IntakeForm: React.FC = () => {
     }, 10);
   };
 
-  // ✅ Parse-only connectivity test helper
-  const testParseOnly = async (apiBase: string, file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
-
-    const res = await fetch(`${apiBase}/api/parse-only`, {
-      method: 'POST',
-      body: fd,
-    });
-
-    const json = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      console.error('[parse-only] failed:', res.status, json);
-      throw new Error(json?.message || `parse-only failed (${res.status})`);
-    }
-
-    console.log('[parse-only] parsed:', json);
-    return json;
-  };
-
-  // --- Submit Handler (API-spec compliant multipart/form-data) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1) Client Validation
+    console.log('[submit] clicked');
+    console.log('[submit] resume in state:', formData.resume);
+
     if (!validate()) {
+      console.warn('[submit] blocked by validation');
       scrollToError();
       return;
     }
 
-    // 2) Set State: Submitting
     setStatus({ state: 'submitting' });
     setErrors({});
 
-    // API base URL
-    const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+    // FORCE localhost backend for now (no env)
+    const apiBase = 'http://localhost:8000';
 
     try {
-      // ✅ 2.25) Health check / connectivity debug
-      console.log('API base:', (import.meta as any).env?.VITE_API_URL);
-      const ping = await fetch(`${(import.meta as any).env?.VITE_API_URL}/health`);
-      console.log('health:', await ping.json());
-
-      // ✅ 2.5) parse-only test (connectivity + PDF parser)
-      if (formData.resume) {
-        const parsed = await testParseOnly(apiBase, formData.resume);
-        setStatus({
-          state: 'submitting',
-          message: 'Resume parsed successfully. Submitting application...',
-        });
-        void parsed;
+      // quick health ping (optional)
+      try {
+        const ping = await fetch(`${apiBase}/health`);
+        const pingJson = await ping.json().catch(() => ({}));
+        console.log('[health]', ping.status, pingJson);
+      } catch (err) {
+        console.warn('[health] failed:', err);
       }
 
-      // 3) Prepare Payload (per API spec)
       const payload = new FormData();
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
 
-      // file (required)
-      if (formData.resume) payload.append('file', formData.resume);
+      // IMPORTANT: file must be appended as "file"
+      if (formData.resume) {
+        payload.append('file', formData.resume, formData.resume.name);
+      }
 
-      // required text fields
       payload.append('full_name', fullName);
       payload.append('email', formData.email);
       payload.append('location', formData.location);
       payload.append('interests', formData.interests);
       payload.append('availability', formData.availability);
       payload.append('experience_level', formData.experienceLevel);
-
-      // consent must be true
       payload.append('consent', 'true');
 
-      // optional fields
       if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl);
       if (formData.githubUrl) payload.append('github_url', formData.githubUrl);
       if (formData.motivation) payload.append('motivation', formData.motivation);
+
+      // DEBUG: show what we are actually sending
+      console.log('[upload] POST =>', `${apiBase}/api/upload`);
+      for (const [k, v] of payload.entries()) {
+        if (v instanceof File) {
+          console.log(`[payload] ${k} = File(name=${v.name}, type=${v.type}, size=${v.size})`);
+        } else {
+          console.log(`[payload] ${k} =`, v);
+        }
+      }
 
       const response = await fetch(`${apiBase}/api/upload`, {
         method: 'POST',
         body: payload,
       });
 
-      // 4) Handle Response
+      const data = await response.json().catch(() => ({}));
+      console.log('[upload] status:', response.status, data);
+
       if (response.ok) {
-        const data = await response.json();
         setStatus({
           state: 'success',
           message: data.message || 'Your application has been received',
@@ -223,12 +197,9 @@ export const IntakeForm: React.FC = () => {
         return;
       }
 
-      // 5) Handle Errors (per spec)
-      const data = await response.json().catch(() => ({}));
-
+      // map backend validation to UI fields
       if (response.status === 422 && data?.code === 'VALIDATION_ERROR' && data?.fields) {
         const apiErrors: FormErrors = {};
-
         const fieldMap: Record<string, keyof IntakeFormData> = {
           full_name: 'firstName',
           email: 'email',
@@ -249,30 +220,21 @@ export const IntakeForm: React.FC = () => {
         });
 
         setErrors(apiErrors);
-        setStatus({
-          state: 'error',
-          message: 'Please fix the highlighted fields and try again.',
-        });
+        setStatus({ state: 'error', message: 'Please fix the highlighted fields and try again.' });
         scrollToError();
         return;
       }
 
       if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
-        setErrors({ resume: data?.message || 'A resume file is required to complete this submission.' });
+        setErrors({ resume: data?.message || 'A resume file is required.' });
         setStatus({ state: 'error', message: 'Please upload your resume to continue.' });
         scrollToError();
         return;
       }
 
-      if (response.status === 500 && data?.code === 'PROCESSING_FAILED') {
-        throw new Error(
-          data?.message ||
-            'We hit a snag while processing your submission. Please try again or reach out to support.'
-        );
-      }
-
-      throw new Error(data?.message || 'Request failed. Please try again.');
+      throw new Error(data?.message || `Request failed (${response.status}). Please try again.`);
     } catch (error: any) {
+      console.error('[submit] error:', error);
       setStatus({
         state: 'error',
         message:
@@ -316,6 +278,7 @@ export const IntakeForm: React.FC = () => {
   };
 
   const handleFileChange = (file: File | null) => {
+    console.log('[file] selected:', file);
     setFormData((prev) => ({ ...prev, resume: file }));
     if (errors.resume) {
       setErrors((prev) => ({ ...prev, resume: undefined }));
@@ -324,7 +287,6 @@ export const IntakeForm: React.FC = () => {
 
   const isSubmitting = status.state === 'submitting';
 
-  // --- Success View ---
   if (status.state === 'success') {
     return (
       <div className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in p-10 text-center border-t-4 border-libelle-emerald">
@@ -357,12 +319,10 @@ export const IntakeForm: React.FC = () => {
     );
   }
 
-  // --- Form View ---
   return (
     <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 relative">
       <div className="h-2 bg-libelle-indigo w-full"></div>
 
-      {/* Form Card Header */}
       <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
           We help you plug in fast.
@@ -377,31 +337,16 @@ export const IntakeForm: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-10" noValidate>
-        {/* Global Error Banner */}
         {status.state === 'error' && status.message && (
-          <div
-            className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start animate-fade-in"
-            role="alert"
-          >
+          <div className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start" role="alert">
             <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
             <p className="font-medium">{status.message}</p>
           </div>
         )}
 
-        {/* Optional banner when parse-only succeeded */}
-        {status.state === 'submitting' && status.message && (
-          <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 p-4 rounded-lg flex items-start animate-fade-in">
-            <Loader2 className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5 animate-spin" />
-            <p className="font-medium">{status.message}</p>
-          </div>
-        )}
-
-        {/* Personal Information Section */}
+        {/* Personal Info */}
         <section aria-labelledby="personal-info-heading">
-          <h2
-            id="personal-info-heading"
-            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
-          >
+          <h2 id="personal-info-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
             Personal Information
           </h2>
           <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
@@ -459,12 +404,9 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Experience & Motivation Section */}
+        {/* Experience */}
         <section aria-labelledby="experience-heading">
-          <h2
-            id="experience-heading"
-            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
-          >
+          <h2 id="experience-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
             Experience & Details
           </h2>
 
@@ -512,11 +454,6 @@ export const IntakeForm: React.FC = () => {
                     <option value="Mid">Mid</option>
                     <option value="Senior">Senior</option>
                   </select>
-                  {errors.experienceLevel && (
-                    <div className="pointer-events-none absolute inset-y-0 right-8 flex items-center">
-                      <AlertCircle className="h-5 w-5 text-libelle-rose" aria-hidden="true" />
-                    </div>
-                  )}
                 </div>
                 {errors.experienceLevel && (
                   <p className="mt-1 text-sm text-libelle-rose" id="experienceLevel-error">
@@ -596,7 +533,7 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Privacy & Consent Section */}
+        {/* Privacy & Consent */}
         <section aria-labelledby="privacy-heading" className="rounded-lg border border-gray-200 overflow-hidden">
           <div className="bg-[#4F46E5] h-[59px] px-8 flex items-center gap-[10px] rounded-t-lg">
             <h2 id="privacy-heading" className="text-white text-lg font-bold font-sans">
@@ -613,15 +550,10 @@ export const IntakeForm: React.FC = () => {
               <br />
               We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.<br />
               <br />
-              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA. See our full{' '}
-              <a href="#" className="text-libelle-indigo underline hover:text-indigo-800">
-                Privacy Policy
-              </a>
-              .<br />
+              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA.
             </p>
 
             <div className="space-y-4 pt-4">
-              {/* Checkbox 1 */}
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
@@ -638,12 +570,9 @@ export const IntakeForm: React.FC = () => {
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label
-                    htmlFor="consentProfile"
-                    className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
-                  >
-                    I understand and consent to TCUS using the information l've provided to match me with volunteer
-                    opportunities in alignment with the mission. <span className="text-libelle-rose">*</span>
+                  <label htmlFor="consentProfile" className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
+                    I understand and consent to TCUS using the information I&apos;ve provided to match me with volunteer opportunities in alignment with the mission.{' '}
+                    <span className="text-libelle-rose">*</span>
                   </label>
                   {errors.consentProfile && (
                     <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">
@@ -653,7 +582,6 @@ export const IntakeForm: React.FC = () => {
                 </div>
               </div>
 
-              {/* Checkbox 2 */}
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
@@ -668,8 +596,8 @@ export const IntakeForm: React.FC = () => {
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="consentDataUse" className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    We're building something big and experimental at TCUS, and we'd love to keep you in the loop as new
-                    projects and volunteer opportunities emerge. <span className="italic text-[#72727B]">(optional)</span>
+                    We&apos;re building something big and experimental at TCUS, and we&apos;d love to keep you in the loop as new projects and volunteer opportunities emerge.{' '}
+                    <span className="italic text-[#72727B]">(optional)</span>
                   </label>
                 </div>
               </div>
@@ -677,7 +605,7 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Submit Actions */}
+        {/* Submit */}
         <div className="pt-4 flex justify-center">
           <div className="w-[286px] h-[70px] flex items-center gap-8">
             <button
