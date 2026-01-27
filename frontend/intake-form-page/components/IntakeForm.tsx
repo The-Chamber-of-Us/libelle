@@ -103,7 +103,7 @@ export const IntakeForm: React.FC = () => {
       }
     }
 
-    // Consent Logic: both must be checked to proceed
+    // Consent Logic
     if (!formData.consentProfile) {
       newErrors.consentProfile = 'This consent is required to proceed';
       isValid = false;
@@ -129,6 +129,27 @@ export const IntakeForm: React.FC = () => {
     }, 10);
   };
 
+  // ✅ Parse-only connectivity test helper
+  const testParseOnly = async (apiBase: string, file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const res = await fetch(`${apiBase}/api/parse-only`, {
+      method: 'POST',
+      body: fd,
+    });
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error('[parse-only] failed:', res.status, json);
+      throw new Error(json?.message || `parse-only failed (${res.status})`);
+    }
+
+    console.log('[parse-only] parsed:', json);
+    return json;
+  };
+
   // --- Submit Handler (API-spec compliant multipart/form-data) ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,42 +164,47 @@ export const IntakeForm: React.FC = () => {
     setStatus({ state: 'submitting' });
     setErrors({});
 
-    // 3) Prepare Payload (per API spec)
-    // Keys MUST match backend:
-    // file, full_name, email, location, interests, availability, experience_level, linkedin_url, github_url, motivation, consent
-    const payload = new FormData();
-
-    const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-
-    // file (required)
-    if (formData.resume) {
-      payload.append('file', formData.resume);
-    }
-
-    // required text fields
-    payload.append('full_name', fullName);
-    payload.append('email', formData.email);
-    payload.append('location', formData.location);
-
-    // interests can be string or string[]; your UI is a string input, so send string (CSV accepted)
-    payload.append('interests', formData.interests);
-
-    payload.append('availability', formData.availability);
-    payload.append('experience_level', formData.experienceLevel);
-
-    // required consent must be true
-    // IMPORTANT: FormData values are strings/blobs; send "true" (backend using Form(bool) should parse)
-    payload.append('consent', 'true');
-
-    // optional fields
-    if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl);
-    if (formData.githubUrl) payload.append('github_url', formData.githubUrl);
-    if (formData.motivation) payload.append('motivation', formData.motivation);
+    // API base URL
+    const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
 
     try {
-      // Base URL per spec: local http://localhost:8000, prod https://api.libelle.io
-      // Keep env override if present; otherwise default to local.
-      const apiBase = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+      // ✅ 2.25) Health check / connectivity debug
+      console.log('API base:', (import.meta as any).env?.VITE_API_URL);
+      const ping = await fetch(`${(import.meta as any).env?.VITE_API_URL}/health`);
+      console.log('health:', await ping.json());
+
+      // ✅ 2.5) parse-only test (connectivity + PDF parser)
+      if (formData.resume) {
+        const parsed = await testParseOnly(apiBase, formData.resume);
+        setStatus({
+          state: 'submitting',
+          message: 'Resume parsed successfully. Submitting application...',
+        });
+        void parsed;
+      }
+
+      // 3) Prepare Payload (per API spec)
+      const payload = new FormData();
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+
+      // file (required)
+      if (formData.resume) payload.append('file', formData.resume);
+
+      // required text fields
+      payload.append('full_name', fullName);
+      payload.append('email', formData.email);
+      payload.append('location', formData.location);
+      payload.append('interests', formData.interests);
+      payload.append('availability', formData.availability);
+      payload.append('experience_level', formData.experienceLevel);
+
+      // consent must be true
+      payload.append('consent', 'true');
+
+      // optional fields
+      if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl);
+      if (formData.githubUrl) payload.append('github_url', formData.githubUrl);
+      if (formData.motivation) payload.append('motivation', formData.motivation);
 
       const response = await fetch(`${apiBase}/api/upload`, {
         method: 'POST',
@@ -200,11 +226,9 @@ export const IntakeForm: React.FC = () => {
       // 5) Handle Errors (per spec)
       const data = await response.json().catch(() => ({}));
 
-      // Validation Error (422): { status, code, fields: {...} }
       if (response.status === 422 && data?.code === 'VALIDATION_ERROR' && data?.fields) {
         const apiErrors: FormErrors = {};
 
-        // Map API keys -> UI fields
         const fieldMap: Record<string, keyof IntakeFormData> = {
           full_name: 'firstName',
           email: 'email',
@@ -233,7 +257,6 @@ export const IntakeForm: React.FC = () => {
         return;
       }
 
-      // Missing File (400): { status, code: FILE_REQUIRED, message }
       if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
         setErrors({ resume: data?.message || 'A resume file is required to complete this submission.' });
         setStatus({ state: 'error', message: 'Please upload your resume to continue.' });
@@ -241,7 +264,6 @@ export const IntakeForm: React.FC = () => {
         return;
       }
 
-      // Internal Failure (500): { status, code: PROCESSING_FAILED, message }
       if (response.status === 500 && data?.code === 'PROCESSING_FAILED') {
         throw new Error(
           data?.message ||
@@ -249,7 +271,6 @@ export const IntakeForm: React.FC = () => {
         );
       }
 
-      // Fallback
       throw new Error(data?.message || 'Request failed. Please try again.');
     } catch (error: any) {
       setStatus({
@@ -363,6 +384,14 @@ export const IntakeForm: React.FC = () => {
             role="alert"
           >
             <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+            <p className="font-medium">{status.message}</p>
+          </div>
+        )}
+
+        {/* Optional banner when parse-only succeeded */}
+        {status.state === 'submitting' && status.message && (
+          <div className="bg-indigo-50 border border-indigo-100 text-indigo-800 p-4 rounded-lg flex items-start animate-fade-in">
+            <Loader2 className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5 animate-spin" />
             <p className="font-medium">{status.message}</p>
           </div>
         )}
@@ -609,8 +638,12 @@ export const IntakeForm: React.FC = () => {
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="consentProfile" className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    I understand and consent to TCUS using the information l've provided to match me with volunteer opportunities in alignment with the mission. <span className="text-libelle-rose">*</span>
+                  <label
+                    htmlFor="consentProfile"
+                    className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                  >
+                    I understand and consent to TCUS using the information l've provided to match me with volunteer
+                    opportunities in alignment with the mission. <span className="text-libelle-rose">*</span>
                   </label>
                   {errors.consentProfile && (
                     <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">
@@ -635,7 +668,8 @@ export const IntakeForm: React.FC = () => {
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="consentDataUse" className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    We're building something big and experimental at TCUS, and we'd love to keep you in the loop as new projects and volunteer opportunities emerge. <span className="italic text-[#72727B]">(optional)</span>
+                    We're building something big and experimental at TCUS, and we'd love to keep you in the loop as new
+                    projects and volunteer opportunities emerge. <span className="italic text-[#72727B]">(optional)</span>
                   </label>
                 </div>
               </div>

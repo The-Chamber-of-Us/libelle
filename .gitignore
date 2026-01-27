@@ -53,20 +53,12 @@ pnpm-debug.log*
 
 # Token & credential files
 **/token.json
+**/org_oauth_client.json
 **/org_credentials.json
-**/credentials.json
-**/*secret*.json
 
 # Python env files
 **/.env
 **/.env.*
-
-# ========================================
-# Google / Auth / Service Account
-# ========================================
-**/client_secret*.json
-**/service_account*.json
-**/*oauth*.json
 
 # ========================================
 # Logs

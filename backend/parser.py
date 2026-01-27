@@ -6,6 +6,12 @@ from typing import List, Dict, Tuple, Any
 
 nd = NameDataset()
 
+EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+REFERENCES_RE = re.compile(
+    r"^\s*(references?|referees?|professional\s+references?)\s*:?\s*$",
+    re.IGNORECASE
+)
+
 def _get_lines(text: str) -> List[str]:
     return [line.rstrip() for line in text.splitlines()]
 
@@ -40,6 +46,7 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
 
 def _group_into_entries(section_lines: List[str]) -> List[str]:
     entries, current = [], []
+
     def flush_current():
         if current:
             text = " ".join([ln.strip() for ln in current if ln.strip()])
@@ -47,10 +54,13 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
             if text:
                 entries.append(text)
             current.clear()
+
     date_like = re.compile(
         r'\b(?:\d{4}|\d{4}\s*-\s*\d{4}|Present|present|Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|'
         r'Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|'
-        r'Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)', re.IGNORECASE)
+        r'Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)', re.IGNORECASE
+    )
+
     for line in section_lines:
         stripped = line.strip()
         if not stripped:
@@ -71,36 +81,29 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
             current.append(stripped)
             continue
         current.append(stripped)
+
     flush_current()
     return entries
 
 def extract_email(text: str) -> Tuple[List[str], float]:
-    EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
-    REFERENCES_RE = re.compile(
-        r"^\s*(references?|referees?|professional\s+references?)\s*:?\s*$",
-        re.IGNORECASE
-    )
-
     lines = [l.strip() for l in text.splitlines() if l.strip()]
 
-    # first ten lines
     header_text = "\n".join(lines[:10])
     header_matches = EMAIL_RE.findall(header_text)
     if header_matches:
         return [header_matches[0]], 1.0
-    
-    # scanning the rest and excluding any reference related emails
+
     cutoff = len(lines)
     for i, line in enumerate(lines):
         if REFERENCES_RE.match(line):
             cutoff = i
             break
+
     body_text = "\n".join(lines[:cutoff])
     body_matches = EMAIL_RE.findall(body_text)
     if body_matches:
         return [body_matches[0]], 1.0
-    
-    # fallback
+
     at_count = sum(1 for w in body_text.split() if "@" in w)
     confidence = min(1.0, at_count / 2)
 
@@ -116,45 +119,58 @@ def extract_phone(text: str) -> Tuple[List[str], float]:
 def extract_name(text: str) -> Tuple[str, float]:
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     stop_headers = ["education", "work", "experience", "employment", "projects", "skills", "summary", "objective", "volunteer", "leadership"]
+
     for line in lines:
         if any(h in line.lower() for h in stop_headers):
             break
-        line_no_email = re.sub(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "", line).strip()
+
+        line_no_email = EMAIL_RE.sub("", line).strip()
         line_no_contact = re.sub(r"\+?\d[\d\s().-]{8,}\d", "", line_no_email).strip()
         if not line_no_contact:
             continue
+
         candidate = HumanName(line_no_contact)
         score = 0.0
+
         if candidate.first and nd.first_names.get(candidate.first.lower()):
             score += 0.5
         if candidate.last and nd.last_names.get(candidate.last.lower()):
             score += 0.5
+
         if score > 0:
             return str(candidate).strip(), min(score, 1.0)
+
     return "Name Not Found", 0.0
 
 def extract_location(text: str) -> Tuple[List[str], float]:
-    job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]   ## Potential Job Titles  
-    state_codes = set(s.abbr for s in us.states.STATES_AND_TERRITORIES)            ## All 50 States + Abbreviations
+    job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]
+    state_codes = set(s.abbr for s in us.states.STATES_AND_TERRITORIES)
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    candidate_lines = [l for l in lines[:15] if not re.search(r"[a-zA-Z0-9._%+-]+@|\\+?\\d[\\d\\s().-]{8,}\\d|https?://\S+", l)]   ##Filtering out email, phone numbers, or URLs
+    candidate_lines = [
+        l for l in lines[:15]
+        if not re.search(r"[a-zA-Z0-9._%+-]+@|\+?\d[\d\s().-]{8,}\d|https?://\S+", l)
+    ]
+
     for line in candidate_lines:
         if re.search(r'\b(remote|hybrid)\b', line, re.IGNORECASE):
             return [line.strip()], 1.0
-    
+
         parts = line.split(",")
-        if (len(parts) >= 2):
+        if len(parts) >= 2:
             state_candidate = parts[1].strip().upper().split()[0]
-            if (state_candidate in state_codes):
+            if state_candidate in state_codes:
                 return [line.strip()], 1.0
+
         if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
-                continue
+            continue
+
     return [], 0.0
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     skills_lines, in_skills_section = [], False
+
     for line in lines:
         if re.search(r'\bskills\b', line, re.IGNORECASE):
             in_skills_section = True
@@ -163,6 +179,7 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
             break
         elif in_skills_section:
             skills_lines.append(line)
+
     skills = [p.strip() for l in skills_lines for p in re.split(r'•|,|·|;', l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
@@ -170,6 +187,7 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
 def extract_education(text: str) -> Tuple[List[str], float]:
     lines = [l.strip() for l in text.splitlines() if l.strip()]
     edu_lines, in_section = [], False
+
     for line in lines:
         if re.search(r'\beducation\b', line, re.IGNORECASE):
             in_section = True
@@ -178,6 +196,7 @@ def extract_education(text: str) -> Tuple[List[str], float]:
             break
         elif in_section:
             edu_lines.append(line)
+
     return edu_lines, 1.0 if edu_lines else 0.0
 
 def extract_work_experience(text: str) -> Tuple[List[str], float, int]:
@@ -191,7 +210,7 @@ def extract_project_experience(text: str, start_index: int) -> Tuple[List[str], 
     lines = _get_lines(text)[start_index:]
     project_lines, _ = _collect_section_lines(lines, [r'project experience', r'projects', r'project'])
     entries = _group_into_entries(project_lines)
-    conf = 1.0 if entries else min(1.0, len(project_lines) / max(1, len(lines[start_index:])))
+    conf = 1.0 if entries else min(1.0, len(project_lines) / max(1, len(lines)))
     return entries, conf
 
 def parse_resume(text: str) -> Dict[str, Any]:
@@ -203,6 +222,7 @@ def parse_resume(text: str) -> Dict[str, Any]:
     education, edu_conf = extract_education(text)
     work_experience, work_conf, work_end_index = extract_work_experience(text)
     project_experience, project_conf = extract_project_experience(text, work_end_index)
+
     return {
         "name": {"value": name, "confidence": name_conf},
         "emails": {"value": emails, "confidence": email_conf},
