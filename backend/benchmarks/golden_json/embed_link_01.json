@@ -1,0 +1,23 @@
+{
+    "submission_id": "embed_link_01",
+    "skills": [
+      "data analytics and interpretation",
+      "python",
+      "sql querying",
+      "data visualization",
+      "statistical analysis",
+      "data cleaning and preprocessing",
+      "technical documentation"
+    ],
+    "location": {
+      "city": "Denver",
+      "country": "United States",
+      "raw": "Denver, CO"
+    },
+    "notes": {
+      "ambiguities": [
+        "multiple cities mentioned in experience and education sections (Denver, Seattle)"
+      ]
+    }
+  }
+  

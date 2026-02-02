@@ -1,0 +1,21 @@
+{
+    "submission_id": "multi_col_02",
+    "skills": [
+      "sample prep",
+      "environmental testing procedures",
+      "quality control documentation",
+      "data logging and review",
+      "basic statistical calculations",
+      "laboratory safety practices",
+      "standard operating procedures"
+    ],
+    "location": {
+      "city": "Kansas City",
+      "country": "United States",
+      "raw": "Kansas City, Missouri"
+    },
+    "notes": {
+      "ambiguities": []
+    }
+  }
+  

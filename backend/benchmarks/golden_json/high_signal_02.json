@@ -1,0 +1,35 @@
+{
+    "submission_id": "high_signal_02",
+    "skills": [
+      "python",
+      "java",
+      "javascript",
+      "typescript",
+      "sql",
+      "restful api design",
+      "fastapi",
+      "flask",
+      "node.js",
+      "authentication workflows",
+      "postgresql",
+      "mysql",
+      "sqlite",
+      "database schema design",
+      "query optimization",
+      "docker",
+      "containerized deployments",
+      "ci/cd pipelines",
+      "linux environments"
+    ],
+    "location": {
+      "city": "La Jolla",
+      "country": "United States",
+      "raw": "La Jolla, CA"
+    },
+    "notes": {
+      "ambiguities": [
+        "multiple cities mentioned in experience and education sections (San Francisco, San Jose)"
+      ]
+    }
+  }
+  

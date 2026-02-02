@@ -1,0 +1,20 @@
+{
+    "submission_id": "low_signal_02",
+    "skills": [
+      "basic health education support",
+      "data entry and record maintenance",
+      "survey assistance",
+      "written communication"
+    ],
+    "location": {
+      "city": "Chicago",
+      "country": "United States",
+      "raw": "Chicago, Illinois"
+    },
+    "notes": {
+      "ambiguities": [
+        "multiple locations mentioned in experience and education sections (IL, TX)"
+      ]
+    }
+  }
+  

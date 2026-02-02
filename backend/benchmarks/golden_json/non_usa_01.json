@@ -1,0 +1,22 @@
+{
+    "submission_id": "non_usa_01",
+    "skills": [
+      "secondary-level curriculum delivery",
+      "lesson planning and instructional material development",
+      "classroom management and student engagement",
+      "inclusive teaching practices",
+      "exam preparation and grading",
+      "formative and summative assessment"
+    ],
+    "location": {
+      "city": "Lviv",
+      "country": "Ukraine",
+      "raw": "Lviv, Ukraine"
+    },
+    "notes": {
+      "ambiguities": [
+        "multiple Ukrainian cities mentioned in experience and education sections (Lviv, Odesa)"
+      ]
+    }
+  }
+  

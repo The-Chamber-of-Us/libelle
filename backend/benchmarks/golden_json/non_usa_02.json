@@ -1,0 +1,21 @@
+{
+    "submission_id": "non_usa_02",
+    "skills": [
+      "nutrition assessment basics",
+      "meal planning and dietary guidance",
+      "understanding of dietary guidelines",
+      "client record keeping",
+      "nutrition education support",
+      "basic data collection and reporting",
+      "communication with clients and care teams"
+    ],
+    "location": {
+      "city": "Johannesburg",
+      "country": "South Africa",
+      "raw": "Johannesburg, South Africa"
+    },
+    "notes": {
+      "ambiguities": []
+    }
+  }
+  
