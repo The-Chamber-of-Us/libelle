@@ -2,11 +2,7 @@ from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, F
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
-<<<<<<< HEAD
-from typing import Optional, Dict, Any, List, Union, Tuple
-=======
 from typing import Optional, Dict, Any, List, Union
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
 import fitz
 import traceback
 import os
@@ -15,11 +11,7 @@ import uuid
 import re
 from datetime import datetime, timezone
 
-<<<<<<< HEAD
-from parser import parse_resume, extract_email
-=======
 from parser import parse_resume
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
 from sheets_sync import write_base_row, update_resume_in_sheet
 from drive_sync import get_target_folder_id, upload_pdf
 from google_auth_oauthlib.flow import Flow
@@ -151,12 +143,9 @@ def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
 
 
 def _make_resume_id() -> int:
-<<<<<<< HEAD
     """
     Safer than a global counter: unique-ish and monotonic in practice.
     """
-=======
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
     return int(datetime.now(timezone.utc).timestamp() * 1000)
 
 
@@ -172,7 +161,6 @@ def health():
     }
 
 
-<<<<<<< HEAD
 @app.get("/debug/config")
 def debug_config():
     """
@@ -188,13 +176,10 @@ def debug_config():
     }
 
 
-=======
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
 @app.post("/api/upload")
 async def upload_volunteer_application(
     background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
-
     full_name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
@@ -204,7 +189,6 @@ async def upload_volunteer_application(
     linkedin_url: Optional[str] = Form(None),
     github_url: Optional[str] = Form(None),
     motivation: Optional[str] = Form(None),
-
     consent: Optional[bool] = Form(None),
 ):
     # 1) Missing file -> 400 FILE_REQUIRED
@@ -218,24 +202,16 @@ async def upload_volunteer_application(
             },
         )
 
-<<<<<<< HEAD
-    # 2) Validate required non-email fields first
-=======
-    # 2) Validate required fields (INCLUDING email)
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
+    # 2) Validate required fields (INCLUDING email; no PDF fallback)
     fields: Dict[str, str] = {}
 
     if not full_name or not full_name.strip():
         fields["full_name"] = "Required"
 
-<<<<<<< HEAD
-=======
-    # ✅ Email must be provided and valid; no PDF fallback
     normalized_email = _normalize_email(email or "")
     if not _validate_email(normalized_email):
         fields["email"] = "Required and must be a valid email address"
 
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
     if not location or not location.strip():
         fields["location"] = "Required"
 
@@ -252,12 +228,6 @@ async def upload_volunteer_application(
     if consent is not True:
         fields["consent"] = "Must be true to submit"
 
-<<<<<<< HEAD
-    # Allow fallback to PDF extraction if invalid
-    email_is_valid = _validate_email(email or "")
-
-=======
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
     if fields:
         raise HTTPException(
             status_code=422,
@@ -284,11 +254,7 @@ async def upload_volunteer_application(
                 detail={"status": "error", "code": "FILE_TOO_LARGE", "message": f"PDF too large (>{MAX_PDF_MB}MB)"},
             )
 
-<<<<<<< HEAD
-        # 4) Extract text once
-=======
         # 4) Extract text once (needed for parsing)
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
         pre_text = _extract_text_from_pdf(pdf_bytes)
         if not pre_text.strip():
             raise HTTPException(
@@ -296,46 +262,16 @@ async def upload_volunteer_application(
                 detail={"status": "error", "code": "NO_TEXT_EXTRACTED", "message": "PDF has no extractable text"},
             )
 
-<<<<<<< HEAD
-        # 5) Email fallback
-        final_email = ""
-        if email_is_valid:
-            final_email = _normalize_email(email or "")
-        else:
-            extracted_emails, _conf = extract_email(pre_text)
-            if extracted_emails:
-                final_email = _normalize_email(extracted_emails[0])
-
-        if not _validate_email(final_email):
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "status": "error",
-                    "code": "VALIDATION_ERROR",
-                    "fields": {"email": "Required (or must be present in PDF) and must be valid"},
-                },
-            )
-
-        # 6) Upload to Drive
-=======
         # 5) Upload to Drive
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
         print(f"[UPLOAD] submission_id={submission_id} resume_id={resume_id} uploading to Drive...")
         folder_id = get_target_folder_id()
         drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{resume_id}-{filename}", folder_id)
         print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
 
-<<<<<<< HEAD
-        # 7) Write base row (Sheets)
-        ui_data = {
-            "name": full_name.strip(),
-            "email": final_email,
-=======
         # 6) Write base row (Sheets)
         ui_data = {
             "name": full_name.strip(),
-            "email": normalized_email,  # ✅ always from form input
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
+            "email": normalized_email,  # always from form input
             "location": location.strip(),
             "areas": normalized_interests,
             "capacity": availability.strip(),
@@ -349,11 +285,7 @@ async def upload_volunteer_application(
         write_base_row(resume_id, drive_file_id, drive_file_url, submission_id, ui_data)
         print(f"[SHEETS] Base row written resume_id={resume_id}")
 
-<<<<<<< HEAD
-        # 8) Background parsing (async)
-=======
-        # 7) Background parsing
->>>>>>> 2f485ed (Revise the email fallback logic to NOT autofilling the frontend email field)
+        # 7) Background parsing (async)
         background_tasks.add_task(_parse_and_update, resume_id, drive_file_id, pre_text)
 
         return JSONResponse(
