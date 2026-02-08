@@ -81,7 +81,7 @@ def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[
     row[6] = ui_data["experience"]   #Experience level
     row[7] = ui_data["linkedin"]    #LinkedIn URL
     row[8] = ui_data["github"]     #GitHub URL
-    row[11] = ui_data["motivation"]    #Motivation
+    row[11] = ui_data["motivation"]    #Motivation (column L)
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
@@ -120,25 +120,25 @@ def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
         parsed.get("skills", {}).get("confidence", 0.0)
     ]) / 4.0, 2)
 
-    # Construct row aligned to columns L–AB (27 columns)
+    # Construct row aligned to columns M–AC (27 columns)
     parser_row = [
-        "parsed",                                         # L - parser_status
-        overall_conf,                                     # M - parser_confidence_overall
-        parsed["name"]["value"],                          # N - parsed_name
-        parsed["name"]["confidence"],                     # O - parsed_name_conf
-        ", ".join(parsed["emails"]["value"]),             # P - parsed_email
-        parsed["emails"]["confidence"],                   # Q - parsed_email_conf
-        ", ".join(parsed["locations"]["value"]),          # R - parsed_location
-        parsed["locations"]["confidence"],                # S - parsed_location_conf
-        str(parsed["education"]["value"]),                # T - parsed_education
-        parsed["education"]["confidence"],                # U - parsed_education_conf
-        str(parsed["skills"]["value"]),                   # V - parsed_skills_json
-        parsed["skills"]["confidence"],                   # W - parsed_skills_conf
-        str(parsed["work_experience"]["value"]),          # X - parsed_work_experience_json
-        parsed["work_experience"]["confidence"],          # Y - parsed_work_experience_conf
-        str(parsed["project_experience"]["value"]),       # Z - parsed_project_experience_json
-        parsed["project_experience"]["confidence"],       # AA - parsed_project_experience_conf
-        "",                                               # AB - full_extracted_text placeholder
+        "parsed",                                         # M - parser_status
+        overall_conf,                                     # N - parser_confidence_overall
+        parsed["name"]["value"],                          # O - parsed_name
+        parsed["name"]["confidence"],                     # P - parsed_name_conf
+        ", ".join(parsed["emails"]["value"]),             # Q - parsed_email
+        parsed["emails"]["confidence"],                   # R - parsed_email_conf
+        ", ".join(parsed["locations"]["value"]),          # S - parsed_location
+        parsed["locations"]["confidence"],                # T - parsed_location_conf
+        str(parsed["education"]["value"]),                # U - parsed_education
+        parsed["education"]["confidence"],                # V - parsed_education_conf
+        str(parsed["skills"]["value"]),                   # W - parsed_skills_json
+        parsed["skills"]["confidence"],                   # X - parsed_skills_conf
+        str(parsed["work_experience"]["value"]),          # Y- parsed_work_experience_json
+        parsed["work_experience"]["confidence"],          # Z - parsed_work_experience_conf
+        str(parsed["project_experience"]["value"]),       # AA - parsed_project_experience_json
+        parsed["project_experience"]["confidence"],       # AB - parsed_project_experience_conf
+        "",                                               # AC - full_extracted_text placeholder
     ]
 
     # Update the parser output columns
