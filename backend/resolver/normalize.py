@@ -1,11 +1,8 @@
 # backend/resolver/normalize.py
+import re
 
 def normalize_token(s: str) -> str:
     """
-    TODO (Chechu): Implement normalization logic.
-
-    Goal: Standardize input strings before alias lookup.
-    
     Examples (Desired Behavior):
       - "React.js" -> "reactjs" (remove dots, lowercase)
       - "  Python  " -> "python" (strip whitespace)
@@ -17,10 +14,12 @@ def normalize_token(s: str) -> str:
     if not s:
         return ""
         
-    # Placeholder: Simple lowercase + strip. 
-    # You will eventually add regex here (import re first).
-    return s.strip().lower()
-
+    s = s.lower().strip()
+    s = re.sub(r"[^\w\s]", " ", s)   # remove punctuation
+    s = re.sub(r"\s+", " ", s)       # collapse whitespace
+    
+    return s
+    
 
 def normalize_key(s: str) -> str:
     """
