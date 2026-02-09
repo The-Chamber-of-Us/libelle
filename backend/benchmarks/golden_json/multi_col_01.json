@@ -6,7 +6,13 @@
       "rest apis",
       "regex",
       "data validation",
-      "linux cli"
+      "linux cli",
+      "git/github",
+      "docker",
+      "fastapi",
+      "google sheets api",
+      "bash",
+      "aws"
     ],
     "location": {
       "city": null,

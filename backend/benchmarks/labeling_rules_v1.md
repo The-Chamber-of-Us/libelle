@@ -11,6 +11,9 @@ This document defines the labeling and normalization rules used to generate Gold
   - removing duplicates
 - Skill group headers (e.g., "Programming Languages") are ignored.
 - No skills are inferred from experience or project descriptions.
+- Keywords listed under a "Tools" section are extracted and treated equivalently to skills.
+- When a skill or tool includes items in parentheses, each item within the parentheses
+  is extracted as an individual skill in addition to the parent term.
 
 ## Location Handling
 
