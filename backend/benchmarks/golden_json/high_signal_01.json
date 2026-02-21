@@ -1,0 +1,35 @@
+{
+    "submission_id": "high_signal_01",
+    "skills": [
+      "structural load calculations",
+      "reinforced concrete design",
+      "steel structure design",
+      "structural modeling",
+      "soil mechanics fundamentals",
+      "foundation analysis",
+      "hydrology basics",
+      "drainage design",
+      "autocad",
+      "civil 3d",
+      "etabs",
+      "staad.pro",
+      "sap2000",
+      "construction scheduling",
+      "quantity take-offs",
+      "boqs",
+      "quality inspections",
+      "design code compliance",
+      "technical reports",
+      "construction drawings",
+      "regulatory submissions"
+    ],
+    "location": {
+      "city": "Riverside",
+      "country": "United States",
+      "raw": "Riverside, CA"
+    },
+    "notes": {
+      "ambiguities": []
+    }
+  }
+  

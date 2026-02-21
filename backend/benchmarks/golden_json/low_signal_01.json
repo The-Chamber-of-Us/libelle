@@ -1,0 +1,18 @@
+{
+    "submission_id": "low_signal_01",
+    "skills": [
+      "basic nutrition assessment",
+      "meal planning",
+      "dietary guidelines familiarity",
+      "record keeping"
+    ],
+    "location": {
+      "city": "Charlotte",
+      "country": "United States",
+      "raw": "Charlotte, North Carolina"
+    },
+    "notes": {
+      "ambiguities": []
+    }
+  }
+  

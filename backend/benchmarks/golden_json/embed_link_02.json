@@ -1,0 +1,23 @@
+{
+    "submission_id": "embed_link_02",
+    "skills": [
+      "process improvement",
+      "project management software",
+      "team player",
+      "budget tracking and cost control",
+      "conflict management",
+      "stakeholder communication",
+      "data analytics"
+    ],
+    "location": {
+      "city": "Chicago",
+      "country": "United States",
+      "raw": "Chicago, Illinois"
+    },
+    "notes": {
+      "ambiguities": [
+        "multiple cities mentioned in experience and education sections (Chicago, Boomtown)"
+      ]
+    }
+  }
+  

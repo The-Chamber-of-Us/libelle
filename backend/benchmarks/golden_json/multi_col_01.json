@@ -1,0 +1,28 @@
+{
+    "submission_id": "multi_col_01",
+    "skills": [
+      "python",
+      "sql",
+      "rest apis",
+      "regex",
+      "data validation",
+      "linux cli",
+      "git/github",
+      "docker",
+      "fastapi",
+      "google sheets api",
+      "bash",
+      "aws"
+    ],
+    "location": {
+      "city": null,
+      "country": null,
+      "raw": "Cloud City, ZZ"
+    },
+    "notes": {
+      "ambiguities": [
+        "location uses a non-real city and country code"
+      ]
+    }
+  }
+  
