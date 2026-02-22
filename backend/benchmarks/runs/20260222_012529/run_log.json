@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-02-22T07:25:29.933761+00:00",
+  "git_commit": "85dd0ac",
+  "parsers": [
+    "libelle"
+  ],
+  "parser_versions": {
+    "libelle": "local"
+  },
+  "command": "scripts/benchmark.py --pdf_dir backend/benchmarks/resumes --golden_dir backend/benchmarks/golden_json --parsers libelle --out backend/benchmarks/runs",
+  "system": {
+    "platform": "Darwin",
+    "platform_version": "Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:40 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8132",
+    "python": "3.14.0",
+    "machine": "arm64"
+  },
+  "args": {
+    "pdf_dir": "backend/benchmarks/resumes",
+    "golden_dir": "backend/benchmarks/golden_json",
+    "parsers": [
+      "libelle"
+    ],
+    "out": "backend/benchmarks/runs"
+  },
+  "errors": []
+}
