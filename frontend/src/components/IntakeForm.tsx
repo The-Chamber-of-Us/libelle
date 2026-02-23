@@ -1,10 +1,9 @@
-// IntakeForm.tsx
-import React, { useState } from 'react';
-import { IntakeFormData, FormErrors, FormStatus } from '../types';
-import { Input } from './ui/Input';
-import { Textarea } from './ui/Textarea';
-import { FileUpload } from './ui/FileUpload';
-import { Check, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react'
+import { IntakeFormData, FormErrors, FormStatus } from '../types'
+import { Input } from '../ui/Input'
+import { Textarea } from '../ui/Textarea'
+import { FileUpload } from '../ui/FileUpload'
+import { Check, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
 
 const INITIAL_FORM_DATA: IntakeFormData = {
   firstName: '',
@@ -20,186 +19,160 @@ const INITIAL_FORM_DATA: IntakeFormData = {
   resume: null,
   consentProfile: false,
   consentGuidelines: false,
-  consentDataUse: false,
-};
+  consentDataUse: false
+}
 
 export const IntakeForm: React.FC = () => {
-  const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [status, setStatus] = useState<FormStatus>({ state: 'idle' });
+  const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA)
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [status, setStatus] = useState<FormStatus>({ state: 'idle' })
 
   const validate = (): boolean => {
-    const newErrors: FormErrors = {};
-    let isValid = true;
+    const newErrors: FormErrors = {}
+    let isValid = true
 
     if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-      isValid = false;
+      newErrors.firstName = 'First name is required'
+      isValid = false
     }
-
     if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-      isValid = false;
+      newErrors.lastName = 'Last name is required'
+      isValid = false
     }
-
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-      isValid = false;
+      newErrors.email = 'Email is required'
+      isValid = false
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-      isValid = false;
+      newErrors.email = 'Please enter a valid email address'
+      isValid = false
     }
-
     if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
-      isValid = false;
+      newErrors.location = 'Location is required'
+      isValid = false
     }
-
     if (!formData.interests.trim()) {
-      newErrors.interests = 'Please list at least one interest';
-      isValid = false;
+      newErrors.interests = 'Please list at least one interest'
+      isValid = false
     }
-
     if (!formData.availability.trim()) {
-      newErrors.availability = 'Availability is required';
-      isValid = false;
+      newErrors.availability = 'Availability is required'
+      isValid = false
     }
-
     if (!formData.experienceLevel) {
-      newErrors.experienceLevel = 'Please select an experience level';
-      isValid = false;
+      newErrors.experienceLevel = 'Please select an experience level'
+      isValid = false
     }
-
-    if (formData.linkedinUrl && !/^https?:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedinUrl)) {
-      newErrors.linkedinUrl = 'Invalid LinkedIn URL';
-      isValid = false;
+    if (
+      formData.linkedinUrl &&
+      !/^https?:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedinUrl)
+    ) {
+      newErrors.linkedinUrl = 'Invalid LinkedIn URL'
+      isValid = false
     }
-
-    if (formData.githubUrl && !/^https?:\/\/(www\.)?github\.com\/.*$/.test(formData.githubUrl)) {
-      newErrors.githubUrl = 'Invalid GitHub URL';
-      isValid = false;
+    if (
+      formData.githubUrl &&
+      !/^https?:\/\/(www\.)?github\.com\/.*$/.test(formData.githubUrl)
+    ) {
+      newErrors.githubUrl = 'Invalid GitHub URL'
+      isValid = false
     }
-
     if (formData.motivation.length > 280) {
-      newErrors.motivation = 'Motivation must be 280 characters or less';
-      isValid = false;
+      newErrors.motivation = 'Motivation must be 280 characters or less'
+      isValid = false
     }
 
-    // Strict File Validation (PDF Only, 5MB)
+    // PDF only, <= 5MB
     if (!formData.resume) {
-      newErrors.resume = 'Please upload your resume (PDF only)';
-      isValid = false;
+      newErrors.resume = 'Please upload your resume (PDF only)'
+      isValid = false
     } else {
       if (formData.resume.type !== 'application/pdf') {
-        newErrors.resume = 'Only PDF files are allowed';
-        isValid = false;
+        newErrors.resume = 'Only PDF files are allowed'
+        isValid = false
       }
       if (formData.resume.size > 5 * 1024 * 1024) {
-        newErrors.resume = 'File size must be less than 5MB';
-        isValid = false;
+        newErrors.resume = 'File size must be less than 5MB'
+        isValid = false
       }
     }
 
     if (!formData.consentProfile) {
-      newErrors.consentProfile = 'This consent is required to proceed';
-      isValid = false;
+      newErrors.consentProfile = 'This consent is required to proceed'
+      isValid = false
     }
-    
 
-    setErrors(newErrors);
-    return isValid;
-  };
+    setErrors(newErrors)
+    return isValid
+  }
 
   const scrollToError = () => {
     setTimeout(() => {
-      const firstError = document.querySelector('[aria-invalid="true"]');
+      const firstError = document.querySelector('[aria-invalid="true"]')
       if (firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' })
       }
-    }, 10);
-  };
+    }, 10)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    console.log('[submit] clicked');
-    console.log('[submit] resume in state:', formData.resume);
+    e.preventDefault()
 
     if (!validate()) {
-      console.warn('[submit] blocked by validation');
-      scrollToError();
-      return;
+      scrollToError()
+      return
     }
 
-    setStatus({ state: 'submitting' });
-    setErrors({});
-
-    // FORCE localhost backend for now (no env)
-    const apiBase = 'http://localhost:8000';
+    setStatus({ state: 'submitting' })
+    setErrors({})
 
     try {
-      // quick health ping (optional)
+      // Optional health ping
       try {
-        const ping = await fetch(`${apiBase}/health`);
-        const pingJson = await ping.json().catch(() => ({}));
-        console.log('[health]', ping.status, pingJson);
-      } catch (err) {
-        console.warn('[health] failed:', err);
+        await fetch('/health')
+      } catch {
+        // ok
       }
 
-      const payload = new FormData();
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const payload = new FormData()
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim()
 
-      // IMPORTANT: file must be appended as "file"
       if (formData.resume) {
-        payload.append('file', formData.resume, formData.resume.name);
+        payload.append('file', formData.resume, formData.resume.name)
       }
 
-      payload.append('full_name', fullName);
-      payload.append('email', formData.email);
-      payload.append('location', formData.location);
-      payload.append('interests', formData.interests);
-      payload.append('availability', formData.availability);
-      payload.append('experience_level', formData.experienceLevel);
-      payload.append('consent', 'true');
+      payload.append('full_name', fullName)
+      payload.append('email', formData.email)
+      payload.append('location', formData.location)
+      payload.append('interests', formData.interests)
+      payload.append('availability', formData.availability)
+      payload.append('experience_level', formData.experienceLevel)
+      payload.append('consent', 'true')
 
-      if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl);
-      if (formData.githubUrl) payload.append('github_url', formData.githubUrl);
-      if (formData.motivation) payload.append('motivation', formData.motivation);
+      if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl)
+      if (formData.githubUrl) payload.append('github_url', formData.githubUrl)
+      if (formData.motivation) payload.append('motivation', formData.motivation)
 
-      // DEBUG: show what we are actually sending
-      console.log('[upload] POST =>', `${apiBase}/api/upload`);
-      for (const [k, v] of payload.entries()) {
-        if (v instanceof File) {
-          console.log(`[payload] ${k} = File(name=${v.name}, type=${v.type}, size=${v.size})`);
-        } else {
-          console.log(`[payload] ${k} =`, v);
-        }
-      }
-
-      const response = await fetch(`${apiBase}/api/upload`, {
+      const response = await fetch('/api/upload', {
         method: 'POST',
-        body: payload,
-      });
+        body: payload
+      })
 
-      const data = await response.json().catch(() => ({}));
-      console.log('[upload] status:', response.status, data);
+      const data = await response.json().catch(() => ({}))
 
       if (response.ok) {
         setStatus({
           state: 'success',
           message: data.message || 'Your application has been received',
-          submissionId: data.submission_id,
-        });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
+          submissionId: data.submission_id
+        })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
       }
 
-      // map backend validation to UI fields
       if (response.status === 422 && data?.code === 'VALIDATION_ERROR' && data?.fields) {
-        const apiErrors: FormErrors = {};
+        const apiErrors: FormErrors = {}
         const fieldMap: Record<string, keyof IntakeFormData> = {
           full_name: 'firstName',
           email: 'email',
@@ -211,81 +184,79 @@ export const IntakeForm: React.FC = () => {
           linkedin_url: 'linkedinUrl',
           github_url: 'githubUrl',
           motivation: 'motivation',
-          consent: 'consentProfile',
-        };
+          consent: 'consentProfile'
+        }
 
         Object.keys(data.fields).forEach((apiKey) => {
-          const stateKey = fieldMap[apiKey];
-          if (stateKey) apiErrors[stateKey] = data.fields[apiKey];
-        });
+          const stateKey = fieldMap[apiKey]
+          if (stateKey) apiErrors[stateKey] = data.fields[apiKey]
+        })
 
-        setErrors(apiErrors);
-        setStatus({ state: 'error', message: 'Please fix the highlighted fields and try again.' });
-        scrollToError();
-        return;
+        setErrors(apiErrors)
+        setStatus({ state: 'error', message: 'Please fix the highlighted fields and try again.' })
+        scrollToError()
+        return
       }
 
       if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
-        setErrors({ resume: data?.message || 'A resume file is required.' });
-        setStatus({ state: 'error', message: 'Please upload your resume to continue.' });
-        scrollToError();
-        return;
+        setErrors({ resume: data?.message || 'A resume file is required.' })
+        setStatus({ state: 'error', message: 'Please upload your resume to continue.' })
+        scrollToError()
+        return
       }
 
-      throw new Error(data?.message || `Request failed (${response.status}). Please try again.`);
+      throw new Error(data?.message || `Request failed (${response.status}). Please try again.`)
     } catch (error: any) {
-      console.error('[submit] error:', error);
       setStatus({
         state: 'error',
         message:
           error?.message ||
-          'We hit a snag... please try again. If it keeps happening, email privacy@thechamberofus.org.',
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+          'We hit a snag... please try again. If it keeps happening, email privacy@thechamberofus.org.'
+      })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-  };
+  }
 
   const handleClear = () => {
     if (window.confirm('Are you sure you want to clear the form? All entered data will be lost.')) {
-      setFormData(INITIAL_FORM_DATA);
-      setErrors({});
-      setStatus({ state: 'idle' });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setFormData(INITIAL_FORM_DATA)
+      setErrors({})
+      setStatus({ state: 'idle' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
-  };
+  }
 
   const handleReset = () => {
-    setFormData(INITIAL_FORM_DATA);
-    setErrors({});
-    setStatus({ state: 'idle' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    setFormData(INITIAL_FORM_DATA)
+    setErrors({})
+    setStatus({ state: 'idle' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name as keyof IntakeFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
-  };
+  }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: checked }));
+    const { name, checked } = e.target
+    setFormData((prev) => ({ ...prev, [name]: checked }))
     if (errors[name as keyof IntakeFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
     }
-  };
+  }
 
   const handleFileChange = (file: File | null) => {
-    console.log('[file] selected:', file);
-    setFormData((prev) => ({ ...prev, resume: file }));
-    if (errors.resume) {
-      setErrors((prev) => ({ ...prev, resume: undefined }));
-    }
-  };
+    setFormData((prev) => ({ ...prev, resume: file }))
+    if (errors.resume) setErrors((prev) => ({ ...prev, resume: undefined }))
+  }
 
-  const isSubmitting = status.state === 'submitting';
+  const isSubmitting = status.state === 'submitting'
 
   if (status.state === 'success') {
     return (
@@ -302,36 +273,38 @@ export const IntakeForm: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href="https://libelle.io"
-            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:bg-indigo-700 transition-colors shadow-sm"
+            href="/"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:opacity-90 transition shadow-sm"
           >
             Back to Libelle
             <ExternalLink className="ml-2 w-4 h-4" />
           </a>
           <button
             onClick={handleReset}
-            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition"
           >
             Submit another
           </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 relative">
-      <div className="h-2 bg-libelle-indigo w-full"></div>
+      <div className="h-2 bg-libelle-indigo w-full" />
 
       <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
           We help you plug in fast.
         </h2>
         <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
-          You found us for a reason. You're ready to put your talent toward something that matters.<br />
-          You won't just be another volunteer-you'll be a co-founder in a new kind of organization.<br />
+          You found us for a reason. You're ready to put your talent toward something that matters.
+          <br />
+          You won't just be another volunteer—you'll be a co-founder in a new kind of organization.
+          <br />
           Here's our promise: We'll connect you with a team, give you a clear mission, and put your skills to work on a
-          project with real-world stakes. No more wasted time. Just meaningful work, with people aligned on mission.<br />
+          project with real-world stakes. No more wasted time. Just meaningful work, with people aligned on mission.
         </p>
         <p className="text-base sm:text-lg text-gray-500 font-medium">Most people finish in under 5 minutes.</p>
       </div>
@@ -430,31 +403,29 @@ export const IntakeForm: React.FC = () => {
                 <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1 font-sans">
                   Experience Level <span className="text-libelle-rose">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    id="experienceLevel"
-                    name="experienceLevel"
-                    required
-                    value={formData.experienceLevel}
-                    onChange={handleInputChange}
-                    disabled={isSubmitting}
-                    className={`
-                      block w-full rounded-md border-gray-300 shadow-sm px-4 py-2.5 bg-white text-gray-900 ring-1 ring-inset ring-gray-300
-                      focus:ring-2 focus:ring-inset focus:ring-libelle-indigo focus:border-libelle-indigo sm:text-sm sm:leading-6 transition-all
-                      disabled:bg-gray-50 disabled:text-gray-500
-                      ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
-                    `}
-                    aria-invalid={!!errors.experienceLevel}
-                    aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
-                  >
-                    <option value="" disabled>
-                      Select your level
-                    </option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Mid">Mid</option>
-                    <option value="Senior">Senior</option>
-                  </select>
-                </div>
+                <select
+                  id="experienceLevel"
+                  name="experienceLevel"
+                  required
+                  value={formData.experienceLevel}
+                  onChange={handleInputChange}
+                  disabled={isSubmitting}
+                  className={`
+                    block w-full rounded-md shadow-sm px-4 py-2.5 bg-white text-gray-900 ring-1 ring-inset ring-gray-300
+                    focus:ring-2 focus:ring-inset focus:ring-libelle-indigo focus:border-libelle-indigo sm:text-sm sm:leading-6 transition-all
+                    disabled:bg-gray-50 disabled:text-gray-500
+                    ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
+                  `}
+                  aria-invalid={!!errors.experienceLevel}
+                  aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
+                >
+                  <option value="" disabled>
+                    Select your level
+                  </option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Mid">Mid</option>
+                  <option value="Senior">Senior</option>
+                </select>
                 {errors.experienceLevel && (
                   <p className="mt-1 text-sm text-libelle-rose" id="experienceLevel-error">
                     {errors.experienceLevel}
@@ -543,14 +514,12 @@ export const IntakeForm: React.FC = () => {
 
           <div className="p-6 sm:p-8 flex flex-col space-y-4">
             <p className="text-sm text-gray-600 leading-relaxed">
-              At The Chamber of Us (TCUS), we take your privacy seriously.<br />
-              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.<br />
+              At The Chamber of Us (TCUS), we take your privacy seriously.
               <br />
-              This may include reviewing the experience you choose to share (e.g. resumes, portfolios, LinkedIn or GitHub profiles), and processing it using secure tools to help us understand how best to include you in mission-aligned projects.<br />
+              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.
               <br />
-              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.<br />
               <br />
-              You can access, edit, or delete your information at any time. Our practices are designed to meet or exceed data protection laws including the GDPR and CCPA.
+              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.
             </p>
 
             <div className="space-y-4 pt-4">
@@ -606,22 +575,12 @@ export const IntakeForm: React.FC = () => {
         </section>
 
         {/* Submit */}
-        <div className="pt-4 flex justify-center">
-          <div className="w-[286px] h-[70px] flex items-center gap-8">
+        <div className="pt-4 flex flex-col items-center">
+          <div className="w-[286px] h-[70px] flex items-center gap-8 justify-center">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="
-                w-[107px] h-[50px]
-                px-7 py-[13px]
-                flex items-center justify-center gap-[10px]
-                rounded-[6px]
-                bg-[#4F46E5] text-white
-                text-sm font-semibold
-                hover:opacity-90
-                disabled:opacity-70 disabled:cursor-not-allowed
-                transition
-              "
+              className="w-[107px] h-[50px] px-7 py-[13px] flex items-center justify-center gap-[10px] rounded-[6px] bg-[#4F46E5] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed transition"
             >
               {isSubmitting ? (
                 <>
@@ -637,20 +596,7 @@ export const IntakeForm: React.FC = () => {
               type="button"
               onClick={handleClear}
               disabled={isSubmitting}
-              className="
-                w-[107px] h-[50px]
-                px-7 py-[13px]
-                inline-flex items-center justify-center gap-[10px]
-                rounded-[6px]
-                border border-[#4F46E5]
-                font-inter font-medium
-                text-[16px] leading-[24px]
-                text-[#4F46E5]
-                text-center
-                bg-white
-                whitespace-nowrap
-                disabled:opacity-50 disabled:cursor-not-allowed
-              "
+              className="w-[107px] h-[50px] px-7 py-[13px] inline-flex items-center justify-center gap-[10px] rounded-[6px] border border-[#4F46E5] font-medium text-[16px] leading-[24px] text-[#4F46E5] bg-white whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Clear form
             </button>
@@ -664,5 +610,5 @@ export const IntakeForm: React.FC = () => {
         </div>
       </form>
     </div>
-  );
-};
+  )
+}
