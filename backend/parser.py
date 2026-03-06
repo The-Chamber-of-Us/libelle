@@ -11,7 +11,12 @@ def _is_section_header(line: str) -> bool:
         return False
     s = line.strip()
     headers = [
-        r'^(summary|objective|contact|education|certifi|certificate|skills|work experience|work|experience|employment|projects|project experience|project|research|publications|awards|volunteer|honors|activities)$'
+
+        r'^(summary|objective|contact|education|certifi|certificate|skills|'
+        r'work experience|professional experience|experience|employment|'
+        r'career history|work history|relevant experience|'
+        r'projects|project experience|project|research|publications|'
+        r'awards|volunteer|honors|activities):?$'
     ]
     if re.match(headers[0], s.lower()):
         return True
@@ -20,12 +25,12 @@ def _is_section_header(line: str) -> bool:
     return False
 
 def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_when_header: bool = True):
-    start_re = re.compile(r'|'.join([f'({p})' for p in start_patterns]), re.IGNORECASE)
+    start_re = re.compile('|'.join(start_patterns), re.IGNORECASE)
     collected = []
     capturing = False
     end_index = len(lines)
     for i, line in enumerate(lines):
-        if not capturing and start_re.search(line or ""):
+        if not capturing and start_re.match(line.strip()):
             capturing = True
             continue
         if capturing:
@@ -131,16 +136,32 @@ def extract_education(text: str) -> Tuple[List[str], float]:
 
 def extract_work_experience(text: str) -> Tuple[List[str], float, int]:
     lines = _get_lines(text)
-    work_lines, work_end = _collect_section_lines(lines, [r'work experience', r'experience', r'employment'])
+    
+    work_patterns = [
+        r'^(work|professional)\s+experience:?$',
+        r'^experience:?$',
+        r'^employment:?$',
+        r'^career\s+history:?$',
+        r'^work\s+history:?$',
+        r'^relevant\s+experience:?$'
+    ]
+
+    work_lines, work_end = _collect_section_lines(lines, work_patterns)
     entries = _group_into_entries(work_lines)
     conf = 1.0 if entries else min(1.0, len(work_lines) / max(1, len(lines)))
     return entries, conf, work_end
 
 def extract_project_experience(text: str, start_index: int) -> Tuple[List[str], float]:
     lines = _get_lines(text)[start_index:]
-    project_lines, _ = _collect_section_lines(lines, [r'project experience', r'projects', r'project'])
+
+    project_patterns = [
+        r'^project\s+experience:?$',
+        r'^projects:?$'
+    ]
+
+    project_lines, _ = _collect_section_lines(lines, project_patterns)
     entries = _group_into_entries(project_lines)
-    conf = 1.0 if entries else min(1.0, len(project_lines) / max(1, len(lines[start_index:])))
+    conf = 1.0 if entries else min(1.0, len(project_lines) / max(1, len(lines)))
     return entries, conf
 
 def parse_resume(text: str) -> Dict[str, Any]:
