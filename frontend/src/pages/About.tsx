@@ -2,6 +2,8 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import abouthero from '../assets/abouthero.svg'
+import dragonfly from '../assets/dragonfly.svg'
 
 export default function About() {
   return (
@@ -31,7 +33,13 @@ export default function About() {
             </div>
           </div>
 
-          <div className="w-[385px] h-[483px] rounded-[10px] overflow-hidden shadow-libelle bg-gray-200" />
+          <div className="w-[385px] h-[483px] rounded-[10px] overflow-hidden shadow-libelle bg-gray-200">
+            <img
+              src={abouthero}
+              alt="Illustration of volunteers collaborating on a project"
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
       </section>
 
@@ -53,20 +61,25 @@ export default function About() {
           </div>
         </div>
 
-        <div className="w-[300px] h-[300px] bg-white rounded-full shadow-libelle" />
-        <div className="w-[233px] h-[148px] relative">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#9747FF] to-libelle-indigo rounded-md" />
+        <div className="w-[300px] h-[300px] bg-white rounded-full shadow-libelle relative">
+          <img
+            src={dragonfly}
+            alt="Dragonfly icon"
+            className="w-[233px] h-[148px] object-contain absolute top-[90px] left-1/2 -translate-x-1/2"
+          />
         </div>
       </section>
 
       {/* WHAT TO EXPECT */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <h2 className="text-black text-[49px] leading-[58.8px] font-sans font-bold mb-6">
-          What to Expect
-        </h2>
-        <p className="text-libelle-text text-[20px] leading-[29.2px] font-sans max-w-3xl">
-          This is a live beta, powered entirely by volunteers. Things may feel a little rough around the edges, but the spirit is real: connecting skills to impact. If you're energized by collaboration and purpose, you'll fit right in.
-        </p>
+      <section className="max-w-6xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center justify-center gap-24">
+        <div className="w-full max-w-[880px] flex flex-col gap-6">
+          <h2 className="text-black text-[49px] leading-[58.8px] font-sans font-bold mb-6">
+            What to Expect
+          </h2>
+          <p className="text-libelle-text text-[20px] leading-[29.2px] font-sans max-w-3xl">
+            This is a live beta, powered entirely by volunteers. Things may feel a little rough around the edges, but the spirit is real: connecting skills to impact. If you're energized by collaboration and purpose, you'll fit right in.
+          </p>
+        </div>
       </section>
 
       {/* CTA */}
