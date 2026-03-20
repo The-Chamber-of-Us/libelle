@@ -2,6 +2,12 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import TCUSlogo from '../assets/TCUSlogo.png'
+import shareYourSkillsImg from '../assets/shareyourskills.svg'
+import weReviewImg from '../assets/wereview.svg'
+import weConnectYouImg from '../assets/weconnectyou.svg'
+import whyLibelleImg from '../assets/whylibelle.svg'
+import courtneyM from '../assets/courtneyM.jpg'
 
 const roles = [
   'UX Designer',
@@ -52,8 +58,11 @@ export default function Landing() {
                 </Link>
 
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-[37.82px] bg-white rounded" />
-                  <div className="w-[55.5px] h-[55.5px] bg-white rounded-full shadow" />
+                  <img
+                    src={TCUSlogo}
+                    alt="The Chamber of Us logo"
+                    className="w-12 h-12 rounded-full object-contain bg-white shadow"
+                  />
                   <div className="text-[#72727B] text-[16px] leading-6 font-sans">
                     Powered by{' '}
                     <span className="underline">The Chamber of Us (TCUS)</span>.
@@ -96,11 +105,28 @@ export default function Landing() {
           </div>
 
           <div className="flex flex-col lg:flex-row items-center justify-center gap-5">
-            <HowCard title="Share your skills" text="Tell us about your experience, skills, interests, and motivations." variant="purple" />
+          <div className="flex flex-col lg:flex-row items-center justify-center gap-5">
+            <HowCard 
+              title="Share your skills" 
+              text="Tell us about your experience, skills, interests, and motivations." 
+              variant="purple"
+              image={shareYourSkillsImg}
+            />
+          </div>
             <ArrowLeft className="w-12 h-12 rotate-180 text-[#6B6B6B] hidden lg:block" />
-            <HowCard title="We Review" text="Our team thoughtfully reviews your profile to find where you'll thrive." variant="violet" />
+            <HowCard 
+              title="We Review" 
+              text="Our team thoughtfully reviews your profile to find where you'll thrive." 
+              variant="violet"
+              image={weReviewImg}
+            />
             <ArrowLeft className="w-12 h-12 rotate-180 text-[#6B6B6B] hidden lg:block" />
-            <HowCard title="We Connect You" text="When the right opportunity opens up, we'll reach out with a perfect match." variant="green" />
+            <HowCard 
+              title="We Connect You" 
+              text="When the right opportunity opens up, we'll reach out with a perfect match." 
+              variant="green"
+              image={weConnectYouImg}
+            />
           </div>
 
           <Link to="/about" className="text-libelle-indigo underline text-[20px] leading-[29.2px] font-sans">
@@ -134,12 +160,25 @@ export default function Landing() {
             </p>
 
             <div className="flex items-center gap-4 mt-9">
-              <div className="w-[50px] h-[50px] rounded-full bg-gray-200" />
-              <div>
-                <div className="text-libelle-text text-[16px] leading-6 font-sans">Courtney M.</div>
-                <div className="text-[#72727B] text-[16px] leading-6 font-sans">UX Designer</div>
+    
+              {/* Profile Image */}
+              <img
+                src={courtneyM}
+                alt="profile picture of Courtney M."
+                className="w-[50px] h-[50px] rounded-full object-cover shrink-0"
+              />
+
+              {/* Name + Title */}
+              <div className="flex flex-col">
+              <div className="text-libelle-text text-[16px] leading-6 font-sans">
+                Courtney M.
+              </div>
+              <div className="text-[#72727B] text-[16px] leading-6 font-sans">
+                UX Designer
               </div>
             </div>
+
+          </div>
           </div>
         </div>
       </section>
@@ -174,11 +213,13 @@ export default function Landing() {
 function HowCard({
   title,
   text,
-  variant
+  variant,
+  image
 }: {
   title: string
   text: string
   variant: 'purple' | 'violet' | 'green'
+  image: string
 }) {
   const bg =
     variant === 'green'
@@ -189,7 +230,13 @@ function HowCard({
 
   return (
     <div className="max-w-[300px] px-5 py-10 bg-white rounded-[10px] shadow-libelle flex flex-col items-center gap-6">
-      <div className={`w-[60px] h-[60px] rounded-full bg-gradient-to-b ${bg}`} />
+      <div className={`w-[60px] h-[60px] rounded-full bg-gradient-to-b ${bg} flex items-center justify-center`} >
+        <img
+        src={image}
+        alt=""
+        className="w-7 h-7 object-contain z-10"
+        />
+      </div>
       <div className="px-5 flex flex-col items-center gap-3">
         <div className="text-black text-[25px] leading-[33.3px] font-sans font-medium text-center">
           {title}
@@ -205,7 +252,13 @@ function HowCard({
 function Bullet({ text }: { text: string }) {
   return (
     <div className="flex items-center gap-4 max-w-[470px]">
-      <div className="w-9 h-9 bg-libelle-emerald rounded" />
+      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+        <img
+          src={whyLibelleImg}
+          alt="bullet icon"
+          className="w-5 h-5 object-contain"
+        />
+      </div>
       <div className="text-black text-[20px] leading-[29.2px] font-sans">
         {text}
       </div>

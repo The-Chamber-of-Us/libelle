@@ -1,4 +1,5 @@
 import { NavLink, Link } from 'react-router-dom'
+import dragonfly from '../assets/dragonfly.svg'
 
 export default function Navbar() {
   const linkBase =
@@ -8,23 +9,29 @@ export default function Navbar() {
 
   return (
     <div className="w-full flex justify-center pt-5">
-      <div className="w-[941px] px-2 py-[6px] bg-white shadow-libelle rounded-full flex items-center justify-between">
-        {/* Brand */}
-        <Link to="/" className="flex items-center gap-2 pl-2">
-          <div className="w-[38.88px] h-[38.88px] bg-libelle-bg rounded-full" />
-          <div className="w-[30.2px] h-[19.18px] relative bg-libelle-bg overflow-hidden rounded-sm">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#9747FF] to-libelle-indigo" />
-          </div>
+    <div className="w-[941px] px-2 py-[6px] bg-white shadow-libelle rounded-full flex items-center justify-between overflow-hidden">
+      {/* Brand */}
+      <Link to="/" className="flex items-center gap-3 pl-3 pr-4 min-w-0">
+        {/* Dragonfly icon with indigo background */}
+        <div className="relative w-[44px] h-[44px] flex items-center justify-center shrink-0">
+          <div className="absolute inset-0 rounded-full bg-indigo-300/30 blur-md" />
+          <img
+            src={dragonfly}
+            alt="Libelle dragonfly icon"
+            className="relative z-10 w-6 h-6 object-contain"
+          />
+        </div>
 
-          <div className="flex items-center gap-2">
-            <div className="text-black text-[20px] leading-[29.2px] font-normal font-sans">
-              Libelle
-            </div>
-            <div className="text-[#72727B] text-[13px] leading-[15.6px] font-normal font-sans">
-              by The Chamber of Us
-            </div>
-          </div>
-        </Link>
+        {/* Single-line brand text */}
+        <div className="flex items-center gap-2 whitespace-nowrap min-w-0">
+          <span className="text-black text-[20px] leading-none font-normal font-sans">
+            Libelle
+          </span>
+          <span className="text-[#72727B] text-[13px] leading-none font-normal font-sans">
+            by The Chamber of Us
+          </span>
+        </div>
+      </Link>
 
         {/* Links */}
         <div className="flex items-center gap-12 pr-2">
