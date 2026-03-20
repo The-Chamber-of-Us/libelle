@@ -59,29 +59,61 @@ def _local_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%m-%d-%Y %H:%M:%S %Z")
 
 
+def _column_letter(column_number: int) -> str:
+    result = ""
+    while column_number > 0:
+        column_number, remainder = divmod(column_number - 1, 26)
+        result = chr(65 + remainder) + result
+    return result
+
+
+def _ensure_submission_id_column() -> int:
+    header_values = sheet.values().get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{SHEET_NAME}!1:1",
+    ).execute().get("values", [])
+    headers = header_values[0] if header_values else []
+
+    if "submission_id" in headers:
+        return headers.index("submission_id") + 1
+
+    column_number = len(headers) + 1 if headers else 1
+    sheet.values().update(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{SHEET_NAME}!{_column_letter(column_number)}1",
+        valueInputOption="RAW",
+        body={"values": [["submission_id"]]},
+    ).execute()
+    print(f"[SHEETS] Added submission_id header at column {_column_letter(column_number)}")
+    return column_number
+
+
 # ---------- Write Base Row ----------
 def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
     """
-    Appends a base row with timestamp, file_id, and file_url into columns A–K.
+    Appends a base row while preserving existing column positions and writing
+    submission_id into a trailing append-only column.
     """
     ts = _local_timestamp()
     drive_url = drive_file_url or _drive_link(drive_file_id)
-    # Prepare a 60-column row with only A, J, K filled
-    row = [""] * 60
+    submission_id_column = _ensure_submission_id_column()
+    ui_data = ui_data or {}
+
+    row = [""] * max(60, submission_id_column)
     row[0] = ts  # Timestamp
     row[9] = drive_file_id  # resume_file_id
     row[10] = drive_url  # resume_file_url
-    
-    #Writing UI Data To Row
-    row[1] = ui_data["name"]    #Full Name
-    row[2] = ui_data["email"]    #Email
-    row[3] = ui_data["location"]   #Location
-    row[4] = ui_data["areas"]     #Areas of Interest
-    row[5] = ui_data["capacity"]    #Availability
-    row[6] = ui_data["experience"]   #Experience level
-    row[7] = ui_data["linkedin"]    #LinkedIn URL
-    row[8] = ui_data["github"]     #GitHub URL
-    row[11] = ui_data["motivation"]    #Motivation
+
+    row[1] = str(ui_data.get("name", ""))  # Full Name
+    row[2] = str(ui_data.get("email", ""))  # Email
+    row[3] = str(ui_data.get("location", ""))  # Location
+    row[4] = str(ui_data.get("areas", ""))  # Areas of Interest
+    row[5] = str(ui_data.get("capacity", ""))  # Availability
+    row[6] = str(ui_data.get("experience", ""))  # Experience level
+    row[7] = str(ui_data.get("linkedin", ""))  # LinkedIn URL
+    row[8] = str(ui_data.get("github", ""))  # GitHub URL
+    row[11] = str(ui_data.get("motivation", ""))  # Motivation
+    row[submission_id_column - 1] = submission_id or ""
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
@@ -90,7 +122,10 @@ def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
-    print(f"[SHEETS] Base row appended → drive_file_id={drive_file_id}")
+    print(
+        f"[SHEETS] Base row appended → drive_file_id={drive_file_id}, "
+        f"submission_id_column={submission_id_column}"
+    )
 
 
 # ---------- Update Parsed Data ----------

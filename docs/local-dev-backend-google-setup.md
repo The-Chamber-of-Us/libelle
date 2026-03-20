@@ -81,6 +81,11 @@ Hold on to your **Sheet ID** — you’ll paste it into your `.env` file later a
 
 4. Confirm the tab name at the bottom is exactly: `applicantsInfo`  
    (Case-sensitive — this must match the backend env var `SHEET_NAME`.)
+5. Confirm the last header cell is `submission_id`.
+
+Important:
+- Add `submission_id` at the end of the existing header row only.
+- Do not insert a new first column or shift existing columns, because the backend parser update logic relies on the current column positions.
 
 ---
 ### 3) Google Cloud project + credentials
@@ -248,5 +253,4 @@ You should see:
 - The PDF uploaded into your Drive folder
 - A new row appended in your test sheet
 - A success JSON response from the API
-
 

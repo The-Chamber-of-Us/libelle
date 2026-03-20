@@ -24,6 +24,7 @@ app = FastAPI(title="Libelle Backend API")
 # -----------------------------
 MAX_PDF_MB = int(os.getenv("MAX_PDF_MB", "5"))
 ALLOWED_PDF_MIMES = {"application/pdf", "application/x-pdf"}
+APP_REDIRECT_URI = os.getenv("APP_REDIRECT_URI", "http://127.0.0.1:8000/oauth2callback")
 
 _allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
@@ -246,7 +247,6 @@ async def upload_volunteer_application(
 
     try:
         pdf_bytes = await file.read()
-        filename = file.filename or "resume.pdf"
 
         if len(pdf_bytes) > MAX_PDF_MB * 1024 * 1024:
             raise HTTPException(
@@ -265,7 +265,7 @@ async def upload_volunteer_application(
         # 5) Upload to Drive
         print(f"[UPLOAD] submission_id={submission_id} resume_id={resume_id} uploading to Drive...")
         folder_id = get_target_folder_id()
-        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{resume_id}-{filename}", folder_id)
+        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{submission_id}-resume.pdf", folder_id)
         print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
 
         # 6) Write base row (Sheets)
@@ -333,7 +333,7 @@ def authorize():
     flow = Flow.from_client_secrets_file(
         os.getenv("GOOGLE_OAUTH_CLIENT", "org_oauth_client.json"),
         scopes=["https://www.googleapis.com/auth/drive.file"],
-        redirect_uri="http://127.0.0.1:8000/oauth2callback",
+        redirect_uri=APP_REDIRECT_URI,
     )
     auth_url, _ = flow.authorization_url(
         access_type="offline",
@@ -348,7 +348,7 @@ def oauth2callback(code: str):
     flow = Flow.from_client_secrets_file(
         os.getenv("GOOGLE_OAUTH_CLIENT", "org_oauth_client.json"),
         scopes=["https://www.googleapis.com/auth/drive.file"],
-        redirect_uri="http://127.0.0.1:8000/oauth2callback",
+        redirect_uri=APP_REDIRECT_URI,
     )
     flow.fetch_token(code=code)
     creds = flow.credentials

@@ -73,6 +73,9 @@ Returns:
 	•	drive_file_id
 	•	drive_file_url
 
+Uploaded filename format:
+	•	`{submission_id}-resume.pdf`
+
 This happens before any parsing.
 
 ---
@@ -92,6 +95,8 @@ J
 resume_file_id
 K
 resume_file_url
+Last appended column
+submission_id
 
 This creates the first permanent record.
 
@@ -343,4 +348,3 @@ Data flow is designed to support:
 	•	Fully local deployments
 
 These are architectural options, not current practice.
-
