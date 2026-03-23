@@ -11,7 +11,6 @@ load_dotenv()
 
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 SHEET_NAME = os.getenv("SHEET_NAME", "applicantsInfo")
-#USER_TIMEZONE = os.getenv("USER_TIMEZONE", "America/New_York")
 
 if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
@@ -39,7 +38,7 @@ else:
         raise RuntimeError(
             "No GOOGLE_SERVICE_ACCOUNT_JSON env var set and no local credential file found."
         )
-    
+
     creds = service_account.Credentials.from_service_account_file(
         GOOGLE_CREDENTIALS,
         scopes=SCOPES
@@ -67,52 +66,80 @@ def _column_letter(column_number: int) -> str:
     return result
 
 
-def _ensure_submission_id_column() -> int:
+def _get_headers() -> List[str]:
     header_values = sheet.values().get(
         spreadsheetId=GOOGLE_SHEET_ID,
         range=f"{SHEET_NAME}!1:1",
     ).execute().get("values", [])
-    headers = header_values[0] if header_values else []
+    return header_values[0] if header_values else []
+
+
+def _ensure_submission_id_column() -> int:
+    """
+    Ensure `submission_id` exists as the last column header.
+    Returns the 1-based column number for submission_id.
+
+    Important:
+    - append-only
+    - never insert at column A
+    - never shift existing columns
+    """
+    headers = _get_headers()
 
     if "submission_id" in headers:
         return headers.index("submission_id") + 1
 
     column_number = len(headers) + 1 if headers else 1
+    column_letter = _column_letter(column_number)
+
     sheet.values().update(
         spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SHEET_NAME}!{_column_letter(column_number)}1",
+        range=f"{SHEET_NAME}!{column_letter}1",
         valueInputOption="RAW",
         body={"values": [["submission_id"]]},
     ).execute()
-    print(f"[SHEETS] Added submission_id header at column {_column_letter(column_number)}")
+
+    print(f"[SHEETS] Added submission_id header at column {column_letter}")
     return column_number
 
 
 # ---------- Write Base Row ----------
-def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
+def write_base_row(
+    drive_file_id: str,
+    drive_file_url: Optional[str] = None,
+    submission_id: Optional[str] = None,
+    ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None
+) -> None:
     """
-    Appends a base row while preserving existing column positions and writing
-    submission_id into a trailing append-only column.
+    Appends a base row while preserving all existing column positions.
+
+    Existing schema remains untouched.
+    submission_id is written to a new append-only last column.
     """
     ts = _local_timestamp()
     drive_url = drive_file_url or _drive_link(drive_file_id)
     submission_id_column = _ensure_submission_id_column()
     ui_data = ui_data or {}
 
+    # Keep existing indexed layout intact, and extend row length if submission_id
+    # lives beyond the current fixed-width row.
     row = [""] * max(60, submission_id_column)
-    row[0] = ts  # Timestamp
-    row[9] = drive_file_id  # resume_file_id
-    row[10] = drive_url  # resume_file_url
 
-    row[1] = str(ui_data.get("name", ""))  # Full Name
-    row[2] = str(ui_data.get("email", ""))  # Email
-    row[3] = str(ui_data.get("location", ""))  # Location
-    row[4] = str(ui_data.get("areas", ""))  # Areas of Interest
-    row[5] = str(ui_data.get("capacity", ""))  # Availability
-    row[6] = str(ui_data.get("experience", ""))  # Experience level
-    row[7] = str(ui_data.get("linkedin", ""))  # LinkedIn URL
-    row[8] = str(ui_data.get("github", ""))  # GitHub URL
-    row[11] = str(ui_data.get("motivation", ""))  # Motivation
+    # Existing fixed columns
+    row[0] = ts  # A  Timestamp
+    row[1] = str(ui_data.get("name", ""))         # B  Full Name
+    row[2] = str(ui_data.get("email", ""))        # C  Email
+    row[3] = str(ui_data.get("location", ""))     # D  Location
+    row[4] = str(ui_data.get("areas", ""))        # E  Areas of Interest
+    row[5] = str(ui_data.get("capacity", ""))     # F  Availability
+    row[6] = str(ui_data.get("experience", ""))   # G  Experience level
+    row[7] = str(ui_data.get("linkedin", ""))     # H  LinkedIn URL
+    row[8] = str(ui_data.get("github", ""))       # I  GitHub URL
+    row[9] = drive_file_id                        # J  resume_file_id
+    row[10] = drive_url                           # K  resume_file_url
+    row[11] = str(ui_data.get("motivation", ""))  # L  Motivation
+
+    # New append-only column
     row[submission_id_column - 1] = submission_id or ""
 
     sheet.values().append(
@@ -122,6 +149,7 @@ def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
+
     print(
         f"[SHEETS] Base row appended → drive_file_id={drive_file_id}, "
         f"submission_id_column={submission_id_column}"
@@ -129,17 +157,18 @@ def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[
 
 
 # ---------- Update Parsed Data ----------
-def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
+def update_resume_in_sheet(parsed: Dict[str, Any]) -> None:
     drive_file_id = parsed.get("drive_file_id")
     if not drive_file_id:
         print("[SHEETS] Missing drive_file_id. Skipping update.")
         return
 
-    # Locate the correct row
+    # Locate row by resume_file_id in column J
     values = sheet.values().get(
         spreadsheetId=GOOGLE_SHEET_ID,
         range=f"{SHEET_NAME}!J2:J"
     ).execute()
+
     ids = [r[0] for r in values.get("values", []) if r]
     if drive_file_id not in ids:
         print(f"[SHEETS] Drive file ID {drive_file_id} not found in sheet.")
@@ -147,7 +176,6 @@ def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
 
     row_index = ids.index(drive_file_id) + 2
 
-    # Compute parser confidence
     overall_conf = round(sum([
         parsed.get("name", {}).get("confidence", 0.0),
         parsed.get("emails", {}).get("confidence", 0.0),
@@ -155,28 +183,27 @@ def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
         parsed.get("skills", {}).get("confidence", 0.0)
     ]) / 4.0, 2)
 
-    # Construct row aligned to columns L–AB (27 columns)
+    # 17 columns total → M:AC
     parser_row = [
-        "parsed",                                         # L - parser_status
-        overall_conf,                                     # M - parser_confidence_overall
-        parsed["name"]["value"],                          # N - parsed_name
-        parsed["name"]["confidence"],                     # O - parsed_name_conf
-        ", ".join(parsed["emails"]["value"]),             # P - parsed_email
-        parsed["emails"]["confidence"],                   # Q - parsed_email_conf
-        ", ".join(parsed["locations"]["value"]),          # R - parsed_location
-        parsed["locations"]["confidence"],                # S - parsed_location_conf
-        str(parsed["education"]["value"]),                # T - parsed_education
-        parsed["education"]["confidence"],                # U - parsed_education_conf
-        str(parsed["skills"]["value"]),                   # V - parsed_skills_json
-        parsed["skills"]["confidence"],                   # W - parsed_skills_conf
-        str(parsed["work_experience"]["value"]),          # X - parsed_work_experience_json
-        parsed["work_experience"]["confidence"],          # Y - parsed_work_experience_conf
-        str(parsed["project_experience"]["value"]),       # Z - parsed_project_experience_json
-        parsed["project_experience"]["confidence"],       # AA - parsed_project_experience_conf
-        "",                                               # AB - full_extracted_text placeholder
+        "parsed",                                                   # M  parser_status
+        overall_conf,                                               # N  parser_confidence_overall
+        parsed.get("name", {}).get("value", ""),                    # O  parsed_name
+        parsed.get("name", {}).get("confidence", 0.0),              # P  parsed_name_conf
+        ", ".join(parsed.get("emails", {}).get("value", [])),       # Q  parsed_email
+        parsed.get("emails", {}).get("confidence", 0.0),            # R  parsed_email_conf
+        ", ".join(parsed.get("locations", {}).get("value", [])),    # S  parsed_location
+        parsed.get("locations", {}).get("confidence", 0.0),         # T  parsed_location_conf
+        str(parsed.get("education", {}).get("value", "")),          # U  parsed_education
+        parsed.get("education", {}).get("confidence", 0.0),         # V  parsed_education_conf
+        str(parsed.get("skills", {}).get("value", "")),             # W  parsed_skills_json
+        parsed.get("skills", {}).get("confidence", 0.0),            # X  parsed_skills_conf
+        str(parsed.get("work_experience", {}).get("value", "")),    # Y  parsed_work_experience_json
+        parsed.get("work_experience", {}).get("confidence", 0.0),   # Z  parsed_work_experience_conf
+        str(parsed.get("project_experience", {}).get("value", "")), # AA parsed_project_experience_json
+        parsed.get("project_experience", {}).get("confidence", 0.0),# AB parsed_project_experience_conf
+        "",                                                         # AC full_extracted_text placeholder
     ]
 
-    # Update the parser output columns
     sheet.values().update(
         spreadsheetId=GOOGLE_SHEET_ID,
         range=f"{SHEET_NAME}!M{row_index}:AC{row_index}",
@@ -184,7 +211,7 @@ def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
         body={"values": [parser_row]},
     ).execute()
 
-    # Update timestamp (A)
+    # Refresh timestamp in column A
     sheet.values().update(
         spreadsheetId=GOOGLE_SHEET_ID,
         range=f"{SHEET_NAME}!A{row_index}",

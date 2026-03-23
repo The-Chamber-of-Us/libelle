@@ -143,13 +143,6 @@ def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
         )
 
 
-def _make_resume_id() -> int:
-    """
-    Safer than a global counter: unique-ish and monotonic in practice.
-    """
-    return int(datetime.now(timezone.utc).timestamp() * 1000)
-
-
 # -----------------------------
 # Endpoints
 # -----------------------------
@@ -203,7 +196,7 @@ async def upload_volunteer_application(
             },
         )
 
-    # 2) Validate required fields (INCLUDING email; no PDF fallback)
+    # 2) Validate required fields
     fields: Dict[str, str] = {}
 
     if not full_name or not full_name.strip():
@@ -242,8 +235,8 @@ async def upload_volunteer_application(
             detail={"status": "error", "code": "INVALID_FILE_TYPE", "message": "Only PDF files supported"},
         )
 
+    # Generate once per request and reuse everywhere
     submission_id = str(uuid.uuid4())[:8]
-    resume_id = _make_resume_id()
 
     try:
         pdf_bytes = await file.read()
@@ -262,16 +255,17 @@ async def upload_volunteer_application(
                 detail={"status": "error", "code": "NO_TEXT_EXTRACTED", "message": "PDF has no extractable text"},
             )
 
-        # 5) Upload to Drive
-        print(f"[UPLOAD] submission_id={submission_id} resume_id={resume_id} uploading to Drive...")
+        # 5) Upload to Drive using submission_id in filename
+        filename = f"{submission_id}-resume.pdf"
+        print(f"[UPLOAD] submission_id={submission_id} uploading to Drive as {filename} ...")
         folder_id = get_target_folder_id()
-        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, f"{submission_id}-resume.pdf", folder_id)
+        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, filename, folder_id)
         print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
 
         # 6) Write base row (Sheets)
         ui_data = {
             "name": full_name.strip(),
-            "email": normalized_email,  # always from form input
+            "email": normalized_email,
             "location": location.strip(),
             "areas": normalized_interests,
             "capacity": availability.strip(),
@@ -281,19 +275,23 @@ async def upload_volunteer_application(
             "motivation": (motivation or "").strip(),
         }
 
-        print(f"[SHEETS] Writing base row resume_id={resume_id} ...")
-        write_base_row(resume_id, drive_file_id, drive_file_url, submission_id, ui_data)
-        print(f"[SHEETS] Base row written resume_id={resume_id}")
+        print(f"[SHEETS] Writing base row for submission_id={submission_id} ...")
+        write_base_row(
+            drive_file_id=drive_file_id,
+            drive_file_url=drive_file_url,
+            submission_id=submission_id,
+            ui_data=ui_data,
+        )
+        print(f"[SHEETS] Base row written for submission_id={submission_id}")
 
         # 7) Background parsing (async)
-        background_tasks.add_task(_parse_and_update, resume_id, drive_file_id, pre_text)
+        background_tasks.add_task(_parse_and_update, drive_file_id, pre_text)
 
         return JSONResponse(
             status_code=200,
             content={
                 "status": "success",
                 "submission_id": submission_id,
-                "resume_id": resume_id,
                 "drive_file_url": drive_file_url,
                 "message": "Your application has been received",
             },
@@ -313,15 +311,15 @@ async def upload_volunteer_application(
         )
 
 
-def _parse_and_update(resume_id: int, drive_file_id: str, pre_extracted_text: str = ""):
+def _parse_and_update(drive_file_id: str, pre_extracted_text: str = ""):
     try:
-        print(f"[JOB] Parsing resume_id={resume_id} ...")
+        print(f"[JOB] Parsing drive_file_id={drive_file_id} ...")
         parsed = parse_resume(pre_extracted_text or "")
         parsed["drive_file_id"] = drive_file_id
-        update_resume_in_sheet(resume_id, parsed)
-        print(f"[JOB] Parsed + updated sheet resume_id={resume_id}")
+        update_resume_in_sheet(parsed)
+        print(f"[JOB] Parsed + updated sheet drive_file_id={drive_file_id}")
     except Exception as e:
-        print(f"[JOB] Error parsing resume_id={resume_id}: {e}")
+        print(f"[JOB] Error parsing drive_file_id={drive_file_id}: {e}")
         traceback.print_exc()
 
 
