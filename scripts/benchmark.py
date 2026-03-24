@@ -74,12 +74,29 @@ def pyresparser_adapter(parsed: Dict[str, Any], submission_id: str, runtime_ms: 
 
 
 def _split_location(raw: str) -> Tuple[str, str]:
-    """Best-effort split 'City, State/Country' → (city, country)."""
+    """Best-effort split 'City, State/Country' → (city, country).
+    
+    If the trailing token is a 2-letter US state code, country is set to
+    'united states' so it matches golden JSONs that use that convention.
+    """
+    US_STATES = {
+        "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN",
+        "IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV",
+        "NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN",
+        "TX","UT","VT","VA","WA","WV","WI","WY","DC",
+    }
     if not raw:
         return "", ""
     parts = [p.strip() for p in raw.split(",")]
     city = parts[0] if parts else ""
-    country = parts[-1] if len(parts) > 1 else ""
+    if len(parts) > 1:
+        last = parts[-1].strip().upper().split()[0] if parts[-1].strip() else ""
+        if last in US_STATES:
+            country = "united states"
+        else:
+            country = parts[-1].strip()
+    else:
+        country = ""
     return city, country
 
 
@@ -151,9 +168,9 @@ def score_skills(
         "tp_count": len(tp),
         "fp_count": len(fp),
         "fn_count": len(fn),
-        "tp_examples": list(tp)[:10],
-        "fp_examples": list(fp)[:10],
-        "fn_examples": list(fn)[:10],
+        "tp_examples": sorted(tp)[:10],
+        "fp_examples": sorted(fp)[:10],
+        "fn_examples": sorted(fn)[:10],
     }
 
 
@@ -173,6 +190,16 @@ def score_location(
         tp, fp, fn = 1, 0, 0
         tp_examples = [f"country={gold_country}" + (f", city={gold_city}" if city_match else "")]
         fp_examples, fn_examples = [], []
+    elif not gold_country:
+        # Golden has no country — any prediction is a false positive only, no FN
+        if pred_country:
+            tp, fp, fn = 0, 1, 0
+            tp_examples = []
+            fp_examples = [f"predicted country={pred_country} (golden has no country)"]
+            fn_examples = []
+        else:
+            tp, fp, fn = 0, 0, 0
+            tp_examples, fp_examples, fn_examples = [], [], []
     elif pred_country:
         # Wrong country predicted
         tp, fp, fn = 0, 1, 1
@@ -225,8 +252,16 @@ def _compute_prf(tp, fp, fn) -> Tuple[float, float, float]:
 
 def write_examples_md(rows: List[Dict], out_dir: Path) -> Path:
     path = out_dir / "examples.md"
-    fp_rows = [r for r in rows if r["fp_count"] > 0]
-    fn_rows = [r for r in rows if r["fn_count"] > 0]
+    fp_rows = sorted(
+        [r for r in rows if r["fp_count"] > 0],
+        key=lambda r: r["fp_count"],
+        reverse=True,
+    )
+    fn_rows = sorted(
+        [r for r in rows if r["fn_count"] > 0],
+        key=lambda r: r["fn_count"],
+        reverse=True,
+    )
 
     lines = ["# Benchmark Failure Examples\n"]
     lines.append("## False Positives (predicted but not in golden)\n")
@@ -349,9 +384,14 @@ def main():
                 raw, runtime_ms = runner_fn(pdf_path)
                 adapted = adapter_fn(raw, submission_id, runtime_ms)
             except Exception as e:
-                msg = traceback.format_exc()
-                print(f"ERROR\n{msg}")
-                errors.append({"resume": submission_id, "parser": parser_name, "error": str(e)})
+                tb = traceback.format_exc()
+                print(f"ERROR\n{tb}")
+                errors.append({
+                    "resume": submission_id,
+                    "parser": parser_name,
+                    "error": str(e),
+                    "traceback": tb,
+                })
                 continue
 
             print(f"done ({runtime_ms:.0f}ms)")
