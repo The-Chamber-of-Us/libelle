@@ -98,115 +98,30 @@ and fill in your own IDs and local credential filenames (never commit secrets).
 **Backend**
 ```bash
 cd backend
-cp .env.example .env
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload
+python3 main.py
 ```
-- Runs at: http://127.0.0.1:8000
 
 **Frontend**
 ```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
-- Runs at: http://localhost:3000
 
-### Frontend ↔ Backend API routing (no env vars)
-
-For the MVP, the frontend should call relative endpoints:
-- `/api/upload`
-- `/api/health`
-
-Local dev uses a Vite proxy (`/api` → `http://127.0.0.1:8000`).
-
-Production uses NGINX to proxy `/api/*` to the FastAPI service on the Pi.
-
-## Production Deployment (Summary)
-
-On the Pathfinder Node (Raspberry Pi):
-- Backend runs as a systemd service
-- Frontend is served via NGINX
-- Cloudflare Tunnel exposes HTTPS
-- Tailscale provides secure SSH
-
-Example service file lives in:
- ```text
-/libelle/infrastructure/systemd/libelle-backend.service.template
- ```
-Do not copy secrets into the repo.
+---
 
 ## Contributing
 
-Libelle is built by volunteers across engineering, design, data, and research.
-
-Ways to contribute:
-- Improve the parsing logic
-- Expand the matching algorithm
-- Refine UX flows
-- Improve documentation
-- Add new modules
-
-Start by exploring:
-- /backend
-- /docs
-- /diagrams
-- GitHub Issues
-
-General contributions via GitHub Issues and Pull Requests are welcome.
-
-To participate in TCUS’s operational network or access live systems and data, you must first join **The Chamber of Us** as a volunteer.
-
----
-
-### About TCUS
-
-**[The Chamber of Us](https://www.thechamberofus.org)** is a 501(c)(3) nonprofit technology organization building **Pathfinder** — an open, ethical, AI-augmented standard to help align people, projects, and capital with a sustainable future (SSP1).
-
-We build open-source tools that enable effective, data-driven, and ethical global coordination.
-
-Read the [Pathfinder White Paper](https://www.thechamberofus.org/pathfinder-white-paper)
-
----
-
-### How to Join TCUS / Libelle
-
-Request access by opening a GitHub issue titled:
-
-**`Request to join TCUS / Libelle`**
-
-Once approved, you will receive:
-
-- A TCUS volunteer agreement
-- Access to our internal Slack workspace
-- Contributor onboarding instructions
+We welcome contributions from developers, designers, and organizers!
+- **Bug Reports & Feature Requests:** Please open a GitHub Issue.
+- **Code Changes:** Create a fork, commit your changes to a new branch, and submit a Pull Request.
+- **Ethics:** All contributors are expected to uphold our commitment to privacy-first, human-centered design.
 
 ---
 
 ## License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-
-You are free to use, modify, and distribute this software under the terms of that license.
-
-If you run this software as a network service, you must make any modifications to the source
-code available to users of that service.
-
----
-
-## A Final Note
-
-Libelle is not just a piece of software.
-
-It is an experiment in:
-- Different ways of working
-- Different ways of belonging
-- Different ways of building systems
-
-If you’re here, you’re part of that experiment.
-
-**Welcome.**
-
-
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
