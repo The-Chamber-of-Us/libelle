@@ -107,17 +107,26 @@ def extract_location(text: str) -> Tuple[List[str], float]:
     return [], 0.0
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    skills_lines, in_skills_section = [], False
-    for line in lines:
-        if re.search(r'\bskills\b', line, re.IGNORECASE):
-            in_skills_section = True
-            continue
-        elif in_skills_section and re.match(r'^[A-Z][A-Z\s&]+$', line) and len(line) < 50:
-            break
-        elif in_skills_section:
-            skills_lines.append(line)
-    skills = [p.strip() for l in skills_lines for p in re.split(r'•|,|·|;', l) if p.strip()]
+    lines = _get_lines(text)
+
+    # Anchored header patterns — matches section headers only, not mid-sentence mentions
+    skills_patterns = [
+        r'^skills:?$',
+        r'^technical\s+skills:?$',
+        r'^core\s+skills:?$',
+        r'^key\s+skills:?$',
+        r'^professional\s+skills:?$',
+        r'^technical\s+proficiencies:?$',
+        r'^core\s+competencies:?$',
+        r'^competencies:?$',
+        r'^technologies:?$',
+        r'^tools\s+(?:&|and)\s+technologies:?$',
+        r'^areas\s+of\s+expertise:?$',
+        r'^skills\s+(?:&|and)\s+expertise:?$',
+    ]
+
+    skills_lines, _ = _collect_section_lines(lines, skills_patterns)
+    skills = [p.strip() for l in skills_lines for p in re.split(r'[•,·;|]', l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 
