@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { IntakeFormData, FormErrors, FormStatus } from '../types'
-import { Input } from '../ui/Input'
-import { Textarea } from '../ui/Textarea'
-import { FileUpload } from '../ui/FileUpload'
+import { IntakeFormData, FormErrors, FormStatus } from '../../types'
+import { Input } from '../../ui/Input'
+import { Textarea } from '../../ui/Textarea'
+import { FileUpload } from '../../ui/FileUpload'
 import { Check, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
 
 const INITIAL_FORM_DATA: IntakeFormData = {
