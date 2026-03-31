@@ -27,6 +27,49 @@ export const IntakeForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({})
   const [status, setStatus] = useState<FormStatus>({ state: 'idle' })
 
+  const getFullName = () => {
+    return `${formData.firstName} ${formData.lastName}`.replace(/\s+/g, ' ').trim()
+  }
+
+  const getBackendConsentValue = () => {
+    // Collapse UI checkbox state into the single backend boolean expected today.
+    // Optional checkboxes may remain in UI, but only this required consent maps to backend `consent`.
+    return formData.consentProfile
+  }
+
+  const buildUploadPayload = () => {
+    const payload = new FormData()
+    const fullName = getFullName()
+    const consent = getBackendConsentValue()
+
+    if (!formData.resume) {
+      throw new Error('Resume file is required before building upload payload.')
+    }
+
+    payload.append('file', formData.resume, formData.resume.name)
+    payload.append('full_name', fullName)
+    payload.append('email', formData.email.trim())
+    payload.append('location', formData.location.trim())
+    payload.append('interests', formData.interests.trim())
+    payload.append('availability', formData.availability.trim())
+    payload.append('experience_level', formData.experienceLevel)
+    payload.append('consent', String(consent))
+
+    if (formData.linkedinUrl.trim()) {
+      payload.append('linkedin_url', formData.linkedinUrl.trim())
+    }
+
+    if (formData.githubUrl.trim()) {
+      payload.append('github_url', formData.githubUrl.trim())
+    }
+
+    if (formData.motivation.trim()) {
+      payload.append('motivation', formData.motivation.trim())
+    }
+
+    return payload
+  }
+
   const validate = (): boolean => {
     const newErrors: FormErrors = {}
     let isValid = true
@@ -35,10 +78,18 @@ export const IntakeForm: React.FC = () => {
       newErrors.firstName = 'First name is required'
       isValid = false
     }
+
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required'
       isValid = false
     }
+
+    if (!getFullName()) {
+      newErrors.firstName = newErrors.firstName || 'Full name is required'
+      newErrors.lastName = newErrors.lastName || 'Full name is required'
+      isValid = false
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
       isValid = false
@@ -46,42 +97,48 @@ export const IntakeForm: React.FC = () => {
       newErrors.email = 'Please enter a valid email address'
       isValid = false
     }
+
     if (!formData.location.trim()) {
       newErrors.location = 'Location is required'
       isValid = false
     }
+
     if (!formData.interests.trim()) {
       newErrors.interests = 'Please list at least one interest'
       isValid = false
     }
+
     if (!formData.availability.trim()) {
       newErrors.availability = 'Availability is required'
       isValid = false
     }
+
     if (!formData.experienceLevel) {
       newErrors.experienceLevel = 'Please select an experience level'
       isValid = false
     }
+
     if (
       formData.linkedinUrl &&
-      !/^https?:\/\/(www\.)?linkedin\.com\/.*$/.test(formData.linkedinUrl)
+      !/^https?:\/\/(www\.)?linkedin\.com\/.*$/i.test(formData.linkedinUrl)
     ) {
       newErrors.linkedinUrl = 'Invalid LinkedIn URL'
       isValid = false
     }
+
     if (
       formData.githubUrl &&
-      !/^https?:\/\/(www\.)?github\.com\/.*$/.test(formData.githubUrl)
+      !/^https?:\/\/(www\.)?github\.com\/.*$/i.test(formData.githubUrl)
     ) {
       newErrors.githubUrl = 'Invalid GitHub URL'
       isValid = false
     }
+
     if (formData.motivation.length > 280) {
       newErrors.motivation = 'Motivation must be 280 characters or less'
       isValid = false
     }
 
-    // PDF only, <= 5MB
     if (!formData.resume) {
       newErrors.resume = 'Please upload your resume (PDF only)'
       isValid = false
@@ -96,7 +153,7 @@ export const IntakeForm: React.FC = () => {
       }
     }
 
-    if (!formData.consentProfile) {
+    if (!getBackendConsentValue()) {
       newErrors.consentProfile = 'This consent is required to proceed'
       isValid = false
     }
@@ -128,31 +185,13 @@ export const IntakeForm: React.FC = () => {
     setErrors({})
 
     try {
-      // Optional health ping
       try {
         await fetch('/health')
       } catch {
         // ok
       }
 
-      const payload = new FormData()
-      const fullName = `${formData.firstName} ${formData.lastName}`.trim()
-
-      if (formData.resume) {
-        payload.append('file', formData.resume, formData.resume.name)
-      }
-
-      payload.append('full_name', fullName)
-      payload.append('email', formData.email)
-      payload.append('location', formData.location)
-      payload.append('interests', formData.interests)
-      payload.append('availability', formData.availability)
-      payload.append('experience_level', formData.experienceLevel)
-      payload.append('consent', 'true')
-
-      if (formData.linkedinUrl) payload.append('linkedin_url', formData.linkedinUrl)
-      if (formData.githubUrl) payload.append('github_url', formData.githubUrl)
-      if (formData.motivation) payload.append('motivation', formData.motivation)
+      const payload = buildUploadPayload()
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -189,18 +228,26 @@ export const IntakeForm: React.FC = () => {
 
         Object.keys(data.fields).forEach((apiKey) => {
           const stateKey = fieldMap[apiKey]
-          if (stateKey) apiErrors[stateKey] = data.fields[apiKey]
+          if (stateKey) {
+            apiErrors[stateKey] = data.fields[apiKey]
+          }
         })
 
         setErrors(apiErrors)
-        setStatus({ state: 'error', message: 'Please fix the highlighted fields and try again.' })
+        setStatus({
+          state: 'error',
+          message: 'Please fix the highlighted fields and try again.'
+        })
         scrollToError()
         return
       }
 
       if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
         setErrors({ resume: data?.message || 'A resume file is required.' })
-        setStatus({ state: 'error', message: 'Please upload your resume to continue.' })
+        setStatus({
+          state: 'error',
+          message: 'Please upload your resume to continue.'
+        })
         scrollToError()
         return
       }
@@ -218,7 +265,9 @@ export const IntakeForm: React.FC = () => {
   }
 
   const handleClear = () => {
-    if (window.confirm('Are you sure you want to clear the form? All entered data will be lost.')) {
+    if (
+      window.confirm('Are you sure you want to clear the form? All entered data will be lost.')
+    ) {
       setFormData(INITIAL_FORM_DATA)
       setErrors({})
       setStatus({ state: 'idle' })
@@ -253,7 +302,9 @@ export const IntakeForm: React.FC = () => {
 
   const handleFileChange = (file: File | null) => {
     setFormData((prev) => ({ ...prev, resume: file }))
-    if (errors.resume) setErrors((prev) => ({ ...prev, resume: undefined }))
+    if (errors.resume) {
+      setErrors((prev) => ({ ...prev, resume: undefined }))
+    }
   }
 
   const isSubmitting = status.state === 'submitting'
@@ -264,12 +315,19 @@ export const IntakeForm: React.FC = () => {
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
           <Check className="w-10 h-10 text-libelle-emerald" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 font-sans mb-4">Application received</h2>
+        <h2 className="text-3xl font-bold text-gray-900 font-sans mb-4">
+          Application received
+        </h2>
         <p className="text-gray-600 mb-8 max-w-lg mx-auto text-lg leading-relaxed">
-          Thanks. We’ve received your profile and will review it for matching across TCUS projects.
+          Thanks. We’ve received your profile and will review it for matching across TCUS
+          projects.
         </p>
 
-        {status.submissionId && <p className="text-xs text-gray-400 mb-8 font-mono">ID: {status.submissionId}</p>}
+        {status.submissionId && (
+          <p className="text-xs text-gray-400 mb-8 font-mono">
+            ID: {status.submissionId}
+          </p>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
@@ -299,27 +357,37 @@ export const IntakeForm: React.FC = () => {
           We help you plug in fast.
         </h2>
         <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
-          You found us for a reason. You're ready to put your talent toward something that matters.
+          You found us for a reason. You're ready to put your talent toward something that
+          matters.
           <br />
-          You won't just be another volunteer—you'll be a co-founder in a new kind of organization.
+          You won't just be another volunteer—you'll be a co-founder in a new kind of
+          organization.
           <br />
-          Here's our promise: We'll connect you with a team, give you a clear mission, and put your skills to work on a
-          project with real-world stakes. No more wasted time. Just meaningful work, with people aligned on mission.
+          Here's our promise: We'll connect you with a team, give you a clear mission, and put
+          your skills to work on a project with real-world stakes. No more wasted time. Just
+          meaningful work, with people aligned on mission.
         </p>
-        <p className="text-base sm:text-lg text-gray-500 font-medium">Most people finish in under 5 minutes.</p>
+        <p className="text-base sm:text-lg text-gray-500 font-medium">
+          Most people finish in under 5 minutes.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-10" noValidate>
         {status.state === 'error' && status.message && (
-          <div className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start" role="alert">
+          <div
+            className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start"
+            role="alert"
+          >
             <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
             <p className="font-medium">{status.message}</p>
           </div>
         )}
 
-        {/* Personal Info */}
         <section aria-labelledby="personal-info-heading">
-          <h2 id="personal-info-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
+          <h2
+            id="personal-info-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
             Personal Information
           </h2>
           <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
@@ -377,9 +445,11 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Experience */}
         <section aria-labelledby="experience-heading">
-          <h2 id="experience-heading" className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100">
+          <h2
+            id="experience-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
             Experience & Details
           </h2>
 
@@ -400,7 +470,10 @@ export const IntakeForm: React.FC = () => {
 
             <div className="sm:col-span-2">
               <div className="w-full">
-                <label htmlFor="experienceLevel" className="block text-sm font-medium text-gray-700 mb-1 font-sans">
+                <label
+                  htmlFor="experienceLevel"
+                  className="block text-sm font-medium text-gray-700 mb-1 font-sans"
+                >
                   Experience Level <span className="text-libelle-rose">*</span>
                 </label>
                 <select
@@ -417,7 +490,9 @@ export const IntakeForm: React.FC = () => {
                     ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
                   `}
                   aria-invalid={!!errors.experienceLevel}
-                  aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
+                  aria-describedby={
+                    errors.experienceLevel ? 'experienceLevel-error' : undefined
+                  }
                 >
                   <option value="" disabled>
                     Select your level
@@ -504,8 +579,10 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Privacy & Consent */}
-        <section aria-labelledby="privacy-heading" className="rounded-lg border border-gray-200 overflow-hidden">
+        <section
+          aria-labelledby="privacy-heading"
+          className="rounded-lg border border-gray-200 overflow-hidden"
+        >
           <div className="bg-[#4F46E5] h-[59px] px-8 flex items-center gap-[10px] rounded-t-lg">
             <h2 id="privacy-heading" className="text-white text-lg font-bold font-sans">
               Privacy and Consent
@@ -516,10 +593,14 @@ export const IntakeForm: React.FC = () => {
             <p className="text-sm text-gray-600 leading-relaxed">
               At The Chamber of Us (TCUS), we take your privacy seriously.
               <br />
-              We will use the information you share here solely for the purpose of matching you with volunteer opportunities that align with your skills, interests, and availability.
+              We will use the information you share here solely for the purpose of matching you
+              with volunteer opportunities that align with your skills, interests, and
+              availability.
               <br />
               <br />
-              We do not collect any data beyond what is required to fulfill this purpose. We will never sell, share, or use your data for advertising, profiling, or unrelated analysis.
+              We do not collect any data beyond what is required to fulfill this purpose. We will
+              never sell, share, or use your data for advertising, profiling, or unrelated
+              analysis.
             </p>
 
             <div className="space-y-4 pt-4">
@@ -535,12 +616,18 @@ export const IntakeForm: React.FC = () => {
                     disabled={isSubmitting}
                     className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
                     aria-invalid={!!errors.consentProfile}
-                    aria-describedby={errors.consentProfile ? 'consentProfile-error' : undefined}
+                    aria-describedby={
+                      errors.consentProfile ? 'consentProfile-error' : undefined
+                    }
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="consentProfile" className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    I understand and consent to TCUS using the information I&apos;ve provided to match me with volunteer opportunities in alignment with the mission.{' '}
+                  <label
+                    htmlFor="consentProfile"
+                    className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                  >
+                    I understand and consent to TCUS using the information I&apos;ve provided to
+                    match me with volunteer opportunities in alignment with the mission.{' '}
                     <span className="text-libelle-rose">*</span>
                   </label>
                   {errors.consentProfile && (
@@ -564,8 +651,12 @@ export const IntakeForm: React.FC = () => {
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="consentDataUse" className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}>
-                    We&apos;re building something big and experimental at TCUS, and we&apos;d love to keep you in the loop as new projects and volunteer opportunities emerge.{' '}
+                  <label
+                    htmlFor="consentDataUse"
+                    className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                  >
+                    We&apos;re building something big and experimental at TCUS, and we&apos;d love
+                    to keep you in the loop as new projects and volunteer opportunities emerge.{' '}
                     <span className="italic text-[#72727B]">(optional)</span>
                   </label>
                 </div>
@@ -574,7 +665,6 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        {/* Submit */}
         <div className="pt-4 flex flex-col items-center">
           <div className="w-[286px] h-[70px] flex items-center gap-8 justify-center">
             <button

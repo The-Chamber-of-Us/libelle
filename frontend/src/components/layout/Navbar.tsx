@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom'
-import dragonfly from '../assets/dragonfly.svg'
+import dragonfly from '../../assets/dragonfly.svg'
 
 export default function Navbar() {
   const linkBase =
