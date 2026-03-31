@@ -1,5 +1,5 @@
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
+import Navbar from '../components/layout/Navbar'
+import Footer from '../components/layout/Footer'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import abouthero from '../assets/abouthero.svg'
