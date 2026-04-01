@@ -1,28 +1,26 @@
-# backend/resolver/normalize.py
 import re
 
+WHITESPACE_RE = re.compile(r"\s+")
+
+# Preserve meaningful punctuation even at boundaries
+LEADING_PUNCT_RE = re.compile(r"^[^\w\+\#\.\-/]+")
+TRAILING_PUNCT_RE = re.compile(r"[^\w\+\#\.\-/]+$")
+
+# Remove unwanted punctuation inside, but keep meaningful ones
+INNER_CLEAN_RE = re.compile(r"[^\w\s\+\#\.\-/]")
+
 def normalize_token(s: str) -> str:
-    """
-    Examples (Desired Behavior):
-      - "React.js" -> "reactjs" (remove dots, lowercase)
-      - "  Python  " -> "python" (strip whitespace)
-      - "Node.JS" -> "nodejs"
-    """
-    # Normalization chain v1 (intended):
-    # lowercase -> trim -> strip punctuation -> collapse whitespace
-    
     if not s:
         return ""
-        
+
     s = s.lower().strip()
-    s = re.sub(r"[^\w\s]", " ", s)   # remove punctuation
-    s = re.sub(r"\s+", " ", s)       # collapse whitespace
-    
+    s = LEADING_PUNCT_RE.sub("", s)
+    s = TRAILING_PUNCT_RE.sub("", s)
+    s = INNER_CLEAN_RE.sub(" ", s)
+    s = WHITESPACE_RE.sub(" ", s).strip()
+
     return s
-    
+
 
 def normalize_key(s: str) -> str:
-    """
-    Strict normalization for dictionary keys (e.g. for alias map lookups).
-    """
     return normalize_token(s).replace(" ", "")
