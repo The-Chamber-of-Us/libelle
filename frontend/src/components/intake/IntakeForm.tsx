@@ -1,0 +1,704 @@
+import React, { useState } from 'react'
+import { IntakeFormData, FormErrors, FormStatus } from '../../types'
+import { Input } from '../../ui/Input'
+import { Textarea } from '../../ui/Textarea'
+import { FileUpload } from '../../ui/FileUpload'
+import { Check, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
+
+const INITIAL_FORM_DATA: IntakeFormData = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  location: '',
+  interests: '',
+  availability: '',
+  experienceLevel: '',
+  linkedinUrl: '',
+  githubUrl: '',
+  motivation: '',
+  resume: null,
+  consentProfile: false,
+  consentGuidelines: false,
+  consentDataUse: false
+}
+
+export const IntakeForm: React.FC = () => {
+  const [formData, setFormData] = useState<IntakeFormData>(INITIAL_FORM_DATA)
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [status, setStatus] = useState<FormStatus>({ state: 'idle' })
+
+  const getFullName = () => {
+    return `${formData.firstName} ${formData.lastName}`.replace(/\s+/g, ' ').trim()
+  }
+
+  const getBackendConsentValue = () => {
+    // Collapse UI checkbox state into the single backend boolean expected today.
+    // Optional checkboxes may remain in UI, but only this required consent maps to backend `consent`.
+    return formData.consentProfile
+  }
+
+  const buildUploadPayload = () => {
+    const payload = new FormData()
+    const fullName = getFullName()
+    const consent = getBackendConsentValue()
+
+    if (!formData.resume) {
+      throw new Error('Resume file is required before building upload payload.')
+    }
+
+    payload.append('file', formData.resume, formData.resume.name)
+    payload.append('full_name', fullName)
+    payload.append('email', formData.email.trim())
+    payload.append('location', formData.location.trim())
+    payload.append('interests', formData.interests.trim())
+    payload.append('availability', formData.availability.trim())
+    payload.append('experience_level', formData.experienceLevel)
+    payload.append('consent', String(consent))
+
+    if (formData.linkedinUrl.trim()) {
+      payload.append('linkedin_url', formData.linkedinUrl.trim())
+    }
+
+    if (formData.githubUrl.trim()) {
+      payload.append('github_url', formData.githubUrl.trim())
+    }
+
+    if (formData.motivation.trim()) {
+      payload.append('motivation', formData.motivation.trim())
+    }
+
+    return payload
+  }
+
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {}
+    let isValid = true
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required'
+      isValid = false
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required'
+      isValid = false
+    }
+
+    if (!getFullName()) {
+      newErrors.firstName = newErrors.firstName || 'Full name is required'
+      newErrors.lastName = newErrors.lastName || 'Full name is required'
+      isValid = false
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required'
+      isValid = false
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address'
+      isValid = false
+    }
+
+    if (!formData.location.trim()) {
+      newErrors.location = 'Location is required'
+      isValid = false
+    }
+
+    if (!formData.interests.trim()) {
+      newErrors.interests = 'Please list at least one interest'
+      isValid = false
+    }
+
+    if (!formData.availability.trim()) {
+      newErrors.availability = 'Availability is required'
+      isValid = false
+    }
+
+    if (!formData.experienceLevel) {
+      newErrors.experienceLevel = 'Please select an experience level'
+      isValid = false
+    }
+
+    if (
+      formData.linkedinUrl &&
+      !/^https?:\/\/(www\.)?linkedin\.com\/.*$/i.test(formData.linkedinUrl)
+    ) {
+      newErrors.linkedinUrl = 'Invalid LinkedIn URL'
+      isValid = false
+    }
+
+    if (
+      formData.githubUrl &&
+      !/^https?:\/\/(www\.)?github\.com\/.*$/i.test(formData.githubUrl)
+    ) {
+      newErrors.githubUrl = 'Invalid GitHub URL'
+      isValid = false
+    }
+
+    if (formData.motivation.length > 280) {
+      newErrors.motivation = 'Motivation must be 280 characters or less'
+      isValid = false
+    }
+
+    if (!formData.resume) {
+      newErrors.resume = 'Please upload your resume (PDF only)'
+      isValid = false
+    } else {
+      if (formData.resume.type !== 'application/pdf') {
+        newErrors.resume = 'Only PDF files are allowed'
+        isValid = false
+      }
+      if (formData.resume.size > 5 * 1024 * 1024) {
+        newErrors.resume = 'File size must be less than 5MB'
+        isValid = false
+      }
+    }
+
+    if (!getBackendConsentValue()) {
+      newErrors.consentProfile = 'This consent is required to proceed'
+      isValid = false
+    }
+
+    setErrors(newErrors)
+    return isValid
+  }
+
+  const scrollToError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector('[aria-invalid="true"]')
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }, 10)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validate()) {
+      scrollToError()
+      return
+    }
+
+    setStatus({ state: 'submitting' })
+    setErrors({})
+
+    try {
+      try {
+        await fetch('/health')
+      } catch {
+        // ok
+      }
+
+      const payload = buildUploadPayload()
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: payload
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (response.ok) {
+        setStatus({
+          state: 'success',
+          message: data.message || 'Your application has been received',
+          submissionId: data.submission_id
+        })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
+      if (response.status === 422 && data?.code === 'VALIDATION_ERROR' && data?.fields) {
+        const apiErrors: FormErrors = {}
+        const fieldMap: Record<string, keyof IntakeFormData> = {
+          full_name: 'firstName',
+          email: 'email',
+          location: 'location',
+          interests: 'interests',
+          availability: 'availability',
+          experience_level: 'experienceLevel',
+          file: 'resume',
+          linkedin_url: 'linkedinUrl',
+          github_url: 'githubUrl',
+          motivation: 'motivation',
+          consent: 'consentProfile'
+        }
+
+        Object.keys(data.fields).forEach((apiKey) => {
+          const stateKey = fieldMap[apiKey]
+          if (stateKey) {
+            apiErrors[stateKey] = data.fields[apiKey]
+          }
+        })
+
+        setErrors(apiErrors)
+        setStatus({
+          state: 'error',
+          message: 'Please fix the highlighted fields and try again.'
+        })
+        scrollToError()
+        return
+      }
+
+      if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
+        setErrors({ resume: data?.message || 'A resume file is required.' })
+        setStatus({
+          state: 'error',
+          message: 'Please upload your resume to continue.'
+        })
+        scrollToError()
+        return
+      }
+
+      throw new Error(data?.message || `Request failed (${response.status}). Please try again.`)
+    } catch (error: any) {
+      setStatus({
+        state: 'error',
+        message:
+          error?.message ||
+          'We hit a snag... please try again. If it keeps happening, email privacy@thechamberofus.org.'
+      })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleClear = () => {
+    if (
+      window.confirm('Are you sure you want to clear the form? All entered data will be lost.')
+    ) {
+      setFormData(INITIAL_FORM_DATA)
+      setErrors({})
+      setStatus({ state: 'idle' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleReset = () => {
+    setFormData(INITIAL_FORM_DATA)
+    setErrors({})
+    setStatus({ state: 'idle' })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name as keyof IntakeFormData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target
+    setFormData((prev) => ({ ...prev, [name]: checked }))
+    if (errors[name as keyof IntakeFormData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }))
+    }
+  }
+
+  const handleFileChange = (file: File | null) => {
+    setFormData((prev) => ({ ...prev, resume: file }))
+    if (errors.resume) {
+      setErrors((prev) => ({ ...prev, resume: undefined }))
+    }
+  }
+
+  const isSubmitting = status.state === 'submitting'
+
+  if (status.state === 'success') {
+    return (
+      <div className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in p-10 text-center border-t-4 border-libelle-emerald">
+        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+          <Check className="w-10 h-10 text-libelle-emerald" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 font-sans mb-4">
+          Application received
+        </h2>
+        <p className="text-gray-600 mb-8 max-w-lg mx-auto text-lg leading-relaxed">
+          Thanks. We’ve received your profile and will review it for matching across TCUS
+          projects.
+        </p>
+
+        {status.submissionId && (
+          <p className="text-xs text-gray-400 mb-8 font-mono">
+            ID: {status.submissionId}
+          </p>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="/"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:opacity-90 transition shadow-sm"
+          >
+            Back to Libelle
+            <ExternalLink className="ml-2 w-4 h-4" />
+          </a>
+          <button
+            onClick={handleReset}
+            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition"
+          >
+            Submit another
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 relative">
+      <div className="h-2 bg-libelle-indigo w-full" />
+
+      <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
+          We help you plug in fast.
+        </h2>
+        <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
+          You found us for a reason. You're ready to put your talent toward something that
+          matters.
+          <br />
+          You won't just be another volunteer—you'll be a co-founder in a new kind of
+          organization.
+          <br />
+          Here's our promise: We'll connect you with a team, give you a clear mission, and put
+          your skills to work on a project with real-world stakes. No more wasted time. Just
+          meaningful work, with people aligned on mission.
+        </p>
+        <p className="text-base sm:text-lg text-gray-500 font-medium">
+          Most people finish in under 5 minutes.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-10" noValidate>
+        {status.state === 'error' && status.message && (
+          <div
+            className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start"
+            role="alert"
+          >
+            <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+            <p className="font-medium">{status.message}</p>
+          </div>
+        )}
+
+        <section aria-labelledby="personal-info-heading">
+          <h2
+            id="personal-info-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
+            Personal Information
+          </h2>
+          <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
+            <Input
+              label="First Name"
+              name="firstName"
+              type="text"
+              required
+              placeholder="e.g. Jane"
+              value={formData.firstName}
+              onChange={handleInputChange}
+              error={errors.firstName}
+              autoComplete="given-name"
+              disabled={isSubmitting}
+            />
+            <Input
+              label="Last Name"
+              name="lastName"
+              type="text"
+              required
+              placeholder="e.g. Doe"
+              value={formData.lastName}
+              onChange={handleInputChange}
+              error={errors.lastName}
+              autoComplete="family-name"
+              disabled={isSubmitting}
+            />
+            <div className="sm:col-span-2">
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                required
+                placeholder="jane@example.com"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={errors.email}
+                autoComplete="email"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Input
+                label="Current Location"
+                name="location"
+                type="text"
+                required
+                placeholder="City, State, or Country"
+                value={formData.location}
+                onChange={handleInputChange}
+                error={errors.location}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="experience-heading">
+          <h2
+            id="experience-heading"
+            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+          >
+            Experience & Details
+          </h2>
+
+          <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2 mb-6">
+            <div className="sm:col-span-2">
+              <Input
+                label="Availability"
+                name="availability"
+                type="text"
+                required
+                placeholder="e.g. 5-10 hours/week, Weekends only"
+                value={formData.availability}
+                onChange={handleInputChange}
+                error={errors.availability}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <div className="w-full">
+                <label
+                  htmlFor="experienceLevel"
+                  className="block text-sm font-medium text-gray-700 mb-1 font-sans"
+                >
+                  Experience Level <span className="text-libelle-rose">*</span>
+                </label>
+                <select
+                  id="experienceLevel"
+                  name="experienceLevel"
+                  required
+                  value={formData.experienceLevel}
+                  onChange={handleInputChange}
+                  disabled={isSubmitting}
+                  className={`
+                    block w-full rounded-md shadow-sm px-4 py-2.5 bg-white text-gray-900 ring-1 ring-inset ring-gray-300
+                    focus:ring-2 focus:ring-inset focus:ring-libelle-indigo focus:border-libelle-indigo sm:text-sm sm:leading-6 transition-all
+                    disabled:bg-gray-50 disabled:text-gray-500
+                    ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
+                  `}
+                  aria-invalid={!!errors.experienceLevel}
+                  aria-describedby={
+                    errors.experienceLevel ? 'experienceLevel-error' : undefined
+                  }
+                >
+                  <option value="" disabled>
+                    Select your level
+                  </option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Mid">Mid</option>
+                  <option value="Senior">Senior</option>
+                </select>
+                {errors.experienceLevel && (
+                  <p className="mt-1 text-sm text-libelle-rose" id="experienceLevel-error">
+                    {errors.experienceLevel}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <Input
+                label="Key Interests"
+                name="interests"
+                type="text"
+                required
+                placeholder="e.g. Coding, Design, Event Planning"
+                value={formData.interests}
+                onChange={handleInputChange}
+                error={errors.interests}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Input
+                label="LinkedIn URL (Optional)"
+                name="linkedinUrl"
+                type="url"
+                placeholder="https://linkedin.com/in/..."
+                value={formData.linkedinUrl}
+                onChange={handleInputChange}
+                error={errors.linkedinUrl}
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Input
+                label="GitHub URL (Optional)"
+                name="githubUrl"
+                type="url"
+                placeholder="https://github.com/..."
+                value={formData.githubUrl}
+                onChange={handleInputChange}
+                error={errors.githubUrl}
+                disabled={isSubmitting}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className={isSubmitting ? 'opacity-60 pointer-events-none' : ''}>
+              <FileUpload
+                label="Resume (PDF Only)"
+                name="resume"
+                accept=".pdf"
+                required
+                value={formData.resume}
+                onChange={handleFileChange}
+                error={errors.resume}
+                description="PDF up to 5MB"
+              />
+            </div>
+
+            <Textarea
+              label="Why do you want to join TCUS? (Optional)"
+              name="motivation"
+              rows={4}
+              maxLength={280}
+              placeholder="Tell us about your interest in volunteering... (Max 280 chars)"
+              value={formData.motivation}
+              onChange={handleInputChange}
+              error={errors.motivation}
+              helperText={`${formData.motivation.length}/280 characters`}
+              disabled={isSubmitting}
+            />
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="privacy-heading"
+          className="rounded-lg border border-gray-200 overflow-hidden"
+        >
+          <div className="bg-[#4F46E5] h-[59px] px-8 flex items-center gap-[10px] rounded-t-lg">
+            <h2 id="privacy-heading" className="text-white text-lg font-bold font-sans">
+              Privacy and Consent
+            </h2>
+          </div>
+
+          <div className="p-6 sm:p-8 flex flex-col space-y-4">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              At The Chamber of Us (TCUS), we take your privacy seriously.
+              <br />
+              We will use the information you share here solely for the purpose of matching you
+              with volunteer opportunities that align with your skills, interests, and
+              availability.
+              <br />
+              <br />
+              We do not collect any data beyond what is required to fulfill this purpose. We will
+              never sell, share, or use your data for advertising, profiling, or unrelated
+              analysis.
+            </p>
+
+            <div className="space-y-4 pt-4">
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    id="consentProfile"
+                    name="consentProfile"
+                    type="checkbox"
+                    required
+                    checked={formData.consentProfile}
+                    onChange={handleCheckboxChange}
+                    disabled={isSubmitting}
+                    className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
+                    aria-invalid={!!errors.consentProfile}
+                    aria-describedby={
+                      errors.consentProfile ? 'consentProfile-error' : undefined
+                    }
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label
+                    htmlFor="consentProfile"
+                    className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                  >
+                    I understand and consent to TCUS using the information I&apos;ve provided to
+                    match me with volunteer opportunities in alignment with the mission.{' '}
+                    <span className="text-libelle-rose">*</span>
+                  </label>
+                  {errors.consentProfile && (
+                    <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">
+                      {errors.consentProfile}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start">
+                <div className="flex items-center h-5">
+                  <input
+                    id="consentDataUse"
+                    name="consentDataUse"
+                    type="checkbox"
+                    checked={formData.consentDataUse}
+                    onChange={handleCheckboxChange}
+                    disabled={isSubmitting}
+                    className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
+                  />
+                </div>
+                <div className="ml-3 text-sm">
+                  <label
+                    htmlFor="consentDataUse"
+                    className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                  >
+                    We&apos;re building something big and experimental at TCUS, and we&apos;d love
+                    to keep you in the loop as new projects and volunteer opportunities emerge.{' '}
+                    <span className="italic text-[#72727B]">(optional)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="pt-4 flex flex-col items-center">
+          <div className="w-[286px] h-[70px] flex items-center gap-8 justify-center">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-[107px] h-[50px] px-7 py-[13px] flex items-center justify-center gap-[10px] rounded-[6px] bg-[#4F46E5] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed transition"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={isSubmitting}
+              className="w-[107px] h-[50px] px-7 py-[13px] inline-flex items-center justify-center gap-[10px] rounded-[6px] border border-[#4F46E5] font-medium text-[16px] leading-[24px] text-[#4F46E5] bg-white whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear form
+            </button>
+          </div>
+
+          {isSubmitting && (
+            <p className="mt-3 text-sm text-gray-500 animate-pulse">
+              Uploading resume and creating your volunteer profile...
+            </p>
+          )}
+        </div>
+      </form>
+    </div>
+  )
+}
