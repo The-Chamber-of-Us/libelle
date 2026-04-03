@@ -32,8 +32,6 @@ export const IntakeForm: React.FC = () => {
   }
 
   const getBackendConsentValue = () => {
-    // Collapse UI checkbox state into the single backend boolean expected today.
-    // Optional checkboxes may remain in UI, but only this required consent maps to backend `consent`.
     return formData.consentProfile
   }
 
@@ -311,35 +309,35 @@ export const IntakeForm: React.FC = () => {
 
   if (status.state === 'success') {
     return (
-      <div className="bg-white rounded-xl shadow-xl overflow-hidden animate-fade-in p-10 text-center border-t-4 border-libelle-emerald">
-        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
-          <Check className="w-10 h-10 text-libelle-emerald" />
+      <div className="overflow-hidden rounded-xl border-t-4 border-libelle-emerald bg-white p-6 text-center shadow-xl animate-fade-in sm:p-10">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-50 shadow-sm">
+          <Check className="h-10 w-10 text-libelle-emerald" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 font-sans mb-4">
+
+        <h2 className="mb-4 font-sans text-2xl font-bold text-gray-900 sm:text-3xl">
           Application received
         </h2>
-        <p className="text-gray-600 mb-8 max-w-lg mx-auto text-lg leading-relaxed">
-          Thanks. We’ve received your profile and will review it for matching across TCUS
-          projects.
+
+        <p className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-gray-600 sm:text-lg">
+          Thanks. We’ve received your profile and will review it for matching across TCUS projects.
         </p>
 
         {status.submissionId && (
-          <p className="text-xs text-gray-400 mb-8 font-mono">
-            ID: {status.submissionId}
-          </p>
+          <p className="mb-8 font-mono text-xs text-gray-400">ID: {status.submissionId}</p>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <a
             href="/"
-            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-libelle-indigo hover:opacity-90 transition shadow-sm"
+            className="inline-flex items-center justify-center rounded-md border border-transparent bg-libelle-indigo px-6 py-3 text-base font-medium text-white shadow-sm transition hover:opacity-90"
           >
             Back to Libelle
-            <ExternalLink className="ml-2 w-4 h-4" />
+            <ExternalLink className="ml-2 h-4 w-4" />
           </a>
+
           <button
             onClick={handleReset}
-            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition"
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 transition hover:bg-gray-50"
           >
             Submit another
           </button>
@@ -349,36 +347,36 @@ export const IntakeForm: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100 relative">
-      <div className="h-2 bg-libelle-indigo w-full" />
+    <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl">
+      <div className="h-2 w-full bg-libelle-indigo" />
 
-      <div className="p-6 sm:p-10 border-b border-gray-100 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 font-sans tracking-tight mb-3">
+      <div className="border-b border-gray-100 p-6 text-center sm:p-10">
+        <h2 className="mb-3 font-sans text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
           We help you plug in fast.
         </h2>
-        <p className="text-base sm:text-lg text-gray-600 mb-4 leading-relaxed">
-          You found us for a reason. You're ready to put your talent toward something that
-          matters.
+
+        <p className="mb-4 text-base leading-relaxed text-gray-600 sm:text-lg">
+          You found us for a reason. You're ready to put your talent toward something that matters.
           <br />
-          You won't just be another volunteer—you'll be a co-founder in a new kind of
-          organization.
+          You won't just be another volunteer—you'll be a co-founder in a new kind of organization.
           <br />
-          Here's our promise: We'll connect you with a team, give you a clear mission, and put
-          your skills to work on a project with real-world stakes. No more wasted time. Just
-          meaningful work, with people aligned on mission.
+          Here's our promise: We'll connect you with a team, give you a clear mission, and put your
+          skills to work on a project with real-world stakes. No more wasted time. Just meaningful
+          work, with people aligned on mission.
         </p>
-        <p className="text-base sm:text-lg text-gray-500 font-medium">
+
+        <p className="text-base font-medium text-gray-500 sm:text-lg">
           Most people finish in under 5 minutes.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 sm:p-10 space-y-10" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-10 p-6 sm:p-10" noValidate>
         {status.state === 'error' && status.message && (
           <div
-            className="bg-red-50 border border-red-100 text-libelle-rose p-4 rounded-lg flex items-start"
+            className="flex items-start rounded-lg border border-red-100 bg-red-50 p-4 text-libelle-rose"
             role="alert"
           >
-            <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
+            <AlertCircle className="mr-3 mt-0.5 h-5 w-5 shrink-0" />
             <p className="font-medium">{status.message}</p>
           </div>
         )}
@@ -386,11 +384,12 @@ export const IntakeForm: React.FC = () => {
         <section aria-labelledby="personal-info-heading">
           <h2
             id="personal-info-heading"
-            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+            className="mb-6 border-b border-gray-100 pb-2 font-sans text-xl font-bold text-gray-900"
           >
             Personal Information
           </h2>
-          <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2">
+
+          <div className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
             <Input
               label="First Name"
               name="firstName"
@@ -403,6 +402,7 @@ export const IntakeForm: React.FC = () => {
               autoComplete="given-name"
               disabled={isSubmitting}
             />
+
             <Input
               label="Last Name"
               name="lastName"
@@ -415,6 +415,7 @@ export const IntakeForm: React.FC = () => {
               autoComplete="family-name"
               disabled={isSubmitting}
             />
+
             <div className="sm:col-span-2">
               <Input
                 label="Email Address"
@@ -429,6 +430,7 @@ export const IntakeForm: React.FC = () => {
                 disabled={isSubmitting}
               />
             </div>
+
             <div className="sm:col-span-2">
               <Input
                 label="Current Location"
@@ -448,12 +450,12 @@ export const IntakeForm: React.FC = () => {
         <section aria-labelledby="experience-heading">
           <h2
             id="experience-heading"
-            className="text-xl font-bold text-gray-900 font-sans mb-6 pb-2 border-b border-gray-100"
+            className="mb-6 border-b border-gray-100 pb-2 font-sans text-xl font-bold text-gray-900"
           >
             Experience & Details
           </h2>
 
-          <div className="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-2 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Input
                 label="Availability"
@@ -472,10 +474,11 @@ export const IntakeForm: React.FC = () => {
               <div className="w-full">
                 <label
                   htmlFor="experienceLevel"
-                  className="block text-sm font-medium text-gray-700 mb-1 font-sans"
+                  className="mb-1 block font-sans text-sm font-medium text-gray-700"
                 >
                   Experience Level <span className="text-libelle-rose">*</span>
                 </label>
+
                 <select
                   id="experienceLevel"
                   name="experienceLevel"
@@ -484,15 +487,13 @@ export const IntakeForm: React.FC = () => {
                   onChange={handleInputChange}
                   disabled={isSubmitting}
                   className={`
-                    block w-full rounded-md shadow-sm px-4 py-2.5 bg-white text-gray-900 ring-1 ring-inset ring-gray-300
-                    focus:ring-2 focus:ring-inset focus:ring-libelle-indigo focus:border-libelle-indigo sm:text-sm sm:leading-6 transition-all
+                    block w-full rounded-md bg-white px-4 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition-all
+                    focus:border-libelle-indigo focus:ring-2 focus:ring-inset focus:ring-libelle-indigo sm:text-sm sm:leading-6
                     disabled:bg-gray-50 disabled:text-gray-500
-                    ${errors.experienceLevel ? 'ring-libelle-rose focus:ring-libelle-rose border-libelle-rose' : ''}
+                    ${errors.experienceLevel ? 'border-libelle-rose ring-libelle-rose focus:ring-libelle-rose' : ''}
                   `}
                   aria-invalid={!!errors.experienceLevel}
-                  aria-describedby={
-                    errors.experienceLevel ? 'experienceLevel-error' : undefined
-                  }
+                  aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
                 >
                   <option value="" disabled>
                     Select your level
@@ -501,6 +502,7 @@ export const IntakeForm: React.FC = () => {
                   <option value="Mid">Mid</option>
                   <option value="Senior">Senior</option>
                 </select>
+
                 {errors.experienceLevel && (
                   <p className="mt-1 text-sm text-libelle-rose" id="experienceLevel-error">
                     {errors.experienceLevel}
@@ -551,7 +553,7 @@ export const IntakeForm: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <div className={isSubmitting ? 'opacity-60 pointer-events-none' : ''}>
+            <div className={isSubmitting ? 'pointer-events-none opacity-60' : ''}>
               <FileUpload
                 label="Resume (PDF Only)"
                 name="resume"
@@ -581,16 +583,16 @@ export const IntakeForm: React.FC = () => {
 
         <section
           aria-labelledby="privacy-heading"
-          className="rounded-lg border border-gray-200 overflow-hidden"
+          className="overflow-hidden rounded-lg border border-gray-200"
         >
-          <div className="bg-[#4F46E5] h-[59px] px-8 flex items-center gap-[10px] rounded-t-lg">
-            <h2 id="privacy-heading" className="text-white text-lg font-bold font-sans">
+          <div className="flex min-h-[59px] items-center gap-[10px] rounded-t-lg bg-[#4F46E5] px-6 sm:px-8">
+            <h2 id="privacy-heading" className="font-sans text-lg font-bold text-white">
               Privacy and Consent
             </h2>
           </div>
 
-          <div className="p-6 sm:p-8 flex flex-col space-y-4">
-            <p className="text-sm text-gray-600 leading-relaxed">
+          <div className="flex flex-col space-y-4 p-6 sm:p-8">
+            <p className="text-sm leading-relaxed text-gray-600">
               At The Chamber of Us (TCUS), we take your privacy seriously.
               <br />
               We will use the information you share here solely for the purpose of matching you
@@ -605,7 +607,7 @@ export const IntakeForm: React.FC = () => {
 
             <div className="space-y-4 pt-4">
               <div className="flex items-start">
-                <div className="flex items-center h-5">
+                <div className="flex h-5 items-center">
                   <input
                     id="consentProfile"
                     name="consentProfile"
@@ -616,22 +618,22 @@ export const IntakeForm: React.FC = () => {
                     disabled={isSubmitting}
                     className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
                     aria-invalid={!!errors.consentProfile}
-                    aria-describedby={
-                      errors.consentProfile ? 'consentProfile-error' : undefined
-                    }
+                    aria-describedby={errors.consentProfile ? 'consentProfile-error' : undefined}
                   />
                 </div>
+
                 <div className="ml-3 text-sm">
                   <label
                     htmlFor="consentProfile"
-                    className={`font-regular text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
+                    className={`text-gray-700 ${isSubmitting ? 'opacity-60' : ''}`}
                   >
                     I understand and consent to TCUS using the information I&apos;ve provided to
                     match me with volunteer opportunities in alignment with the mission.{' '}
                     <span className="text-libelle-rose">*</span>
                   </label>
+
                   {errors.consentProfile && (
-                    <p id="consentProfile-error" className="text-libelle-rose text-xs mt-1">
+                    <p id="consentProfile-error" className="mt-1 text-xs text-libelle-rose">
                       {errors.consentProfile}
                     </p>
                   )}
@@ -639,7 +641,7 @@ export const IntakeForm: React.FC = () => {
               </div>
 
               <div className="flex items-start">
-                <div className="flex items-center h-5">
+                <div className="flex h-5 items-center">
                   <input
                     id="consentDataUse"
                     name="consentDataUse"
@@ -650,6 +652,7 @@ export const IntakeForm: React.FC = () => {
                     className="h-4 w-4 rounded border-gray-300 text-libelle-indigo focus:ring-libelle-indigo disabled:opacity-50"
                   />
                 </div>
+
                 <div className="ml-3 text-sm">
                   <label
                     htmlFor="consentDataUse"
@@ -665,12 +668,12 @@ export const IntakeForm: React.FC = () => {
           </div>
         </section>
 
-        <div className="pt-4 flex flex-col items-center">
-          <div className="w-[286px] h-[70px] flex items-center gap-8 justify-center">
+        <div className="flex flex-col items-center pt-4">
+          <div className="flex w-full max-w-md flex-col items-stretch justify-center gap-4 sm:flex-row sm:items-center">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-[107px] h-[50px] px-7 py-[13px] flex items-center justify-center gap-[10px] rounded-[6px] bg-[#4F46E5] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed transition"
+              className="inline-flex min-h-[50px] items-center justify-center gap-[10px] rounded-[6px] bg-[#4F46E5] px-7 py-[13px] text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[140px]"
             >
               {isSubmitting ? (
                 <>
@@ -686,14 +689,14 @@ export const IntakeForm: React.FC = () => {
               type="button"
               onClick={handleClear}
               disabled={isSubmitting}
-              className="w-[107px] h-[50px] px-7 py-[13px] inline-flex items-center justify-center gap-[10px] rounded-[6px] border border-[#4F46E5] font-medium text-[16px] leading-[24px] text-[#4F46E5] bg-white whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex min-h-[50px] items-center justify-center gap-[10px] whitespace-nowrap rounded-[6px] border border-[#4F46E5] bg-white px-7 py-[13px] text-[16px] font-medium leading-[24px] text-[#4F46E5] disabled:cursor-not-allowed disabled:opacity-50 sm:min-w-[140px]"
             >
               Clear form
             </button>
           </div>
 
           {isSubmitting && (
-            <p className="mt-3 text-sm text-gray-500 animate-pulse">
+            <p className="mt-3 text-center text-sm text-gray-500 animate-pulse">
               Uploading resume and creating your volunteer profile...
             </p>
           )}
