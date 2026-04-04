@@ -1,112 +1,96 @@
 # Libelle API Specification
 
-This document defines how the Libelle frontend and backend communicate.
-
-It is the single source of truth for request / response formats.
+This document defines how the Libelle frontend and backend communicate. It is the single source of truth for request and response formats.
 
 ## Base URL
-Local: `http://localhost:8000`
-Prod: `https://api.libelle.io`
-
-
-  ---
-
-## General Rules
-
-- All responses are in JSON
-- Authentication is currently **open** (no auth, no tokens)
-- Errors return standard HTTP status codes
-- File upload is done using `multipart/form-data`
-- CORS is restricted to approved origins
+* **Local:** `http://127.0.0.1:8000`
+* **Production:** `https://libelle.io` 
+*(Note: In production, API routes are proxied via NGINX. Admin/Setup routes may be protected upstream by Cloudflare Zero Trust in production).*
 
 ---
 
-## Endpoints
+## General Rules & Auth
+
+* **Format:** All responses are in JSON.
+* **Client Auth:** Public volunteer intake endpoints are currently **open** (no user login required).
+* **Backend Auth:** The backend internally uses two Google authentication methods for infrastructure access:
+  * **Google Drive:** Uses OAuth user consent (bootstrapped via `/authorize` to create `token.json`).
+  * **Google Sheets:** Google Sheets: Uses a service account credential, typically configured via GOOGLE_CREDENTIALS..
+* **Uploads:** File upload is handled via `multipart/form-data`.
+* **CORS:** Restricted to approved origins.
+
+---
+
+## Public Endpoints
 
 ### `GET /health`
-
-Used to confirm the backend is online.
+Used by the frontend to confirm the backend is online before allowing form submission. 
+*(Note: The route is `/health`, not `/api/health`).*
 
 **Request**
-
 ```http
 GET /health
 ```
+Response – 200 OK
 
-**Response – 200 OK**
-  ```json
+```json
 {
   "status": "ok",
   "service": "libelle-backend",
-  "timestamp": "2025-11-22T13:04:12Z"
+  "timestamp": "2026-04-04T19:15:25Z"
 }
-  ```
-
-
+```
 
 ### `POST /api/upload`
-
 Uploads a resume and submits a volunteer application.
 
 **Purpose**
-1. Uploads PDF to Google Drive.
-2. Creates a base row in the Google Sheet.
-3. Triggers parsing + internal logging.
-4. Returns submission confirmation to the frontend.
+1. Validates the submitted form.
+2. Uploads the PDF resume to Google Drive.
+3. Creates a base row in the master Google Sheet.
+4. Returns submission confirmation and the Drive URL to the frontend.
 
----
-
-### Request
-
-- **Method:** `POST`
-- **Content-Type:** `multipart/form-data`
+**Request**
+* **Method:** `POST`
+* **Content-Type:** `multipart/form-data`
 
 | Key | Type | Required | Description |
-|-----|-----|------|-------------|
-| file | File (PDF) | ✅ Yes | Resume PDF |
-| full_name | String | ✅ Yes | User full name |
-| email | String | ✅ Yes | Contact email |
-| location | String | ✅ Yes | City/Region |
-| interests | String / String[] | ✅ Yes | Areas of interest (array preferred, CSV accepted) |
-| availability | String | ✅ Yes | Hours per week |
-| experience_level | String | ✅ Yes | Beginner / Mid / Senior |
-| linkedin_url | String | No | Optional LinkedIn |
-| github_url | String | No | Optional GitHub |
-| motivation | String | No | Optional text |
-| consent | Boolean | ✅ Yes | Must be true to submit |
+|-----|------|----------|-------------|
+| `file` | File (PDF) | No* | Resume PDF (*required) |
+| `full_name` | String | ✅ Yes | User full name |
+| `email` | String | ✅ Yes | Contact email |
+| `location` | String | ✅ Yes | City/Region |
+| `interests` | String/Array | ✅ Yes | Areas of interest (array preferred, CSV accepted) |
+| `availability` | String | ✅ Yes | Hours per week |
+| `experience_level`| String | ✅ Yes | Beginner / Mid / Senior |
+| `linkedin_url` | String | No | Optional LinkedIn |
+| `github_url` | String | No | Optional GitHub |
+| `motivation` | String | No | Optional text |
+| `consent` | Boolean | ✅ Yes | Must be true to submit |
 
-For v0.1, all fields are stored but not all are used in matching logic yet.
+Response – Success (200)
 
----
-
-### Response – Success (200)
-
-```json
+```JSON
 {
   "status": "success",
   "submission_id": "abc123",
+  "drive_file_url": "https://drive.google.com/file/d/FILE_ID/view?usp=drive_link"
   "message": "Your application has been received"
 }
 ```
-### Response – Error (Internal Failure) [500]
-```json
+
+Response – Error (Internal Failure) [500]
+
+```JSON
 {
   "status": "error",
   "code": "PROCESSING_FAILED",
   "message": "We hit a snag while processing your submission. Please try again or reach out to support."
 }
 ```
+Response – Validation Error (422)
 
-### Response – Missing File (400)
-```json
-{
-  "status": "error",
-  "code": "FILE_REQUIRED",
-  "message": "A resume file is required to complete this submission."
-}
-```
-### Response – Validation Error (422)
-```json
+```JSON
 {
   "status": "error",
   "code": "VALIDATION_ERROR",
@@ -116,61 +100,44 @@ For v0.1, all fields are stored but not all are used in matching logic yet.
   }
 }
 ```
+Frontend Example (JS)
 
-
-**Frontend Example (JS)**
-```js
+```JavaScript
 const formData = new FormData();
 formData.append("file", fileInput.files[0]);
 formData.append("full_name", fullName);
 formData.append("email", email);
-formData.append("location", location);
-formData.append("interests", interests); // csv or string[]
-formData.append("availability", availability);
-formData.append("experience_level", experienceLevel);
-formData.append("linkedin_url", linkedin);
-formData.append("github_url", github);
-formData.append("motivation", motivation);
+// ... append other fields
 formData.append("consent", true);
 
-fetch(`${API_URL}/api/upload`, {
+fetch(`/api/upload`, {
   method: "POST",
   body: formData
 });
 ```
+## Admin & Setup Endpoints
+These endpoints are used to bootstrap the backend's connection to Google Drive. **They are not for frontend user authentication.**
 
-> ⚠️ **Note (Future State – Not Implemented Yet)**
-> Parser confidence scores will be logged internally but not returned to the frontend in v0.1.
-> A future version of this API may include:
-```json
-{
-  "parsed_data": {
-    "name": { "value": "Jane Doe", "confidence": 0.92 },
-    "emails": { "value": ["jane@email.com"], "confidence": 0.88 },
-    ...
-  },
-  "overall_confidence": 0.78
-}
-```
+### `GET /authorize`
+Starts the Google OAuth consent flow for the backend service. Returns a JSON object with the authorization URL. Current implementation does not automatically redirect the browser.
 
+### `GET /oauth2callback`
+Receives the Google authorization code, exchanges it for a token, and saves `token.json` file to the server for persistent backend Drive access. This endpoint must match the redirect URI configured in the Google OAuth client.
 
- **Roadmap (Future Endpoints)**
- These are NOT implemented yet. For visibility only.
-```text
+## Roadmap (Future Endpoints)
+These are NOT implemented yet. For roadmap visibility only.
+
 POST /api/match
 GET  /api/volunteer/{id}
 GET  /api/projects
 POST /api/manual-sync
-```
-Notes for Frontend Contributors
-- Assume parsing is asynchronous internally but returns a response
-- Treat confidence scores as guidance, not truth
-- Never expose raw credentials in frontend code
-- If backend zone is down, surface clear UI state
+
+## Notes for Frontend Contributors 
+Assume parsing logic runs asynchronously internally, even though the API returns a synchronous success response.
+
+Never expose raw credentials or API tokens in frontend code.
+
+If the backend health check fails, surface a clear UI state to the user preventing submission.
 
 ## Maintainer
-
-[The Chamber of Us](https://www.thechamberofus.org)
- 
-
-
+[The Chamber of Us](https://www.thechamberofus.org/)
