@@ -2,11 +2,14 @@
 """
 Libelle Parser Benchmark CLI
 Usage:
+    python scripts/benchmark.py
+
+    # Optional overrides:
     python scripts/benchmark.py \
-        --pdf_dir benchmarks/resumes \
-        --golden_dir benchmarks/golden_json \
+        --pdf_dir backend/benchmarks/resumes \
+        --golden_dir backend/benchmarks/golden_json \
         --parsers libelle pyresparser \
-        --out benchmarks/runs
+        --out backend/benchmarks/runs
 """
 
 import argparse
@@ -109,9 +112,9 @@ def _run_libelle(pdf_path: Path) -> Tuple[Dict[str, Any], float]:
     import fitz  # PyMuPDF
 
     # Add parent dirs to sys.path so we can import parser.py
-    for p in [str(Path(__file__).parent.parent.parent), str(Path(__file__).parent.parent)]:
-        if p not in sys.path:
-            sys.path.insert(0, p)
+    backend_path = str(Path(__file__).parent.parent / "backend")
+    if backend_path not in sys.path:
+        sys.path.insert(0, backend_path)
 
     from parser import parse_resume  # Libelle's parser
 
@@ -336,15 +339,32 @@ def write_run_log(
 # ---------------------------------------------------------------------------
 
 def main():
+    BASE_DIR = Path(__file__).parent.parent
     parser = argparse.ArgumentParser(description="Libelle Parser Benchmark CLI")
-    parser.add_argument("--pdf_dir", required=True, help="Directory of PDF resumes")
-    parser.add_argument("--golden_dir", required=True, help="Directory of golden JSON files")
+
+    parser.add_argument(
+        "--pdf_dir",
+        default=str(BASE_DIR / "backend/benchmarks/resumes"),
+        help="Directory of PDF resumes",
+    )
+
+    parser.add_argument(
+        "--golden_dir",
+        default=str(BASE_DIR / "backend/benchmarks/golden_json"),
+        help="Directory of golden JSON files",
+    )
+
     parser.add_argument(
         "--parsers", nargs="+", default=["libelle"],
         choices=list(PARSERS.keys()),
         help="Parsers to benchmark",
     )
-    parser.add_argument("--out", default="benchmarks/runs", help="Output base directory")
+
+    parser.add_argument(
+        "--out",
+        default=str(BASE_DIR / "backend/benchmarks/runs"),
+        help="Output base directory",
+    )
     args = parser.parse_args()
 
     pdf_dir = Path(args.pdf_dir)
