@@ -56,50 +56,6 @@ def _drive_link(file_id: str) -> str:
 def _local_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%m-%d-%Y %H:%M:%S %Z")
 
-def _column_letter(column_number: int) -> str:
-    result = ""
-    while column_number > 0:
-        column_number, remainder = divmod(column_number - 1, 26)
-        result = chr(65 + remainder) + result
-    return result
-
-
-def _get_headers() -> List[str]:
-    header_values = sheet.values().get(
-        spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SHEET_NAME}!1:1",
-    ).execute().get("values", [])
-    return header_values[0] if header_values else []
-
-
-def _ensure_submission_id_column() -> int:
-    """
-    Ensure `submission_id` exists as the last column header.
-    Returns the 1-based column number for submission_id.
-
-    Important:
-    - append-only
-    - never insert at column A
-    - never shift existing columns
-    """
-    headers = _get_headers()
-
-    if "submission_id" in headers:
-        return headers.index("submission_id") + 1
-
-    column_number = len(headers) + 1 if headers else 1
-    column_letter = _column_letter(column_number)
-
-    sheet.values().update(
-        spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SHEET_NAME}!{column_letter}1",
-        valueInputOption="RAW",
-        body={"values": [["submission_id"]]},
-    ).execute()
-
-    print(f"[SHEETS] Added submission_id header at column {column_letter}")
-    return column_number
-
 
 # ---------- Write Base Row ----------
 def write_base_row(
@@ -109,20 +65,15 @@ def write_base_row(
     ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
 ) -> None:
     """
-    Appends a base row while preserving all existing column positions.
+    Appends a base row.
 
-    Existing schema remains untouched.
-    submission_id is written to a new append-only last column.
+    Existing columns stay in their current positions.
+    submission_id is written as a new append-only last column.
     """
+    ui_data = ui_data or {}
 
     ts = _local_timestamp()
     drive_url = drive_file_url or _drive_link(drive_file_id)
-    submission_id_column = _ensure_submission_id_column()
-    ui_data = ui_data or {}
-
-    # Keep existing indexed layout intact, and extend row length if submission_id
-    # lives beyond the current fixed-width row.
-    row = [""] * max(60, submission_id_column)
 
     # Existing layout used through AC, plus one new final column for submission_id.
     # A  = timestamp
@@ -139,6 +90,7 @@ def write_base_row(
     # L  = motivation
     # M:AC = parser output block
     # AD = submission_id (new last column)
+    row = [""] * 30
 
     row[0] = ts
     row[1] = str(ui_data.get("name", "")).strip()
@@ -153,8 +105,8 @@ def write_base_row(
     row[10] = drive_url
     row[11] = str(ui_data.get("motivation", "")).strip()
 
-    # New append-only column
-    row[submission_id_column - 1] = submission_id or ""
+    # Append-only new last column
+    row[29] = submission_id or ""
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
