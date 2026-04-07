@@ -94,7 +94,7 @@ def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, sub
 
 
 # ---------- Update Parsed Data ----------
-def update_resume_in_sheet(resume_id: int, parsed: Dict[str, Any]) -> None:
+def update_resume_in_sheet(parsed: Dict[str, Any]) -> None:
     drive_file_id = parsed.get("drive_file_id")
     if not drive_file_id:
         print("[SHEETS] Missing drive_file_id. Skipping update.")
