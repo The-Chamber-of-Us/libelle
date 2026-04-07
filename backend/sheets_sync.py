@@ -60,7 +60,7 @@ def _local_timestamp() -> str:
 
 
 # ---------- Write Base Row ----------
-def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
+def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
     """
     Appends a base row with timestamp, file_id, and file_url into columns A–K.
     """
