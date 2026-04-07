@@ -1,0 +1,43 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name libelle.io www.libelle.io;
+
+    root /var/www/libelle;
+    index index.html;
+
+    client_max_body_size 10M;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /health {
+        proxy_pass http://127.0.0.1:8000/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Admin and OAuth routes are proxied here but RESTRICTED
+    # at the Cloudflare Zero Trust layer.
+    location ~ ^/(authorize|oauth2callback|docs|openapi.json|debug/config) {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
