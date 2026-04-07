@@ -60,28 +60,55 @@ def _local_timestamp() -> str:
 
 
 # ---------- Write Base Row ----------
-def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
+def write_base_row(
+    drive_file_id: str,
+    drive_file_url: Optional[str] = None,
+    submission_id: Optional[str] = None,
+    ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
+) -> None:
     """
-    Appends a base row with timestamp, file_id, and file_url into columns A–K.
+    Appends a base row.
+
+    Existing columns stay in their current positions.
+    submission_id is written as a new append-only last column.
     """
+    ui_data = ui_data or {}
+
     ts = _local_timestamp()
     drive_url = drive_file_url or _drive_link(drive_file_id)
-    # Prepare a 60-column row with only A, J, K filled
-    row = [""] * 60
-    row[0] = ts  # Timestamp
-    row[9] = drive_file_id  # resume_file_id
-    row[10] = drive_url  # resume_file_url
-    
-    #Writing UI Data To Row
-    row[1] = ui_data["name"]    #Full Name
-    row[2] = ui_data["email"]    #Email
-    row[3] = ui_data["location"]   #Location
-    row[4] = ui_data["areas"]     #Areas of Interest
-    row[5] = ui_data["capacity"]    #Availability
-    row[6] = ui_data["experience"]   #Experience level
-    row[7] = ui_data["linkedin"]    #LinkedIn URL
-    row[8] = ui_data["github"]     #GitHub URL
-    row[11] = ui_data["motivation"]    #Motivation (column L)
+
+    # Existing layout used through AC, plus one new final column for submission_id.
+    # A  = timestamp
+    # B  = full_name
+    # C  = email
+    # D  = location
+    # E  = areas_of_interest
+    # F  = availability
+    # G  = experience_level
+    # H  = linkedin_url
+    # I  = github_url
+    # J  = resume_file_id
+    # K  = resume_file_url
+    # L  = motivation
+    # M:AC = parser output block
+    # AD = submission_id (new last column)
+    row = [""] * 30
+
+    row[0] = ts
+    row[1] = str(ui_data.get("name", "")).strip()
+    row[2] = str(ui_data.get("email", "")).strip()
+    row[3] = str(ui_data.get("location", "")).strip()
+    row[4] = str(ui_data.get("areas", "")).strip()
+    row[5] = str(ui_data.get("capacity", "")).strip()
+    row[6] = str(ui_data.get("experience", "")).strip()
+    row[7] = str(ui_data.get("linkedin", "")).strip()
+    row[8] = str(ui_data.get("github", "")).strip()
+    row[9] = drive_file_id
+    row[10] = drive_url
+    row[11] = str(ui_data.get("motivation", "")).strip()
+
+    # Append-only new last column
+    row[29] = submission_id or ""
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
@@ -90,7 +117,10 @@ def write_base_row(resume_id: int, drive_file_id: str, drive_file_url: Optional[
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
-    print(f"[SHEETS] Base row appended → drive_file_id={drive_file_id}")
+
+    print(
+        f"[SHEETS] Base row appended → drive_file_id={drive_file_id}, submission_id={submission_id}"
+    )
 
 
 # ---------- Update Parsed Data ----------
