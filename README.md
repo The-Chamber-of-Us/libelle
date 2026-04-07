@@ -1,212 +1,112 @@
 # Libelle
 
-Libelle is an open-source, volunteer-powered platform that helps people apply their skills where they matter most.  
-Built by The Chamber of Us (TCUS), it supports ethical collaboration and real-world impact in ways traditional systems often fail to enable.
+Libelle is an open-source, volunteer-powered platform that helps people apply their skills where they matter most. 
+Built by **[The Chamber of Us (TCUS)](https://www.thechamberofus.org/)**, it supports ethical collaboration and real-world impact in ways traditional systems often fail to enable.
 
 ---
 
 ## What Libelle Does
-
 Libelle is designed to:
-
-- Collect and organize volunteer and contributor information in a secure, structured way
-- Match people’s skills, interests, and availability to real-world, mission-driven projects
-- Support transparent, ethical, and human-centered collaboration
-- Run on lightweight, sovereign infrastructure, including low-cost hardware like Raspberry Pi
-
-This repository is the **public monorepo** for Libelle. It contains the application code, architecture, and documentation needed to run, extend, and contribute to the platform.
-
-Sensitive credentials and production secrets are not stored here.
+* **Collect and organize** volunteer information in a secure, structured way.
+* **Match skills, interests, and availability** to mission-driven projects.
+* **Support transparent, ethical collaboration** using human-centered design.
+* **Run on sovereign infrastructure**, including low-cost hardware like Raspberry Pi (Pathfinder Nodes).
 
 ---
 
 ## Repository Structure
-
 ```text
 libelle/
-├── backend/              # FastAPI backend for intake, parsing, and data handling
-├── frontend/             # Frontend UI (React)
-├── infrastructure/        # Example configs (templates only, no secrets)
-│   ├── nginx/
-│   ├── systemd/
-│   └── cloudflare/
-├── diagrams/             # Architecture and flow diagrams
-├── docs/                 # Guides, system design, and contributor notes
-├── scripts/              # Utility scripts for setup and maintenance
-├── .gitignore
-└── README.md
+├── backend/            # FastAPI backend (Intake, Drive/Sheets integration)
+├── frontend/           # Frontend UI (React + Tailwind)
+├── infrastructure/     # Templates for Nginx, Systemd, and Cloudflare
+├── diagrams/           # System architecture and data flow
+├── docs/               # Technical guides and contributor notes
+└── scripts/            # Utility scripts for setup and maintenance
 ```
 ## Tech Stack
 
-**Backend**
-- Python 3.11+
-- FastAPI
-- Uvicorn
-- Google Drive + Sheets APIs
-- Modular resume / document parsing
+### Backend
+* Python 3.11+ (FastAPI / Uvicorn)
+* Google Drive & Sheets APIs
+* Modular Document Parsing
 
-**Frontend**
-- React
-- Tailwind
-- Form + file upload handling
+### Frontend
+* React / Tailwind CSS
+* Vite (Build tool)
 
-**Infrastructure**
-- Raspberry Pi (Pathfinder Node)
-- Cloudflare Tunnel (public ingress)
-- Tailscale (secure admin access)
-- NGINX (reverse proxy)
-- systemd (service management)
+### Infrastructure
+* Raspberry Pi (Pathfinder Node v0.1)
+* Cloudflare Tunnel & Zero Trust (Secure ingress and route protection)
+* NGINX (Reverse proxy & static serving)
+* Systemd (Service persistence)
 
----
+## ⚠️ Security & Environment
+This is a public repository. No credentials, tokens, or live secrets are stored here.
 
-## ⚠️ Security Model
+### Production Configuration
+On a live Pathfinder Node, production secrets are stored securely outside the web root (e.g. `/etc/libelle/libelle.env`). Required variables include:
 
-This is a public repository by design. Therefore:
+* **GOOGLE_SERVICE_ACCOUNT_JSON:** Path to the service account JSON file used for Google Sheets access (e.g. org_credentials.json).
+* **GOOGLE_SHEET_ID:** The ID of the master volunteer sheet.
+* **DRIVE_ROOT_FOLDER_ID:** The ID of the Drive folder for PDF uploads.
+* **APP_REDIRECT_URI:** The public OAuth callback (e.g. `https://libelle.io/oauth2callback`).
 
-- No credentials are committed here
-- No API keys or tokens are stored here
-- All examples in `/infrastructure` are templates only
-- Production configuration lives in a **private infrastructure repo**
+## Google Auth Model
+Libelle utilizes a dual-authentication system to navigate Google's permission constraints:
 
-If you are deploying to a server or Pi, you must create:
- ```bash
-/etc/libelle/libelle.env
-  ```
-- And pass sensitive values there, including:
-```bash
-GOOGLE_SERVICE_ACCOUNT_JSON=...
-GOOGLE_SHEET_ID=...
-DRIVE_ROOT_FOLDER_ID=...
-```
----
+* **Google Sheets (Service Account):** Used for appending metadata. Configured via a service account credential file referenced by GOOGLE_CREDENTIALS.
+* **Google Drive (User OAuth):** Used for PDF uploads to Gmail-owned folders. Requires a `token.json` generated via the backend setup endpoints.
+
+## Setup / Admin Endpoints
+In production, these endpoints may be protected upstream by Cloudflare Zero Trust:
+
+* **GET /authorize:** Initiates the Google consent flow.
+* **GET /oauth2callback:** Completes the flow and saves the local `token.json`.
 
 ## Getting Started (Local Dev)
 
-### Backend Google setup (required for real end-to-end testing)
-
-Libelle uses:
-- Drive OAuth (via `/authorize` → creates `token.json`)
-- Sheets Service Account (share your test sheet with the service account email)
-
-Follow the step-by-step guide here:
-- [`docs/local-dev-backend-google-setup.md`](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-backend-google-setup.md)
-
-Then copy:
-- `backend/.env.example` → `backend/.env`
-and fill in your own IDs and local credential filenames (never commit secrets).
-
-**Backend**
+### 1. Backend Setup
 ```bash
 cd backend
 cp .env.example .env
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
-- Runs at: http://127.0.0.1:8000
+Runs at: http://127.0.0.1:8000
+Health Check: http://127.0.0.1:8000/health (Note: Endpoint is NOT /api/health)
+For real end-to-end local testing with Drive and Sheets, follow the local Google setup guide before running the backend linked below. 
 
-**Frontend**
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-- Runs at: http://localhost:3000
+Runs at: http://localhost:3000
 
-### Frontend ↔ Backend API routing (no env vars)
+## Documentation
 
-For the MVP, the frontend should call relative endpoints:
-- `/api/upload`
-- `/api/health`
+[Local Backend Google Setup](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-backend-google-setup.md)
 
-Local dev uses a Vite proxy (`/api` → `http://127.0.0.1:8000`).
-
-Production uses NGINX to proxy `/api/*` to the FastAPI service on the Pi.
-
-## Production Deployment (Summary)
-
-On the Pathfinder Node (Raspberry Pi):
-- Backend runs as a systemd service
-- Frontend is served via NGINX
-- Cloudflare Tunnel exposes HTTPS
-- Tailscale provides secure SSH
-
-Example service file lives in:
- ```text
-/libelle/infrastructure/systemd/libelle-backend.service.template
- ```
-Do not copy secrets into the repo.
+[API Specification](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/api-spec.md)
 
 ## Contributing
-
-Libelle is built by volunteers across engineering, design, data, and research.
-
+We welcome contributions across engineering, design, and research!
 Ways to contribute:
-- Improve the parsing logic
-- Expand the matching algorithm
-- Refine UX flows
-- Improve documentation
-- Add new modules
 
-Start by exploring:
-- /backend
-- /docs
-- /diagrams
-- GitHub Issues
+* Refine the resume parsing logic in /backend.
+* Improve the volunteer matching algorithm.
+* Harden the infrastructure templates in /infrastructure.
+* To access live systems or participate in TCUS operations, please open an issue titled "Request to join TCUS / Libelle" to begin the onboarding process.
 
-General contributions via GitHub Issues and Pull Requests are welcome.
-
-To participate in TCUS’s operational network or access live systems and data, you must first join **The Chamber of Us** as a volunteer.
-
----
-
-### About TCUS
-
-**[The Chamber of Us](https://www.thechamberofus.org)** is a 501(c)(3) nonprofit technology organization building **Pathfinder** — an open, ethical, AI-augmented standard to help align people, projects, and capital with a sustainable future (SSP1).
-
-We build open-source tools that enable effective, data-driven, and ethical global coordination.
-
-Read the [Pathfinder White Paper](https://www.thechamberofus.org/pathfinder-white-paper)
-
----
-
-### How to Join TCUS / Libelle
-
-Request access by opening a GitHub issue titled:
-
-**`Request to join TCUS / Libelle`**
-
-Once approved, you will receive:
-
-- A TCUS volunteer agreement
-- Access to our internal Slack workspace
-- Contributor onboarding instructions
-
----
+## About TCUS
+The Chamber of Us is a 501(c)(3) nonprofit building **Pathfinder** — an open, ethical, AI-augmented standard to align people, projects, and capital with a sustainable future.
+[Read the Pathfinder White Paper](https://www.thechamberofus.org/pathfinder-white-paper)
 
 ## License
+Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. If you run this software as a network service, you must make your modifications available to your users.
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-
-You are free to use, modify, and distribute this software under the terms of that license.
-
-If you run this software as a network service, you must make any modifications to the source
-code available to users of that service.
-
----
-
-## A Final Note
-
-Libelle is not just a piece of software.
-
-It is an experiment in:
-- Different ways of working
-- Different ways of belonging
-- Different ways of building systems
-
-If you’re here, you’re part of that experiment.
-
-**Welcome.**
-
-
+*Libelle is an experiment in different ways of working, belonging, and building. Welcome to the mission.*
