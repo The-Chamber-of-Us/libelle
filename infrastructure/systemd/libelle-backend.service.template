@@ -1,0 +1,19 @@
+[Unit]
+Description=Libelle FastAPI Backend
+After=network.target
+
+[Service]
+Type=simple
+User=tcus-admin
+Group=tcus-admin
+WorkingDirectory=/opt/libelle/backend
+
+# Ensures the service uses the correct virtual environment binaries
+Environment="PATH=/opt/libelle/backend/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/opt/libelle/backend/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
