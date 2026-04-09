@@ -1,7 +1,6 @@
 import io
 import os
 from typing import Tuple
-from dotenv import load_dotenv
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -9,12 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-# Load .env variables
-load_dotenv()
-
-GOOGLE_OAUTH_CLIENT = os.getenv("GOOGLE_OAUTH_CLIENT", "org_oauth_client.json")
-TOKEN_FILE = os.getenv("TOKEN_FILE", "token.json")
-DRIVE_ROOT_FOLDER_ID = os.getenv("DRIVE_ROOT_FOLDER_ID")
+from config import GOOGLE_OAUTH_CLIENT, TOKEN_FILE, DRIVE_ROOT_FOLDER_ID
 
 # Drive API scopes
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]

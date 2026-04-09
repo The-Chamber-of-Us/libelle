@@ -5,7 +5,6 @@ from fastapi.exceptions import RequestValidationError
 from typing import Optional, Dict, Any, List, Union
 import fitz
 import traceback
-import os
 import json
 import uuid
 import re
@@ -15,6 +14,10 @@ from parser import parse_resume
 from sheets_sync import write_base_row, update_resume_in_sheet
 from drive_sync import get_target_folder_id, upload_pdf
 from google_auth_oauthlib.flow import Flow
+from config import (
+    MAX_PDF_MB, ALLOWED_ORIGINS, APP_REDIRECT_URI,
+    GOOGLE_OAUTH_CLIENT, TOKEN_FILE,
+)
 
 
 app = FastAPI(title="Libelle Backend API")
@@ -22,11 +25,7 @@ app = FastAPI(title="Libelle Backend API")
 # -----------------------------
 # Env + Config
 # -----------------------------
-MAX_PDF_MB = int(os.getenv("MAX_PDF_MB", "5"))
 ALLOWED_PDF_MIMES = {"application/pdf", "application/x-pdf"}
-
-_allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
-ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
 
 if ALLOWED_ORIGINS:
     app.add_middleware(
@@ -86,7 +85,7 @@ EMAIL_IN_TEXT_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 
 def _get_redirect_uri() -> str:
-    return os.getenv("APP_REDIRECT_URI", "http://127.0.0.1:8000/oauth2callback")
+    return APP_REDIRECT_URI
 
 
 def _is_placeholder_email(value: str) -> bool:
@@ -169,8 +168,8 @@ def debug_config():
         "MAX_PDF_MB": MAX_PDF_MB,
         "ALLOWED_ORIGINS": ALLOWED_ORIGINS,
         "APP_REDIRECT_URI": _get_redirect_uri(),
-        "has_google_oauth_client": bool(os.getenv("GOOGLE_OAUTH_CLIENT")),
-        "has_token_file": bool(os.getenv("TOKEN_FILE")),
+        "has_google_oauth_client": bool(GOOGLE_OAUTH_CLIENT),
+        "has_token_file": bool(TOKEN_FILE),
     }
 
 
@@ -334,7 +333,7 @@ def _parse_and_update(drive_file_id: str, pre_extracted_text: str = ""):
 def authorize():
     redirect_uri = _get_redirect_uri()
     flow = Flow.from_client_secrets_file(
-        os.getenv("GOOGLE_OAUTH_CLIENT", "org_oauth_client.json"),
+        GOOGLE_OAUTH_CLIENT,
         scopes=["https://www.googleapis.com/auth/drive.file"],
         redirect_uri=redirect_uri,
     )
@@ -350,12 +349,12 @@ def authorize():
 def oauth2callback(code: str):
     redirect_uri = _get_redirect_uri()
     flow = Flow.from_client_secrets_file(
-        os.getenv("GOOGLE_OAUTH_CLIENT", "org_oauth_client.json"),
+        GOOGLE_OAUTH_CLIENT,
         scopes=["https://www.googleapis.com/auth/drive.file"],
         redirect_uri=redirect_uri,
     )
     flow.fetch_token(code=code)
     creds = flow.credentials
-    with open(os.getenv("TOKEN_FILE", "token.json"), "w") as token:
+    with open(TOKEN_FILE, "w") as token:
         token.write(creds.to_json())
     return {"status": "success", "message": "Authorization complete. token.json saved."}
