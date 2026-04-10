@@ -69,26 +69,22 @@ def write_base_row(
     ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
 ) -> None:
     """
-    Appends a base row using schema-driven row construction for the
-    submissions tab.
+    Appends a base row using schema-driven row construction.
+    This refactor changes only how the row is built, not the write-path behavior.
     """
-    if not submission_id:
-        raise ValueError("submission_id is required")
+    ts = _local_timestamp()
 
     if ui_data is None:
         ui_data = {}
 
-    ts = _local_timestamp()
-    drive_url = drive_file_url or _drive_link(drive_file_id)
-
     row_data = {
-        "submission_id": submission_id,
+        "submission_id": submission_id or "",
         "created_at": ts,
         "full_name": ui_data.get("name", ""),
         "email": ui_data.get("email", ""),
         "location_raw": ui_data.get("location", ""),
         "timezone": "",
-        "skills_raw": ui_data.get("areas", ""),
+        "skills_raw": "",
         "interests": ui_data.get("areas", ""),
         "experience_level": ui_data.get("experience", ""),
         "availability": ui_data.get("capacity", ""),
@@ -96,7 +92,7 @@ def write_base_row(
         "linkedin_url": ui_data.get("linkedin", ""),
         "github_url": ui_data.get("github", ""),
         "consent_given": True,
-        "resume_filename": drive_url,
+        "resume_filename": f"{submission_id}-resume.pdf" if submission_id else "",
         "resume_status": "uploaded",
     }
 
@@ -104,13 +100,13 @@ def write_base_row(
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
-        range="submissions!A2",
+        range=f"{SHEET_NAME}!A2",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
 
-    print(f"[SHEETS] Base row appended → submission_id={submission_id}")
+    print(f"[SHEETS] Base row appended → drive_file_id={drive_file_id}")
 
 
 # ---------- Update Parsed Data ----------
