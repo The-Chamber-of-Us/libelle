@@ -6,10 +6,13 @@ from typing import List, Dict, Tuple, Any
 def _get_lines(text: str) -> List[str]:
     return [line.rstrip() for line in text.splitlines()]
 
+def _clean_line(line: str) -> str:
+    return re.sub(r'[\s_\-=*]+$', '', line.strip())
+
 def _is_section_header(line: str) -> bool:
     if not line or len(line.strip()) == 0:
         return False
-    s = re.sub(r'[\s_\-=*]+$', '', line.strip())
+    s = _clean_line(line)
     headers = [
 
         r'^(summary|objective|contact|education|certifi|certificate|skills|'
@@ -31,12 +34,12 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
     capturing = False
     end_index = len(lines)
     for i, line in enumerate(lines):
-        cleaned = re.sub(r'[\s_\-=*]+$', '', line.strip())
+        cleaned = _clean_line(line)
         if not capturing and start_re.match(cleaned):
             capturing = True
             continue
         if capturing:
-            if stop_when_header and _is_section_header(cleaned):
+            if stop_when_header and _is_section_header(line):
                 end_index = i
                 break
             collected.append(line)
