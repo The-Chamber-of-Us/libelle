@@ -1,3 +1,4 @@
+import threading
 from typing import Optional, Dict, Union, Any, List
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
@@ -9,14 +10,17 @@ if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
 
 _sheet = None
+_sheet_lock = threading.Lock()
 
 
 def _get_sheet():
     """Lazily build and cache the Sheets API client."""
     global _sheet
     if _sheet is None:
-        creds = load_service_account_creds(SHEETS_SCOPES)
-        _sheet = build("sheets", "v4", credentials=creds).spreadsheets()
+        with _sheet_lock:
+            if _sheet is None:
+                creds = load_service_account_creds(SHEETS_SCOPES)
+                _sheet = build("sheets", "v4", credentials=creds).spreadsheets()
     return _sheet
 
 

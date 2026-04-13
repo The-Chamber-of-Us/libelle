@@ -4,7 +4,7 @@ from typing import Tuple
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
-from config import DRIVE_ROOT_FOLDER_ID
+from config import DRIVE_ROOT_FOLDER_ID, TOKEN_FILE
 from storage._auth import load_oauth_creds, build_oauth_flow, DRIVE_SCOPES
 
 
@@ -73,6 +73,5 @@ def exchange_code(code: str, redirect_uri: str) -> None:
     """Exchange an OAuth authorization code for credentials and persist them."""
     flow = build_oauth_flow(redirect_uri)
     flow.fetch_token(code=code)
-    from config import TOKEN_FILE
     with open(TOKEN_FILE, "w") as token:
         token.write(flow.credentials.to_json())

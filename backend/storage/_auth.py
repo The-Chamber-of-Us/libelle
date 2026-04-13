@@ -1,3 +1,4 @@
+import logging
 import os
 import json
 
@@ -11,6 +12,8 @@ from config import (
     GOOGLE_OAUTH_CLIENT, TOKEN_FILE,
 )
 
+logger = logging.getLogger(__name__)
+
 SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 
@@ -21,7 +24,7 @@ def load_service_account_creds(scopes: list):
         try:
             info = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON.strip())
             creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
-            print("[CREDENTIALS] Loaded service account from environment variable.")
+            logger.info("Loaded service account from environment variable.")
             return creds
         except Exception as e:
             raise RuntimeError(f"Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
@@ -35,7 +38,7 @@ def load_service_account_creds(scopes: list):
         GOOGLE_CREDENTIALS,
         scopes=scopes,
     )
-    print(f"[CREDENTIALS] Loaded service account from local file: {GOOGLE_CREDENTIALS}")
+    logger.info("Loaded service account from local file: %s", GOOGLE_CREDENTIALS)
     return creds
 
 
@@ -48,7 +51,7 @@ def load_oauth_creds(scopes: list):
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            print("[DRIVE] Refreshing expired credentials...")
+            logger.info("Refreshing expired OAuth credentials.")
             creds.refresh(Request())
         else:
             raise RuntimeError(
