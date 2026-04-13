@@ -11,12 +11,10 @@ import re
 from datetime import datetime, timezone
 
 from parser import parse_resume
-from sheets_sync import write_base_row, update_resume_in_sheet
-from drive_sync import get_target_folder_id, upload_pdf
-from google_auth_oauthlib.flow import Flow
+from storage.sheets_repo import write_base_row, update_resume_in_sheet
+from storage.drive_repo import upload_pdf, build_auth_url, exchange_code
 from config import (
     MAX_PDF_MB, ALLOWED_ORIGINS, APP_REDIRECT_URI,
-    GOOGLE_OAUTH_CLIENT, TOKEN_FILE,
 )
 
 
@@ -163,6 +161,7 @@ def debug_config():
     Returns non-sensitive config to confirm your env is wired.
     Do NOT include secrets here.
     """
+    from config import GOOGLE_OAUTH_CLIENT, TOKEN_FILE
     return {
         "status": "ok",
         "MAX_PDF_MB": MAX_PDF_MB,
@@ -258,11 +257,9 @@ async def upload_volunteer_application(
                 detail={"status": "error", "code": "NO_TEXT_EXTRACTED", "message": "PDF has no extractable text"},
             )
 
-        # 5) Upload to Drive using submission_id in filename
-        filename = f"{submission_id}-resume.pdf"
-        print(f"[UPLOAD] submission_id={submission_id} uploading to Drive as {filename} ...")
-        folder_id = get_target_folder_id()
-        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, filename, folder_id)
+        # 5) Upload to Drive
+        print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
+        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
         print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
 
         # 6) Write base row (Sheets)
@@ -331,30 +328,11 @@ def _parse_and_update(drive_file_id: str, pre_extracted_text: str = ""):
 # -----------------------------
 @app.get("/authorize")
 def authorize():
-    redirect_uri = _get_redirect_uri()
-    flow = Flow.from_client_secrets_file(
-        GOOGLE_OAUTH_CLIENT,
-        scopes=["https://www.googleapis.com/auth/drive.file"],
-        redirect_uri=redirect_uri,
-    )
-    auth_url, _ = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent",
-    )
+    auth_url = build_auth_url(_get_redirect_uri())
     return {"status": "ok", "auth_url": auth_url}
 
 
 @app.get("/oauth2callback")
 def oauth2callback(code: str):
-    redirect_uri = _get_redirect_uri()
-    flow = Flow.from_client_secrets_file(
-        GOOGLE_OAUTH_CLIENT,
-        scopes=["https://www.googleapis.com/auth/drive.file"],
-        redirect_uri=redirect_uri,
-    )
-    flow.fetch_token(code=code)
-    creds = flow.credentials
-    with open(TOKEN_FILE, "w") as token:
-        token.write(creds.to_json())
+    exchange_code(code, _get_redirect_uri())
     return {"status": "success", "message": "Authorization complete. token.json saved."}

@@ -1,45 +1,23 @@
-import os
 from typing import Optional, Dict, Union, Any, List
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
-import json
 
-from config import (
-    GOOGLE_SHEET_ID, SHEET_NAME,
-    GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_CREDENTIALS,
-)
+from config import GOOGLE_SHEET_ID, SHEET_NAME
+from storage._auth import load_service_account_creds, SHEETS_SCOPES
 
 if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
 
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-
-# ------------------------------ Secure Credential Loading -------------------------------------
-
-if GOOGLE_SERVICE_ACCOUNT_JSON:
-    try:
-        info = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON.strip())
-        creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-        print("[CREDENTIALS] Loaded service account from environment variable.")
-    except Exception as e:
-        raise RuntimeError(f"Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: {e}")
-
-else:
-    # Fallback: using file (LOCAL DEV ONLY)
-    if not os.path.exists(GOOGLE_CREDENTIALS):
-        raise RuntimeError(
-            "No GOOGLE_SERVICE_ACCOUNT_JSON env var set and no local credential file found."
-        )
-
-    creds = service_account.Credentials.from_service_account_file(
-        GOOGLE_CREDENTIALS,
-        scopes=SCOPES
-    )
-    print(f"[CREDENTIALS] Loaded service account from local file: {GOOGLE_CREDENTIALS}")
+_sheet = None
 
 
-sheet = build("sheets", "v4", credentials=creds).spreadsheets()
+def _get_sheet():
+    """Lazily build and cache the Sheets API client."""
+    global _sheet
+    if _sheet is None:
+        creds = load_service_account_creds(SHEETS_SCOPES)
+        _sheet = build("sheets", "v4", credentials=creds).spreadsheets()
+    return _sheet
 
 
 # ---------- Helpers ----------
@@ -63,7 +41,7 @@ def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, sub
     row[0] = ts  # Timestamp
     row[9] = drive_file_id  # resume_file_id
     row[10] = drive_url  # resume_file_url
-    
+
     #Writing UI Data To Row
     row[1] = ui_data["name"]    #Full Name
     row[2] = ui_data["email"]    #Email
@@ -75,7 +53,7 @@ def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, sub
     row[8] = ui_data["github"]     #GitHub URL
     row[11] = ui_data["motivation"]    #Motivation (column L)
 
-    sheet.values().append(
+    _get_sheet().values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
         range=f"{SHEET_NAME}!A2",
         valueInputOption="RAW",
@@ -91,6 +69,8 @@ def update_resume_in_sheet(parsed: Dict[str, Any]) -> None:
     if not drive_file_id:
         print("[SHEETS] Missing drive_file_id. Skipping update.")
         return
+
+    sheet = _get_sheet()
 
     # Locate the correct row
     values = sheet.values().get(
