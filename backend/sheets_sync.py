@@ -6,6 +6,8 @@ from google.oauth2 import service_account
 from dotenv import load_dotenv
 import json
 
+from sheet_schema import build_row
+
 # Load .env
 load_dotenv()
 
@@ -39,7 +41,7 @@ else:
         raise RuntimeError(
             "No GOOGLE_SERVICE_ACCOUNT_JSON env var set and no local credential file found."
         )
-    
+
     creds = service_account.Credentials.from_service_account_file(
         GOOGLE_CREDENTIALS,
         scopes=SCOPES
@@ -60,28 +62,41 @@ def _local_timestamp() -> str:
 
 
 # ---------- Write Base Row ----------
-def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, submission_id: Optional[str] = None, ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None) -> None:
+def write_base_row(
+    drive_file_id: str,
+    drive_file_url: Optional[str] = None,
+    submission_id: Optional[str] = None,
+    ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
+) -> None:
     """
-    Appends a base row with timestamp, file_id, and file_url into columns A–K.
+    Appends a base row using schema-driven row construction.
+    This refactor changes only how the row is built, not the write-path behavior.
     """
     ts = _local_timestamp()
-    drive_url = drive_file_url or _drive_link(drive_file_id)
-    # Prepare a 60-column row with only A, J, K filled
-    row = [""] * 60
-    row[0] = ts  # Timestamp
-    row[9] = drive_file_id  # resume_file_id
-    row[10] = drive_url  # resume_file_url
-    
-    #Writing UI Data To Row
-    row[1] = ui_data["name"]    #Full Name
-    row[2] = ui_data["email"]    #Email
-    row[3] = ui_data["location"]   #Location
-    row[4] = ui_data["areas"]     #Areas of Interest
-    row[5] = ui_data["capacity"]    #Availability
-    row[6] = ui_data["experience"]   #Experience level
-    row[7] = ui_data["linkedin"]    #LinkedIn URL
-    row[8] = ui_data["github"]     #GitHub URL
-    row[11] = ui_data["motivation"]    #Motivation (column L)
+
+    if ui_data is None:
+        ui_data = {}
+
+    row_data = {
+        "submission_id": submission_id or "",
+        "created_at": ts,
+        "full_name": ui_data.get("name", ""),
+        "email": ui_data.get("email", ""),
+        "location_raw": ui_data.get("location", ""),
+        "timezone": "",
+        "skills_raw": "",
+        "interests": ui_data.get("areas", ""),
+        "experience_level": ui_data.get("experience", ""),
+        "availability": ui_data.get("capacity", ""),
+        "motivation": ui_data.get("motivation", ""),
+        "linkedin_url": ui_data.get("linkedin", ""),
+        "github_url": ui_data.get("github", ""),
+        "consent_given": True,
+        "resume_filename": f"{submission_id}-resume.pdf" if submission_id else "",
+        "resume_status": "uploaded",
+    }
+
+    row = build_row("submissions", row_data)
 
     sheet.values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
@@ -90,6 +105,7 @@ def write_base_row(drive_file_id: str, drive_file_url: Optional[str] = None, sub
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
     ).execute()
+
     print(f"[SHEETS] Base row appended → drive_file_id={drive_file_id}")
 
 
