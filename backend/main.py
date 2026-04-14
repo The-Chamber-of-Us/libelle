@@ -289,7 +289,7 @@ async def upload_volunteer_application(
         print(f"[SHEETS] Base row written for submission_id={submission_id}")
 
         # 7) Background parsing (async)
-        background_tasks.add_task(_parse_and_update, drive_file_id, pre_text)
+        background_tasks.add_task(_parse_and_update, submission_id, drive_file_id, pre_text)
 
         return JSONResponse(
             status_code=200,
@@ -315,15 +315,15 @@ async def upload_volunteer_application(
         )
 
 
-def _parse_and_update(drive_file_id: str, pre_extracted_text: str = ""):
+def _parse_and_update(submission_id: str, drive_file_id: str, pre_extracted_text: str = ""):
     try:
-        print(f"[JOB] Parsing drive_file_id={drive_file_id} ...")
+        print(f"[JOB] Parsing submission_id={submission_id}, drive_file_id={drive_file_id} ...")
         parsed = parse_resume(pre_extracted_text or "")
         parsed["drive_file_id"] = drive_file_id
-        update_resume_in_sheet(parsed)
-        print(f"[JOB] Parsed + updated sheet drive_file_id={drive_file_id}")
+        update_resume_in_sheet(submission_id, parsed)
+        print(f"[JOB] Parsed + wrote parser_results submission_id={submission_id}")
     except Exception as e:
-        print(f"[JOB] Error parsing drive_file_id={drive_file_id}: {e}")
+        print(f"[JOB] Error parsing submission_id={submission_id}, drive_file_id={drive_file_id}: {e}")
         traceback.print_exc()
 
 
