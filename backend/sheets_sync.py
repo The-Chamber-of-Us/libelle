@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 
 from sheet_schema import build_row
 
+from sheet_schema import build_row
+
 # Load .env
 load_dotenv()
 
