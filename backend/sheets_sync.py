@@ -3,17 +3,13 @@ from typing import Optional, Dict, Union, Any, List
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-from dotenv import load_dotenv
 import json
 
+from config import (
+    GOOGLE_SHEET_ID, SHEET_NAME,
+    GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_CREDENTIALS,
+)
 from sheet_schema import build_row
-
-# Load .env
-load_dotenv()
-
-GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-SHEET_NAME = os.getenv("SHEET_NAME", "applicantsInfo")
-#USER_TIMEZONE = os.getenv("USER_TIMEZONE", "America/New_York")
 
 if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
@@ -22,12 +18,9 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # ------------------------------ Secure Credential Loading -------------------------------------
 
-service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-
-if service_account_json:
+if GOOGLE_SERVICE_ACCOUNT_JSON:
     try:
-        service_account_json = service_account_json.strip()
-        info = json.loads(service_account_json)
+        info = json.loads(GOOGLE_SERVICE_ACCOUNT_JSON.strip())
         creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
         print("[CREDENTIALS] Loaded service account from environment variable.")
     except Exception as e:
@@ -35,8 +28,6 @@ if service_account_json:
 
 else:
     # Fallback: using file (LOCAL DEV ONLY)
-    GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS", "org_credentials.json")
-
     if not os.path.exists(GOOGLE_CREDENTIALS):
         raise RuntimeError(
             "No GOOGLE_SERVICE_ACCOUNT_JSON env var set and no local credential file found."
