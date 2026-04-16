@@ -104,3 +104,48 @@ def build_row(tab_name: str, data: dict) -> list:
         row[index_map[field]] = value
 
     return row
+
+
+def compare_headers(tab_name: str, actual_headers: list[str]) -> dict[str, object]:
+    """
+    Compare actual headers for a tab against the expected schema headers.
+
+    Returns a dictionary describing whether the headers match exactly,
+    along with missing and extra header names.
+    """
+    expected_headers = get_headers(tab_name)
+
+    missing_expected = [header for header in expected_headers if header not in actual_headers]
+    extra_found = [header for header in actual_headers if header not in expected_headers]
+
+    return {
+        "tab_name": tab_name,
+        "is_match": len(missing_expected) == 0 and len(extra_found) == 0,
+        "expected_headers": expected_headers,
+        "actual_headers": actual_headers,
+        "missing_expected": missing_expected,
+        "extra_found": extra_found,
+    }
+
+
+def compare_tab_names(actual_tabs: list[str]) -> dict[str, object]:
+    """
+    Compare actual sheet tab names against the expected schema tab names.
+
+    Expected tabs are derived dynamically from SHEET_SCHEMA.keys().
+
+    Returns a dictionary describing whether the tab set matches,
+    along with missing and extra tab names.
+    """
+    expected_tabs = list(SHEET_SCHEMA.keys())
+
+    missing_expected = [tab_name for tab_name in expected_tabs if tab_name not in actual_tabs]
+    extra_found = [tab_name for tab_name in actual_tabs if tab_name not in expected_tabs]
+
+    return {
+        "is_match": len(missing_expected) == 0 and len(extra_found) == 0,
+        "expected_tabs": expected_tabs,
+        "actual_tabs": actual_tabs,
+        "missing_expected": missing_expected,
+        "extra_found": extra_found,
+    }
