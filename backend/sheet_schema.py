@@ -111,20 +111,22 @@ def compare_headers(tab_name: str, actual_headers: list[str]) -> dict[str, objec
     Compare actual headers for a tab against the expected schema headers.
 
     Returns a dictionary describing whether the headers match exactly,
-    along with missing and extra header names.
+    including missing headers, extra headers, and whether the order matches.
     """
     expected_headers = get_headers(tab_name)
 
     missing_expected = [header for header in expected_headers if header not in actual_headers]
     extra_found = [header for header in actual_headers if header not in expected_headers]
+    order_matches = actual_headers == expected_headers
 
     return {
         "tab_name": tab_name,
-        "is_match": len(missing_expected) == 0 and len(extra_found) == 0,
+        "is_match": len(missing_expected) == 0 and len(extra_found) == 0 and order_matches,
         "expected_headers": expected_headers,
         "actual_headers": actual_headers,
         "missing_expected": missing_expected,
         "extra_found": extra_found,
+        "order_matches": order_matches,
     }
 
 
