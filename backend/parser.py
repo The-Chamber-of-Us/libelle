@@ -6,17 +6,21 @@ from typing import List, Dict, Tuple, Any
 def _get_lines(text: str) -> List[str]:
     return [line.rstrip() for line in text.splitlines()]
 
+def _clean_line(line: str) -> str:
+    return re.sub(r'[\s_\-=*]+$', '', line.strip())
+
 def _is_section_header(line: str) -> bool:
     if not line or len(line.strip()) == 0:
         return False
-    s = line.strip()
+    s = _clean_line(line)
     headers = [
 
         r'^(summary|objective|contact|education|certifi|certificate|skills|'
         r'work experience|professional experience|experience|employment|'
+        r'job experience|'
         r'career history|work history|relevant experience|'
         r'projects|project experience|project|research|publications|'
-        r'awards|volunteer|honors|activities):?$'
+        r'awards|volunteer|volunteer experience|honors|activities):?$'
     ]
     if re.match(headers[0], s.lower()):
         return True
@@ -30,11 +34,12 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
     capturing = False
     end_index = len(lines)
     for i, line in enumerate(lines):
-        if not capturing and start_re.match(line.strip()):
+        cleaned = _clean_line(line)
+        if not capturing and start_re.match(cleaned):
             capturing = True
             continue
         if capturing:
-            if stop_when_header and _is_section_header(line.strip()):
+            if stop_when_header and _is_section_header(line):
                 end_index = i
                 break
             collected.append(line)
@@ -107,17 +112,27 @@ def extract_location(text: str) -> Tuple[List[str], float]:
     return [], 0.0
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    skills_lines, in_skills_section = [], False
-    for line in lines:
-        if re.search(r'\bskills\b', line, re.IGNORECASE):
-            in_skills_section = True
-            continue
-        elif in_skills_section and re.match(r'^[A-Z][A-Z\s&]+$', line) and len(line) < 50:
-            break
-        elif in_skills_section:
-            skills_lines.append(line)
-    skills = [p.strip() for l in skills_lines for p in re.split(r'•|,|·|;', l) if p.strip()]
+    skills_patterns = [
+        r'^skills:?$',
+        r'^technical\s+skills:?$',
+        r'^core\s+skills:?$',
+        r'^key\s+skills:?$',
+        r'^professional\s+skills:?$',
+        r'^technical\s+proficiencies:?$',
+        r'^core\s+competencies:?$',
+        r'^competencies:?$',
+        r'^technologies:?$',
+        r'^tools\s+(?:&|and)\s+technologies:?$',
+        r'^areas\s+of\s+expertise:?$',
+        r'^skills\s+(?:&|and)\s+expertise:?$',
+        r'^technical\s+expertise:?$',
+        r'^programming\s+languages:?$',
+        r'^qualifications:?$',
+    ]
+
+    lines = _get_lines(text)
+    skills_lines, _ = _collect_section_lines(lines, skills_patterns)
+    skills = [p.strip() for l in skills_lines for p in re.split(r'[•,·;|]', l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 
@@ -143,7 +158,8 @@ def extract_work_experience(text: str) -> Tuple[List[str], float, int]:
         r'^employment:?$',
         r'^career\s+history:?$',
         r'^work\s+history:?$',
-        r'^relevant\s+experience:?$'
+        r'^relevant\s+experience:?$',
+        r'^job\s+experience:?$',
     ]
 
     work_lines, work_end = _collect_section_lines(lines, work_patterns)
