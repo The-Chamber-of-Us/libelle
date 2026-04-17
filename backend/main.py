@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from config import ALLOWED_ORIGINS, APP_REDIRECT_URI, MAX_PDF_MB
-from services.intake_service import IntakeError, process_submission
+from services.intake_service import IntakeError, finalize_submission, validate_intake
 from services.parser_service import parse_and_update
 from storage.drive_repo import build_auth_url, exchange_code
 
@@ -131,21 +131,24 @@ async def upload_volunteer_application(
         )
 
     try:
-        pdf_bytes = await file.read()
-        result = process_submission(
+        normalized = validate_intake(
             filename=file.filename,
             content_type=file.content_type,
-            pdf_bytes=pdf_bytes,
             full_name=full_name,
             email=email,
             location=location,
             interests=interests,
             availability=availability,
             experience_level=experience_level,
+            consent=consent,
+        )
+        pdf_bytes = await file.read()
+        result = finalize_submission(
+            pdf_bytes=pdf_bytes,
+            normalized=normalized,
             linkedin_url=linkedin_url,
             github_url=github_url,
             motivation=motivation,
-            consent=consent,
         )
     except IntakeError as e:
         raise _intake_error_to_http(e)

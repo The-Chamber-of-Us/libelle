@@ -149,27 +149,23 @@ def _validate_file_size(pdf_bytes: bytes) -> None:
         )
 
 
-def process_submission(
+def validate_intake(
     *,
     filename: str,
     content_type: Optional[str],
-    pdf_bytes: bytes,
     full_name: Optional[str],
     email: Optional[str],
     location: Optional[str],
     interests: Optional[Union[str, List[str]]],
     availability: Optional[str],
     experience_level: Optional[str],
-    linkedin_url: Optional[str],
-    github_url: Optional[str],
-    motivation: Optional[str],
     consent: Optional[bool],
 ) -> Dict[str, Any]:
     """
-    Validate the intake, upload the resume to Drive, and append the base row to Sheets.
+    Validate fields and file metadata without reading file bytes.
 
-    Raises IntakeError on any validation or extraction failure. Returns a dict with
-    submission_id, drive_file_id, drive_file_url, and pre_text (for the parser job).
+    Raises IntakeError on validation failure. Returns normalized field values for
+    the caller to pass to finalize_submission after the PDF bytes have been read.
     """
     normalized = _validate_fields(
         full_name=full_name,
@@ -180,8 +176,25 @@ def process_submission(
         experience_level=experience_level,
         consent=consent,
     )
-
     _validate_file_type(filename, content_type)
+    return normalized
+
+
+def finalize_submission(
+    *,
+    pdf_bytes: bytes,
+    normalized: Dict[str, Any],
+    linkedin_url: Optional[str],
+    github_url: Optional[str],
+    motivation: Optional[str],
+) -> Dict[str, Any]:
+    """
+    Validate file size, extract text, upload to Drive, and append the base row to Sheets.
+
+    Expects `normalized` from a prior validate_intake call. Raises IntakeError on
+    size/extraction failure. Returns a dict with submission_id, drive_file_id,
+    drive_file_url, and pre_text (for the parser job).
+    """
     _validate_file_size(pdf_bytes)
 
     pre_text = _extract_text_from_pdf(pdf_bytes)
