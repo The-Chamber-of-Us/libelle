@@ -2,9 +2,22 @@ import re
 
 WHITESPACE_RE = re.compile(r"\s+")
 
-# Preserve meaningful punctuation even at boundaries
-LEADING_PUNCT_RE = re.compile(r"^[^\w\+\#\.\-/]+")
-TRAILING_PUNCT_RE = re.compile(r"[^\w\+\#\.\-/]+$")
+# Strip wrapping punctuation/noise at token boundaries,
+# but preserve identity-critical characters when they are part of the token.
+#
+# Examples preserved:
+#   c++
+#   c#
+#   .net
+#   next.js
+#
+# Examples cleaned:
+#   python -
+#   next.js...
+#   (react)
+#   "node js"
+LEADING_PUNCT_RE = re.compile(r"^[^\w\+\#\.]+")
+TRAILING_PUNCT_RE = re.compile(r"[^\w\+\#]+$")
 
 # Remove unwanted punctuation inside, but keep meaningful ones
 INNER_CLEAN_RE = re.compile(r"[^\w\s\+\#\.\-/]")
