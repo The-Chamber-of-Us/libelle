@@ -7,17 +7,13 @@
 
     "python": "python",
     "python3": "python",
-    "python 3": "python",
 
     "nodejs": "nodejs",
-    "node js": "nodejs",
 
     "c": "c",
     "c#": "c#",
-    "c++":"c++",
+    "c++": "c++",
     "cplusplus": "c++",
-    "c plus plus": "c++",
-    "c hash": "c#",
     "chash": "c#",
 
     "dotnet": ".net",
