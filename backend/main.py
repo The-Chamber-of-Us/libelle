@@ -11,6 +11,7 @@ from config import ALLOWED_ORIGINS, APP_REDIRECT_URI, MAX_PDF_MB
 from services.intake_service import IntakeError, finalize_submission, validate_intake
 from services.parser_service import parse_and_update
 from storage.drive_repo import build_auth_url, exchange_code
+from validator import validate_sheet_schema
 
 
 app = FastAPI(title="Libelle Backend API")
@@ -31,6 +32,11 @@ def _startup_log():
     print("[STARTUP] Libelle backend booted")
     print(f"[STARTUP] MAX_PDF_MB={MAX_PDF_MB}")
     print(f"[STARTUP] ALLOWED_ORIGINS={ALLOWED_ORIGINS}")
+
+
+@app.on_event("startup")
+def _startup_validate_schema():
+    validate_sheet_schema()
 
 
 # -----------------------------

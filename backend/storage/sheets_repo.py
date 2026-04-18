@@ -5,13 +5,14 @@ from typing import Optional, Dict, Union, Any, List
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
-from config import GOOGLE_SHEET_ID, SHEET_NAME
-from sheet_schema import build_row
+from config import GOOGLE_SHEET_ID
+from sheet_schema import SHEET_SCHEMA, build_row
 from storage._auth import load_service_account_creds, SHEETS_SCOPES
 
 if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
 
+SUBMISSIONS_SHEET_NAME = "submissions"
 PARSER_RESULTS_SHEET_NAME = "parser_results"
 
 _sheet = None
@@ -27,6 +28,50 @@ def _get_sheet():
                 creds = load_service_account_creds(SHEETS_SCOPES)
                 _sheet = build("sheets", "v4", credentials=creds).spreadsheets()
     return _sheet
+
+
+def fetch_live_schema() -> Dict[str, Any]:
+    """
+    Snapshot the live Google Sheet for startup schema validation.
+
+    Makes two Sheets API calls:
+      1. spreadsheets().get(fields="sheets.properties.title") to list tab names.
+      2. values().batchGet(...) to read Row 1 of every expected tab that
+         exists in the live sheet.
+
+    Returns:
+        {
+            "tabs":    [str, ...],                    # all live tab titles
+            "headers": {tab_name: [str, ...], ...},   # row 1 for expected
+                                                       # tabs that exist
+        }
+
+    Sheets/auth exceptions are allowed to propagate so the caller (startup
+    validator) halts with the underlying diagnostic traceback intact.
+    """
+    sheet = _get_sheet()
+
+    meta = sheet.get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        fields="sheets.properties.title",
+    ).execute()
+    tabs = [s["properties"]["title"] for s in meta.get("sheets", [])]
+
+    expected_present = [t for t in SHEET_SCHEMA if t in tabs]
+    headers: Dict[str, List[str]] = {}
+
+    if expected_present:
+        ranges = [f"{t}!1:1" for t in expected_present]
+        batch = sheet.values().batchGet(
+            spreadsheetId=GOOGLE_SHEET_ID,
+            ranges=ranges,
+        ).execute()
+        value_ranges = batch.get("valueRanges", [])
+        for tab_name, vr in zip(expected_present, value_ranges):
+            rows = vr.get("values", [])
+            headers[tab_name] = rows[0] if rows else []
+
+    return {"tabs": tabs, "headers": headers}
 
 
 # ---------- Helpers ----------
@@ -120,7 +165,7 @@ def write_base_row(
 
     _get_sheet().values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SHEET_NAME}!A2",
+        range=f"{SUBMISSIONS_SHEET_NAME}!A2",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
