@@ -116,7 +116,6 @@ DRIVE_ROOT_FOLDER_ID=PASTE_YOUR_FOLDER_ID
 
 # Sheets (service account)
 GOOGLE_SHEET_ID=PASTE_YOUR_SHEET_ID
-SHEET_NAME=applicantsInfo
 
 # Service account key file (local dev)
 GOOGLE_CREDENTIALS=org_credentials.json

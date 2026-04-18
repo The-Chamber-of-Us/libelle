@@ -5,13 +5,14 @@ from typing import Optional, Dict, Union, Any, List
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
-from config import GOOGLE_SHEET_ID, SHEET_NAME
+from config import GOOGLE_SHEET_ID
 from sheet_schema import SHEET_SCHEMA, build_row
 from storage._auth import load_service_account_creds, SHEETS_SCOPES
 
 if not GOOGLE_SHEET_ID:
     raise RuntimeError("GOOGLE_SHEET_ID not set in .env")
 
+SUBMISSIONS_SHEET_NAME = "submissions"
 PARSER_RESULTS_SHEET_NAME = "parser_results"
 
 _sheet = None
@@ -164,7 +165,7 @@ def write_base_row(
 
     _get_sheet().values().append(
         spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SHEET_NAME}!A2",
+        range=f"{SUBMISSIONS_SHEET_NAME}!A2",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body={"values": [row]},
