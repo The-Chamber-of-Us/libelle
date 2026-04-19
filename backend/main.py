@@ -171,7 +171,12 @@ async def upload_volunteer_application(
             },
         )
 
-    background_tasks.add_task(parse_and_update, result["drive_file_id"], result["pre_text"])
+    background_tasks.add_task(
+        parse_and_update,
+        result["submission_id"],
+        result["drive_file_id"],
+        result["pre_text"],
+    )
 
     return JSONResponse(
         status_code=200,
