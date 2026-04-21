@@ -333,6 +333,71 @@ def write_run_log(
         json.dump(log, f, indent=2)
     return path
 
+# Summary markdown file 
+def write_summary_md(rows: List[Dict], out_dir: Path, args: argparse.Namespace) -> Path:
+    stats = compute_aggregate_stats(rows)
+    path = out_dir / "summary.md"
+
+    # metadata
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    git_commit = _get_git_commit()
+    parsers_used = ", ".join(args.parsers)
+
+    # heatmap with top 3 resumes by FP count
+    top_fps = sorted(rows, key=lambda r: r["fp_count"], reverse=True)[:3]
+
+    lines = []
+
+    # writing metadata
+    lines.append("# Benchmark Summary\n")
+    lines.append(f"**Timestamp:** {timestamp}  ")
+    lines.append(f"**Git Commit:** `{git_commit}`  ")
+    lines.append(f"**Parsers:** {parsers_used}\n")
+
+    # writing scoreboard
+    lines.append("## Scoreboard\n")
+    lines.append("| Parser | Field | Micro-F1 | Macro-F1 | Std Dev |")
+    lines.append("|--------|-------|----------|----------|---------|")
+    for (parser, field), s in sorted(stats.items()):
+        lines.append(
+            f"| {parser} | {field} | {s['micro_f1']:.3f} | {s['macro_f1']:.3f} | {s['std_dev']:.3f} |"
+        )
+
+    # writing failure heatmap
+    lines.append("\n## Failure Heatmap (Top 3 by False Positives)\n")
+    lines.append("| Resume | Field | Parser | FP Count |")
+    lines.append("|--------|-------|--------|----------|")
+    for r in top_fps:
+        lines.append(f"| {r['resume']} | {r['field']} | {r['parser']} | {r['fp_count']} |")
+
+    with open(path, "w") as f:
+        f.write("\n".join(lines))
+
+    return path
+
+# Summary JSON file
+def write_summary_json(rows: List[Dict], out_dir: Path, args: argparse.Namespace) -> Path:
+    stats = compute_aggregate_stats(rows)
+    path = out_dir / "summary.json"
+
+    serializable = {}
+    for (parser, field), s in stats.items():
+        key = f"{parser}::{field}"
+        serializable[key] = {
+            "micro_p": s["micro_p"],
+            "micro_r": s["micro_r"],
+            "micro_f1": s["micro_f1"],
+            "macro_f1": s["macro_f1"],
+            "std_dev": s["std_dev"],
+            "tp": s["tp"],
+            "fp": s["fp"],
+            "fn": s["fn"],
+        }
+
+    with open(path, "w") as f:
+        json.dump(serializable, f, indent=2)
+
+    return path
 
 # ---------------------------------------------------------------------------
 # Main
@@ -466,35 +531,62 @@ def main():
     csv_path = write_report_csv(report_rows, out_dir)
     md_path = write_examples_md(report_rows, out_dir)
     log_path = write_run_log(out_dir, args.parsers, args, errors)
+    summary_path = write_summary_md(report_rows, out_dir, args)
+    json_path = write_summary_json(report_rows, out_dir, args)
 
     print(f"\n✅ Run complete → {out_dir}")
     print(f"   report.csv   : {csv_path}")
     print(f"   examples.md  : {md_path}")
     print(f"   run_log.json : {log_path}")
+    print(f"   summary.md   : {summary_path}")
+    print(f"   summary.json : {json_path}")
 
     # Print quick summary
     _print_summary(report_rows)
 
-
-def _print_summary(rows: List[Dict]):
+# Computing and writing macro and micro stats (includes variance)
+def compute_aggregate_stats(rows: List[Dict]) -> Dict:
     from collections import defaultdict
-    summary = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0})
+
+    groups = defaultdict(list)
     for r in rows:
         key = (r["parser"], r["field"])
-        summary[key]["tp"] += r["tp_count"]
-        summary[key]["fp"] += r["fp_count"]
-        summary[key]["fn"] += r["fn_count"]
+        groups[key].append(r)
+
+    stats = {}
+    for (parser, field), group_rows in groups.items():
+        tp = sum(r["tp_count"] for r in group_rows)
+        fp = sum(r["fp_count"] for r in group_rows)
+        fn = sum(r["fn_count"] for r in group_rows)
+        micro_p, micro_r, micro_f1 = _compute_prf(tp, fp, fn)
+
+        f1_scores = [r["f1"] for r in group_rows]
+        macro_f1 = round(sum(f1_scores) / len(f1_scores), 3)
+
+        # std deviation
+        mean = sum(f1_scores) / len(f1_scores)
+        variance = sum((x - mean) ** 2 for x in f1_scores) / len(f1_scores)
+        std_dev = round(variance ** 0.5, 3) if len(f1_scores) > 1 else 0.0
+
+        stats[(parser, field)] = {
+            "tp": tp, "fp": fp, "fn": fn,
+            "micro_p": micro_p, "micro_r": micro_r, "micro_f1": micro_f1,
+            "macro_f1": macro_f1, "std_dev": std_dev, "f1_scores": f1_scores
+        }
+    return stats
+
+
+def _print_summary(rows: List[Dict]):
+    stats = compute_aggregate_stats(rows)
 
     print("\n── Summary ──────────────────────────────────")
-    print(f"{'Parser':<15} {'Field':<10} {'P':>6} {'R':>6} {'F1':>6}")
-    print("─" * 45)
-    for (parser, field), counts in sorted(summary.items()):
-        tp, fp, fn = counts["tp"], counts["fp"], counts["fn"]
-        p = tp / (tp + fp) if (tp + fp) > 0 else 0
-        r = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0
-        print(f"{parser:<15} {field:<10} {p:>6.3f} {r:>6.3f} {f1:>6.3f}")
-    print("─" * 45)
+    print(f"{'Parser':<15} {'Field':<10} {'Micro-P':>8} {'Micro-R':>8} {'Micro-F1':>9} {'Macro-F1':>9}")
+    print("─" * 55)
+    for (parser, field), s in sorted(stats.items()):
+        print(
+            f"{parser:<15} {field:<10} {s['micro_p']:>8.3f} {s['micro_r']:>8.3f} {s['micro_f1']:>9.3f} {s['macro_f1']:>9.3f}"
+        )
+    print("─" * 55)
 
 
 if __name__ == "__main__":
