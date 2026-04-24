@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
 from config import GOOGLE_SHEET_ID
-from sheet_schema import SHEET_SCHEMA, build_row
+from sheet_schema import SHEET_SCHEMA, build_row, get_headers
 from storage._auth import load_service_account_creds, SHEETS_SCOPES
 
 if not GOOGLE_SHEET_ID:
@@ -72,6 +72,51 @@ def fetch_live_schema() -> Dict[str, Any]:
             headers[tab_name] = rows[0] if rows else []
 
     return {"tabs": tabs, "headers": headers}
+
+
+def load_submission_records() -> Dict[str, Dict[str, str]]:
+    """
+    Load canonical intake rows from the submissions tab for later snapshot composition.
+
+    Returns:
+        Dict[str, Dict[str, str]]:
+            A dictionary keyed by submission_id. Each value is a schema-aligned
+            dictionary containing only submissions-tab fields.
+
+    Scope boundary:
+        - Loads submissions data only
+        - Does NOT perform parser selection
+        - Does NOT compose ops state
+        - Does NOT summarize errors
+        - Does NOT assemble final snapshot records
+
+    Missing/blank cells are normalized to "" so optional fields are handled safely.
+    Rows with no submission_id are skipped because submission_id is the required key.
+    """
+    headers = get_headers(SUBMISSIONS_SHEET_NAME)
+
+    response = _get_sheet().values().get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{SUBMISSIONS_SHEET_NAME}!A2:ZZ",
+    ).execute()
+
+    rows = response.get("values", [])
+    records_by_submission_id: Dict[str, Dict[str, str]] = {}
+
+    for raw_row in rows:
+        padded_row = list(raw_row) + [""] * (len(headers) - len(raw_row))
+        row_dict = {
+            header: str(value).strip() if value is not None else ""
+            for header, value in zip(headers, padded_row)
+        }
+
+        submission_id = row_dict.get("submission_id", "")
+        if not submission_id:
+            continue
+
+        records_by_submission_id[submission_id] = row_dict
+
+    return records_by_submission_id
 
 
 # ---------- Helpers ----------
