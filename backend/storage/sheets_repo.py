@@ -97,7 +97,7 @@ def load_submission_records() -> Dict[str, Dict[str, str]]:
 
     response = _get_sheet().values().get(
         spreadsheetId=GOOGLE_SHEET_ID,
-        range=f"{SUBMISSIONS_SHEET_NAME}!A2:{chr(64 + len(headers))}",
+        range=f"{SUBMISSIONS_SHEET_NAME}!A2:ZZ",
     ).execute()
 
     rows = response.get("values", [])
