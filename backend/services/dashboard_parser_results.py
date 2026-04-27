@@ -1,6 +1,6 @@
 """Pure parser_results selection helpers for dashboard snapshot composition."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -38,7 +38,10 @@ def _created_at_sort_value(created_at: Any) -> Tuple[int, Any]:
         "%Y-%m-%d %H:%M:%S",
     ):
         try:
-            return (1, datetime.strptime(value, fmt))
+            dt = datetime.strptime(value, fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return (1, dt.timestamp())
         except ValueError:
             continue
 

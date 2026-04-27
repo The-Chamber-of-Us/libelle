@@ -55,3 +55,20 @@ def test_select_latest_parser_result_breaks_ties_by_latest_created_at() -> None:
     assert latest is not None
     assert latest["created_at"] == "04-20-2026 12:00:00 UTC"
     assert latest["parsed_skills_raw"] == "newer result"
+
+
+def test_select_latest_parser_result_returns_copy() -> None:
+    row = {
+        "submission_id": "sub_001",
+        "parser_run_id": "1",
+        "created_at": "04-20-2026 10:00:00 UTC",
+    }
+
+    latest = select_latest_parser_result([row])
+
+    assert latest is not row
+    assert latest is not None
+
+    latest["parser_run_id"] = "999"
+
+    assert row["parser_run_id"] == "1"
