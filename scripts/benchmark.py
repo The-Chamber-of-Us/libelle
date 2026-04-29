@@ -21,9 +21,164 @@ import subprocess
 import sys
 import time
 import traceback
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+
+
+# ---------------------------------------------------------------------------
+# Path / import helpers
+# ---------------------------------------------------------------------------
+
+BASE_DIR = Path(__file__).parent.parent
+BACKEND_DIR = BASE_DIR / "backend"
+
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+
+# ---------------------------------------------------------------------------
+# Resolver helpers
+# ---------------------------------------------------------------------------
+
+DEFAULT_ALIAS_PATHS = [
+    BACKEND_DIR / "resolver" / "aliases.json",
+    BACKEND_DIR / "resolver" / "skill_aliases.json",
+    BACKEND_DIR / "resolver" / "aliases" / "skills.json",
+    BACKEND_DIR / "resolver" / "aliases" / "skills_v1.json",
+    BACKEND_DIR / "data" / "skill_aliases.json",
+    BACKEND_DIR / "benchmarks" / "aliases.json",
+]
+
+
+def _load_alias_map(path: Optional[str]) -> Tuple[Dict[str, str], str, str]:
+    """
+    Load resolver aliases for local benchmark evaluation.
+
+    Supports either:
+      1. {"python": "python", "js": "javascript"}
+      2. {"version": "2026-04-xx", "aliases": {...}}
+      3. [{"alias": "js", "canonical": "javascript"}, ...]
+    """
+    candidate_paths = [Path(path)] if path else DEFAULT_ALIAS_PATHS
+
+    selected_path: Optional[Path] = None
+    for candidate in candidate_paths:
+        if candidate.exists():
+            selected_path = candidate
+            break
+
+    if selected_path is None:
+        searched = ", ".join(str(p) for p in candidate_paths)
+        raise FileNotFoundError(f"No resolver alias map found. Searched: {searched}")
+
+    with open(selected_path) as f:
+        raw = json.load(f)
+
+    aliases_version = selected_path.stem
+
+    if isinstance(raw, dict) and isinstance(raw.get("aliases"), dict):
+        aliases_version = str(raw.get("version") or raw.get("aliases_version") or aliases_version)
+        aliases = raw["aliases"]
+    elif isinstance(raw, dict):
+        aliases = raw
+    elif isinstance(raw, list):
+        aliases = {}
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            alias = item.get("alias") or item.get("key") or item.get("raw")
+            canonical = item.get("canonical") or item.get("canonical_id") or item.get("skill_id")
+            if alias and canonical:
+                aliases[str(alias)] = str(canonical)
+    else:
+        raise ValueError(f"Unsupported alias map format in {selected_path}")
+
+    cleaned_aliases = {
+        str(k): str(v)
+        for k, v in aliases.items()
+        if str(k).strip() and str(v).strip()
+    }
+
+    return cleaned_aliases, aliases_version, str(selected_path)
+
+
+def _resolve_skills_for_benchmark(
+    *,
+    submission_id: str,
+    skills: List[str],
+    location_raw: str,
+    aliases: Dict[str, str],
+    aliases_version: str,
+) -> Dict[str, Any]:
+    from resolver.resolver import resolve_extracted_profile
+    from resolver.schemas import ExtractedProfileV1
+
+    if not skills:
+        return {
+            "resolver_coverage": "",
+            "resolver_input_count": 0,
+            "resolver_resolved_count": 0,
+            "resolver_unknown_count": 0,
+            "unknown_skills": [],
+            "resolver_version": "v1",
+            "aliases_version": aliases_version,
+        }
+
+    extracted = ExtractedProfileV1(
+        submission_id=submission_id,
+        skills=skills,
+        location_raw=location_raw or "",
+        meta={"source": "benchmark"},
+    )
+
+    resolved = resolve_extracted_profile(
+        extracted,
+        aliases,
+        resolver_version="v1",
+        aliases_version=aliases_version,
+    )
+
+    return {
+        "resolver_coverage": round(resolved.stats.coverage, 3),
+        "resolver_input_count": resolved.stats.input_count,
+        "resolver_resolved_count": resolved.stats.resolved_count,
+        "resolver_unknown_count": resolved.stats.unknown_count,
+        "unknown_skills": list(resolved.unknowns.skills),
+        "resolver_version": resolved.meta.get("resolver_version", "v1"),
+        "aliases_version": resolved.meta.get("aliases_version", aliases_version),
+    }
+
+
+def _build_resolver_summary(resolver_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+    coverage_values = [
+        float(r["resolver_coverage"])
+        for r in resolver_rows
+        if r.get("resolver_coverage") != ""
+    ]
+
+    unknown_counter: Counter[str] = Counter()
+    for row in resolver_rows:
+        for skill in row.get("unknown_skills", []):
+            if isinstance(skill, str) and skill.strip():
+                unknown_counter[skill.strip()] += 1
+
+    unknown_skills = [
+        {"skill": skill, "count": count}
+        for skill, count in sorted(unknown_counter.items(), key=lambda x: (-x[1], x[0].lower()))
+    ]
+
+    avg_coverage = round(sum(coverage_values) / len(coverage_values), 3) if coverage_values else 0.0
+
+    return {
+        "average_resolver_coverage": avg_coverage,
+        "resolved_rows_count": len(coverage_values),
+        "unknown_skills": unknown_skills,
+    }
+
+
 
 # ---------------------------------------------------------------------------
 # Adapter helpers
@@ -110,12 +265,6 @@ def _split_location(raw: str) -> Tuple[str, str]:
 def _run_libelle(pdf_path: Path) -> Tuple[Dict[str, Any], float]:
     """Extract text with PyMuPDF and run Libelle parser. Returns (raw_parsed, runtime_ms)."""
     import fitz  # PyMuPDF
-
-    # Add parent dirs to sys.path so we can import parser.py
-    backend_path = str(Path(__file__).parent.parent / "backend")
-    if backend_path not in sys.path:
-        sys.path.insert(0, backend_path)
-
     from parser import parse_resume  # Libelle's parser
 
     doc = fitz.open(str(pdf_path))
@@ -151,7 +300,7 @@ PARSERS = {
 # Scoring
 # ---------------------------------------------------------------------------
 
-def _normalize(s) -> str:
+def _normalize(s: Any) -> str:
     if not s:
         return ""
     return str(s).strip().lower()
@@ -237,6 +386,13 @@ def write_report_csv(rows: List[Dict], out_dir: Path) -> Path:
         "precision", "recall", "f1",
         "tp_examples", "fp_examples", "fn_examples",
         "runtime_ms",
+        "resolver_coverage",
+        "resolver_input_count",
+        "resolver_resolved_count",
+        "resolver_unknown_count",
+        "resolver_version",
+        "aliases_version",
+        "unknown_skills",
     ]
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -312,6 +468,8 @@ def write_run_log(
     parser_names: List[str],
     args: argparse.Namespace,
     errors: List[Dict],
+    resolver_summary: Dict[str, Any],
+    alias_path: str,
 ) -> Path:
     path = out_dir / "run_log.json"
     log = {
@@ -327,6 +485,10 @@ def write_run_log(
             "machine": platform.machine(),
         },
         "args": vars(args),
+        "resolver": {
+            "alias_path": alias_path,
+            **resolver_summary,
+        },
         "errors": errors,
     }
     with open(path, "w") as f:
@@ -334,7 +496,12 @@ def write_run_log(
     return path
 
 # Summary markdown file 
-def write_summary_md(rows: List[Dict], stats: Dict, out_dir: Path, args: argparse.Namespace) -> Path:
+def write_summary_md(
+        rows: List[Dict[str, Any]], 
+        stats: Dict[Tuple[str, str], Dict[str, Any]], 
+        resolver_summary: Dict[str, Any],
+        out_dir: Path, 
+        args: argparse.Namespace) -> Path:
     path = out_dir / "summary.md"
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -358,6 +525,11 @@ def write_summary_md(rows: List[Dict], stats: Dict, out_dir: Path, args: argpars
             f"| {parser} | {field} | {s['micro_f1']:.3f} | {s['macro_f1']:.3f} | {s['std_dev']:.3f} |"
         )
 
+    lines.append("\n## Resolver Coverage\n")
+    lines.append(f"- Average resolver coverage: `{resolver_summary['average_resolver_coverage']:.3f}`")
+    lines.append(f"- Resolver rows counted: `{resolver_summary['resolved_rows_count']}`")
+    lines.append(f"- Unknown skills captured: `{len(resolver_summary['unknown_skills'])}`")
+
     lines.append("\n## Failure Heatmap (Top 3 by False Positive resume/field combinations)\n")
     lines.append("| Resume | Field | Parser | FP Count |")
     lines.append("|--------|-------|--------|----------|")
@@ -370,10 +542,17 @@ def write_summary_md(rows: List[Dict], stats: Dict, out_dir: Path, args: argpars
     return path
 
 # Summary JSON file
-def write_summary_json(stats: Dict, out_dir: Path, args: argparse.Namespace) -> Path:
+def write_summary_json(
+        stats: Dict[Tuple[str, str], Dict[str, Any]], 
+        resolver_summary: Dict[str, Any],
+        out_dir: Path, 
+        args: argparse.Namespace) -> Path:
     path = out_dir / "summary.json"
 
-    serializable = {}
+    serializable = {
+        "scores": {},
+        "resolver": resolver_summary,
+    }
     for (parser, field), s in stats.items():
         key = f"{parser}::{field}"
         serializable[key] = {
@@ -393,9 +572,7 @@ def write_summary_json(stats: Dict, out_dir: Path, args: argparse.Namespace) -> 
     return path
 
 # computing aggregate stats (SD and var included) - raw values
-def compute_aggregate_stats(rows: List[Dict]) -> Dict:
-    from collections import defaultdict
-
+def compute_aggregate_stats(rows: List[Dict[str, Any]]) -> Dict[Tuple[str, str], Dict[str, Any]]:
     groups = defaultdict(list)
     for r in rows:
         key = (r["parser"], r["field"])
@@ -427,7 +604,7 @@ def compute_aggregate_stats(rows: List[Dict]) -> Dict:
 
     return stats
 
-def _print_summary(stats: Dict):
+def _print_summary(stats: Dict[Tuple[str, str], Dict[str, Any]], resolver_summary: Dict[str, Any]) -> None:
     print("\n── Summary ──────────────────────────────────")
     print(f"{'Parser':<15} {'Field':<10} {'Micro-P':>8} {'Micro-R':>8} {'Micro-F1':>9} {'Macro-F1':>9}")
     print("─" * 55)
@@ -436,13 +613,14 @@ def _print_summary(stats: Dict):
             f"{parser:<15} {field:<10} {s['micro_p']:>8.3f} {s['micro_r']:>8.3f} {s['micro_f1']:>9.3f} {s['macro_f1']:>9.3f}"
         )
     print("─" * 55)
+    print(f"Average resolver coverage: {resolver_summary['average_resolver_coverage']:.3f}")
+    print(f"Unknown skills captured: {len(resolver_summary['unknown_skills'])}")
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
-def main():
-    BASE_DIR = Path(__file__).parent.parent
+def main() -> None:
     parser = argparse.ArgumentParser(description="Libelle Parser Benchmark CLI")
 
     parser.add_argument(
@@ -468,10 +646,20 @@ def main():
         default=str(BASE_DIR / "backend/benchmarks/runs"),
         help="Output base directory",
     )
+
+    parser.add_argument(
+        "--aliases_path",
+        default=None,
+        help="Optional path to Resolver V1 alias map JSON. If omitted, benchmark.py searches known local paths.",
+    )
+
     args = parser.parse_args()
 
     pdf_dir = Path(args.pdf_dir)
     golden_dir = Path(args.golden_dir)
+
+    aliases, aliases_version, alias_path = _load_alias_map(args.aliases_path)
+    print(f"[RESOLVER] Loaded {len(aliases)} aliases from {alias_path}")
 
     # Create timestamped output dir
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -483,8 +671,9 @@ def main():
         print(f"[ERROR] No PDFs found in {pdf_dir}")
         sys.exit(1)
 
-    report_rows: List[Dict] = []
-    errors: List[Dict] = []
+    report_rows: List[Dict[str, Any]] = []
+    resolver_rows: List[Dict[str, Any]] = []
+    errors: List[Dict[str, Any]] = []
 
     for pdf_path in pdfs:
         submission_id = pdf_path.stem
@@ -506,6 +695,18 @@ def main():
             try:
                 raw, runtime_ms = runner_fn(pdf_path)
                 adapted = adapter_fn(raw, submission_id, runtime_ms)
+                resolver_metrics = _resolve_skills_for_benchmark(
+                    submission_id=submission_id,
+                    skills=adapted["skills"],
+                    location_raw=adapted["location"].get("raw", ""),
+                    aliases=aliases,
+                    aliases_version=aliases_version,
+                )
+                resolver_rows.append({
+                    "resume": submission_id,
+                    "parser": parser_name,
+                    **resolver_metrics,
+                })
             except Exception as e:
                 tb = traceback.format_exc()
                 print(f"ERROR\n{tb}")
@@ -538,6 +739,13 @@ def main():
                 "tp_examples": json.dumps(skills_score["tp_examples"]),
                 "fp_examples": json.dumps(skills_score["fp_examples"]),
                 "fn_examples": json.dumps(skills_score["fn_examples"]),
+                "resolver_coverage": resolver_metrics["resolver_coverage"],
+                "resolver_input_count": resolver_metrics["resolver_input_count"],
+                "resolver_resolved_count": resolver_metrics["resolver_resolved_count"],
+                "resolver_unknown_count": resolver_metrics["resolver_unknown_count"],
+                "resolver_version": resolver_metrics["resolver_version"],
+                "aliases_version": resolver_metrics["aliases_version"],
+                "unknown_skills": json.dumps(resolver_metrics["unknown_skills"]),
             })
 
             # Score location
@@ -559,6 +767,13 @@ def main():
                 "tp_examples": json.dumps(loc_score["tp_examples"]),
                 "fp_examples": json.dumps(loc_score["fp_examples"]),
                 "fn_examples": json.dumps(loc_score["fn_examples"]),
+                "resolver_coverage": "",
+                "resolver_input_count": "",
+                "resolver_resolved_count": "",
+                "resolver_unknown_count": "",
+                "resolver_version": resolver_metrics["resolver_version"],
+                "aliases_version": resolver_metrics["aliases_version"],
+                "unknown_skills": "",
             })
 
     if not report_rows:
@@ -566,12 +781,13 @@ def main():
         sys.exit(1)
 
     stats = compute_aggregate_stats(report_rows)
+    resolver_summary = _build_resolver_summary(resolver_rows)
     # Write outputs
     csv_path = write_report_csv(report_rows, out_dir)
     md_path = write_examples_md(report_rows, out_dir)
-    log_path = write_run_log(out_dir, args.parsers, args, errors)
-    summary_path = write_summary_md(report_rows, stats, out_dir, args)
-    json_path = write_summary_json(stats, out_dir, args)
+    log_path = write_run_log(out_dir, args.parsers, args, errors, resolver_summary, alias_path)
+    summary_path = write_summary_md(report_rows, stats, resolver_summary, out_dir, args)
+    json_path = write_summary_json(stats, resolver_summary, out_dir, args)
 
     print(f"\n✅ Run complete → {out_dir}")
     print(f"   report.csv   : {csv_path}")
@@ -581,7 +797,7 @@ def main():
     print(f"   summary.json : {json_path}")
 
     # Print quick summary
-    _print_summary(stats)
+    _print_summary(stats, resolver_summary)
 
 
 if __name__ == "__main__":
