@@ -44,8 +44,12 @@ if str(BACKEND_DIR) not in sys.path:
 # ---------------------------------------------------------------------------
 
 DEFAULT_ALIAS_PATHS = [
+    BACKEND_DIR / "resolver" / "aliases_v1.json",
     BACKEND_DIR / "resolver" / "aliases.json",
     BACKEND_DIR / "resolver" / "skill_aliases.json",
+    BACKEND_DIR / "resolver" / "knowledge" / "aliases_v1.json",
+    BACKEND_DIR / "resolver" / "knowledge" / "aliases.json",
+    BACKEND_DIR / "resolver" / "knowledge" / "skill_aliases.json",
     BACKEND_DIR / "resolver" / "aliases" / "skills.json",
     BACKEND_DIR / "resolver" / "aliases" / "skills_v1.json",
     BACKEND_DIR / "data" / "skill_aliases.json",
@@ -62,6 +66,8 @@ def _load_alias_map(path: Optional[str]) -> Tuple[Dict[str, str], str, str]:
       2. {"version": "2026-04-xx", "aliases": {...}}
       3. [{"alias": "js", "canonical": "javascript"}, ...]
     """
+
+    from resolver.normalize import normalize_key
     candidate_paths = [Path(path)] if path else DEFAULT_ALIAS_PATHS
 
     selected_path: Optional[Path] = None
@@ -96,10 +102,10 @@ def _load_alias_map(path: Optional[str]) -> Tuple[Dict[str, str], str, str]:
     else:
         raise ValueError(f"Unsupported alias map format in {selected_path}")
 
-    cleaned_aliases = {
-        str(k): str(v)
+    cleaned_aliases: Dict[str, str] = {
+        normalize_key(str(k)): str(v)
         for k, v in aliases.items()
-        if str(k).strip() and str(v).strip()
+        if normalize_key(str(k)) and str(v).strip()
     }
 
     return cleaned_aliases, aliases_version, str(selected_path)
@@ -525,10 +531,11 @@ def write_summary_md(
             f"| {parser} | {field} | {s['micro_f1']:.3f} | {s['macro_f1']:.3f} | {s['std_dev']:.3f} |"
         )
 
-    lines.append("\n## Resolver Coverage\n")
-    lines.append(f"- Average resolver coverage: `{resolver_summary['average_resolver_coverage']:.3f}`")
+    lines.append("\n## Resolver Coverage on Parser Output\n")
+    lines.append(f"- Average resolver coverage on parser output: `{resolver_summary['average_resolver_coverage']:.3f}`")
     lines.append(f"- Resolver rows counted: `{resolver_summary['resolved_rows_count']}`")
     lines.append(f"- Unknown skills captured: `{len(resolver_summary['unknown_skills'])}`")
+    lines.append("- Note: This measures resolver alias-map coverage over skills emitted by the parser. It is not end-to-end parser skill recovery against the gold skills; TP / FP / FN / precision / recall / F1 scoring above remains unchanged.")
 
     lines.append("\n## Failure Heatmap (Top 3 by False Positive resume/field combinations)\n")
     lines.append("| Resume | Field | Parser | FP Count |")
@@ -555,7 +562,7 @@ def write_summary_json(
     }
     for (parser, field), s in stats.items():
         key = f"{parser}::{field}"
-        serializable[key] = {
+        serializable["scores"][key] = {
             "micro_p": s["micro_p"],
             "micro_r": s["micro_r"],
             "micro_f1": s["micro_f1"],
@@ -613,7 +620,7 @@ def _print_summary(stats: Dict[Tuple[str, str], Dict[str, Any]], resolver_summar
             f"{parser:<15} {field:<10} {s['micro_p']:>8.3f} {s['micro_r']:>8.3f} {s['micro_f1']:>9.3f} {s['macro_f1']:>9.3f}"
         )
     print("─" * 55)
-    print(f"Average resolver coverage: {resolver_summary['average_resolver_coverage']:.3f}")
+    print(f"Average resolver coverage on parser output: {resolver_summary['average_resolver_coverage']:.3f}")
     print(f"Unknown skills captured: {len(resolver_summary['unknown_skills'])}")
 
 # ---------------------------------------------------------------------------
