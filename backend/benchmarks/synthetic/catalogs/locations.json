@@ -1,0 +1,44 @@
+{
+  "_comment": "raw_variants are the strings the layout may write in the contact line. The (city, country) tuple is what gold.json records canonical. country=null + city=null means the rendered location is intentionally unresolvable (e.g. fictional or ambiguous) and the parser is expected NOT to confidently extract it.",
+  "us": [
+    {"city": "San Francisco", "country": "United States", "state_abbr": "CA", "state_full": "California", "raw_variants": ["San Francisco, CA", "San Francisco, California", "SF, CA", "San Francisco, CA, USA"]},
+    {"city": "New York", "country": "United States", "state_abbr": "NY", "state_full": "New York", "raw_variants": ["New York, NY", "NYC", "New York City, NY", "Brooklyn, NY", "Manhattan, NY"]},
+    {"city": "Seattle", "country": "United States", "state_abbr": "WA", "state_full": "Washington", "raw_variants": ["Seattle, WA", "Seattle, Washington", "Greater Seattle Area"]},
+    {"city": "Austin", "country": "United States", "state_abbr": "TX", "state_full": "Texas", "raw_variants": ["Austin, TX", "Austin, Texas"]},
+    {"city": "Boston", "country": "United States", "state_abbr": "MA", "state_full": "Massachusetts", "raw_variants": ["Boston, MA", "Boston, Massachusetts"]},
+    {"city": "Chicago", "country": "United States", "state_abbr": "IL", "state_full": "Illinois", "raw_variants": ["Chicago, IL", "Chicago, Illinois"]},
+    {"city": "Denver", "country": "United States", "state_abbr": "CO", "state_full": "Colorado", "raw_variants": ["Denver, CO", "Denver, Colorado"]},
+    {"city": "Atlanta", "country": "United States", "state_abbr": "GA", "state_full": "Georgia", "raw_variants": ["Atlanta, GA", "Atlanta, Georgia"]},
+    {"city": "Portland", "country": "United States", "state_abbr": "OR", "state_full": "Oregon", "raw_variants": ["Portland, OR", "Portland, Oregon"]},
+    {"city": "Miami", "country": "United States", "state_abbr": "FL", "state_full": "Florida", "raw_variants": ["Miami, FL", "Miami, Florida"]},
+    {"city": "Riverside", "country": "United States", "state_abbr": "CA", "state_full": "California", "raw_variants": ["Riverside, CA"]},
+    {"city": "Phoenix", "country": "United States", "state_abbr": "AZ", "state_full": "Arizona", "raw_variants": ["Phoenix, AZ", "Phoenix, Arizona"]},
+    {"city": "Minneapolis", "country": "United States", "state_abbr": "MN", "state_full": "Minnesota", "raw_variants": ["Minneapolis, MN", "Minneapolis, Minnesota"]}
+  ],
+  "non_us": [
+    {"city": "Lviv", "country": "Ukraine", "raw_variants": ["Lviv, Ukraine"]},
+    {"city": "Berlin", "country": "Germany", "raw_variants": ["Berlin, Germany", "Berlin"]},
+    {"city": "Toronto", "country": "Canada", "raw_variants": ["Toronto, ON", "Toronto, Ontario", "Toronto, Canada"]},
+    {"city": "Vancouver", "country": "Canada", "raw_variants": ["Vancouver, BC", "Vancouver, British Columbia", "Vancouver, Canada"]},
+    {"city": "London", "country": "United Kingdom", "raw_variants": ["London, UK", "London, United Kingdom", "London, England"]},
+    {"city": "Dublin", "country": "Ireland", "raw_variants": ["Dublin, Ireland"]},
+    {"city": "Paris", "country": "France", "raw_variants": ["Paris, France"]},
+    {"city": "Amsterdam", "country": "Netherlands", "raw_variants": ["Amsterdam, Netherlands"]},
+    {"city": "Bangalore", "country": "India", "raw_variants": ["Bangalore, India", "Bengaluru, India"]},
+    {"city": "Mumbai", "country": "India", "raw_variants": ["Mumbai, India"]},
+    {"city": "Singapore", "country": "Singapore", "raw_variants": ["Singapore"]},
+    {"city": "Sydney", "country": "Australia", "raw_variants": ["Sydney, Australia", "Sydney, NSW"]},
+    {"city": "Tokyo", "country": "Japan", "raw_variants": ["Tokyo, Japan"]},
+    {"city": "São Paulo", "country": "Brazil", "raw_variants": ["São Paulo, Brazil", "Sao Paulo, Brazil"]},
+    {"city": "Mexico City", "country": "Mexico", "raw_variants": ["Mexico City, Mexico", "CDMX, Mexico"]},
+    {"city": "Cape Town", "country": "South Africa", "raw_variants": ["Cape Town, South Africa"]},
+    {"city": "Lagos", "country": "Nigeria", "raw_variants": ["Lagos, Nigeria"]},
+    {"city": "Tel Aviv", "country": "Israel", "raw_variants": ["Tel Aviv, Israel"]}
+  ],
+  "remote": [
+    {"city": null, "country": null, "raw_variants": ["Remote", "Remote — based in Berlin", "Remote (US time zones)", "Remote, hybrid in NYC"]}
+  ],
+  "fictional": [
+    {"city": null, "country": null, "raw_variants": ["Cloud City, ZZ", "Springfield", "Anywhere, USA"]}
+  ]
+}

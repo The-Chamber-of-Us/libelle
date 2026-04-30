@@ -1,0 +1,7 @@
+weasyprint>=65.0
+Jinja2==3.1.4
+# Newer PyMuPDF — backend pins 1.22.5, but that has no Python 3.13 wheel.
+# This is spike-local only; backend prod pin is unchanged.
+PyMuPDF>=1.24.0
+# parser.py imports `us` for state codes
+us>=3.1.0

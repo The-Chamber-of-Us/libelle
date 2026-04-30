@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!-- Adversarial: contact location placed late in document via a banner block.
+     parser.py:96 only scans first 15 lines of `text.splitlines()`. -->
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="decor">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+<div class="decor">Available immediately for new opportunities</div>
+<div class="decor">References available upon request</div>
+<div class="decor">Open to relocation worldwide</div>
+<div class="decor">Authorized to work in multiple jurisdictions</div>
+<div class="decor">Active security clearance: maintained</div>
+<div class="decor">Languages: as listed below</div>
+<div class="decor">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+
+<h2>Languages</h2>
+<p>English (native), Spanish (conversational)</p>
+
+<h2>Profile</h2>
+<p>Senior contributor with broad cross-domain experience.</p>
+
+<div class="contact"><strong>Contact:</strong> {{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<h2>Skills</h2>
+<ul class="skills-list">
+{% for s in rendered_skills %}<li>{{ s }}</li>
+{% endfor %}</ul>
+
+<h2>Experience</h2>
+{% for e in profile.experience %}
+<div class="experience-entry">
+  <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+  <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+</div>
+{% endfor %}
+</body></html>

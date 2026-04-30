@@ -1,0 +1,18 @@
+/* Shared minimal CSS. Avoids exotic web fonts so PyMuPDF text extraction
+ * stays stable across machines (only font fallback drift, not metric drift). */
+@page { size: Letter; margin: 0.75in; }
+body { font-family: "DejaVu Sans", "Helvetica", sans-serif; font-size: 10.5pt; color: #111; }
+h1 { font-size: 18pt; margin: 0 0 4pt 0; }
+h2 { font-size: 12pt; margin: 12pt 0 4pt 0; text-transform: none; border-bottom: 1px solid #aaa; padding-bottom: 2pt; }
+.contact { font-size: 9.5pt; color: #444; margin-bottom: 8pt; }
+.skills-list, .tools-list { margin: 0; padding: 0; }
+.skills-list li { list-style: disc; margin-left: 18pt; }
+.experience-entry, .education-entry { margin-bottom: 8pt; }
+.entry-header { font-weight: bold; }
+.entry-meta { color: #555; font-size: 9.5pt; }
+.entry-bullets { margin: 2pt 0 0 18pt; padding: 0; }
+.entry-bullets li { list-style: disc; margin-bottom: 1pt; }
+.two-col { display: flex; gap: 16pt; }
+.two-col .sidebar { flex: 0 0 32%; }
+.two-col .main { flex: 1; }
+.decor { color: #888; font-size: 9pt; margin-bottom: 2pt; }
