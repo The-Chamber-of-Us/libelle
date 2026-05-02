@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- Adversarial: ALL CAPS section header with non-standard wording.
+     parser.py:_is_section_header (line 27) matches all-caps lines under
+     60 chars with a space — but extract_skills patterns won't recognise
+     "TECHNICAL TOOLKIT" so skills section is missed. -->
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="contact">{{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<h2 style="text-transform: uppercase; letter-spacing: 1pt;">Technical Toolkit</h2>
+<ul class="skills-list">
+{% for s in rendered_skills %}<li>{{ s }}</li>
+{% endfor %}</ul>
+
+<h2>Experience</h2>
+{% for e in profile.experience %}
+<div class="experience-entry">
+  <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+  <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+</div>
+{% endfor %}
+</body></html>

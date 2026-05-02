@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!-- Adversarial: uses a plain "Tools" header. labeling_rules_v1.md says these
+     should be extracted equivalently to skills, but parser.py:115-131 only
+     matches "Tools & Technologies" / "Tools and Technologies", not "Tools". -->
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="contact">{{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<h2>Tools</h2>
+<ul class="tools-list">
+{% for s in rendered_skills %}<li>{{ s }}</li>
+{% endfor %}</ul>
+
+<h2>Experience</h2>
+{% for e in profile.experience %}
+<div class="experience-entry">
+  <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+  <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+</div>
+{% endfor %}
+</body></html>

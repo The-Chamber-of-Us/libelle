@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!-- Adversarial: NO explicit Skills section — skills only appear inside
+     experience bullets. labeling_rules_v1.md says no inference from
+     experience, so gold.skills should be empty. parser.py should also
+     return [] for skills. This case asserts both behave the same. -->
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="contact">{{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<h2>Summary</h2>
+<p>Generalist with hands-on delivery experience.</p>
+
+<h2>Experience</h2>
+{% for e in profile.experience %}
+<div class="experience-entry">
+  <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+  <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+  <ul class="entry-bullets">
+  {% for b in e.bullets %}<li>{{ b }}</li>
+  {% endfor %}</ul>
+</div>
+{% endfor %}
+
+<h2>Education</h2>
+{% for ed in profile.education %}
+<div class="education-entry">
+  <div class="entry-header">{{ ed.degree }}</div>
+  <div class="entry-meta">{{ ed.institution }} | {{ ed.location_raw }} | {{ ed.dates }}</div>
+</div>
+{% endfor %}
+</body></html>

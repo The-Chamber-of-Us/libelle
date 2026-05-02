@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="contact">{{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<div class="two-col">
+  <div class="sidebar">
+    <h2>Skills</h2>
+    <ul class="skills-list">
+    {% for s in rendered_skills %}<li>{{ s }}</li>
+    {% endfor %}</ul>
+
+    <h2>Education</h2>
+    {% for ed in profile.education %}
+    <div class="education-entry">
+      <div class="entry-header">{{ ed.degree }}</div>
+      <div class="entry-meta">{{ ed.institution }}<br>{{ ed.dates }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="main">
+    <h2>Experience</h2>
+    {% for e in profile.experience %}
+    <div class="experience-entry">
+      <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+      <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+      <ul class="entry-bullets">
+      {% for b in e.bullets %}<li>{{ b }}</li>
+      {% endfor %}</ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+</body></html>

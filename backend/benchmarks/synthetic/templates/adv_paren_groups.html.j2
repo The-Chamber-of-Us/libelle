@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!-- Adversarial: parenthesized groups. labeling_rules_v1.md says items inside
+     parens should be extracted as individual skills + the parent. parser.py
+     splits only on [•,·;|], so the whole "Group (a, b, c)" stays as one skill. -->
+<html><head><meta charset="utf-8"><style>{{ css }}</style></head><body>
+<h1>{{ profile.name }}</h1>
+<div class="contact">{{ profile.email }} | {{ profile.phone }} | {{ profile.location.raw }}</div>
+
+<h2>Skills</h2>
+<ul class="skills-list">
+{% for group in paren_groups %}<li>{{ group.label }} ({{ group.members | join(", ") }})</li>
+{% endfor %}</ul>
+
+<h2>Experience</h2>
+{% for e in profile.experience %}
+<div class="experience-entry">
+  <div class="entry-header">{{ e.title }} — {{ e.company }}</div>
+  <div class="entry-meta">{{ e.location_raw }} | {{ e.dates }}</div>
+</div>
+{% endfor %}
+</body></html>
