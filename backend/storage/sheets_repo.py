@@ -14,6 +14,8 @@ if not GOOGLE_SHEET_ID:
 
 SUBMISSIONS_SHEET_NAME = "submissions"
 PARSER_RESULTS_SHEET_NAME = "parser_results"
+OPS_SHEET_NAME = "ops"
+ERRORS_SHEET_NAME = "errors"
 
 _sheet = None
 _sheet_lock = threading.Lock()
@@ -117,6 +119,47 @@ def load_submission_records() -> Dict[str, Dict[str, str]]:
         records_by_submission_id[submission_id] = row_dict
 
     return records_by_submission_id
+
+
+def load_parser_result_rows() -> List[Dict[str, str]]:
+    """Load schema-aligned parser_results rows for snapshot composition."""
+    return _load_sheet_rows(PARSER_RESULTS_SHEET_NAME)
+
+
+def load_ops_rows() -> List[Dict[str, str]]:
+    """Load schema-aligned ops rows for snapshot composition."""
+    return _load_sheet_rows(OPS_SHEET_NAME)
+
+
+def load_error_rows() -> List[Dict[str, str]]:
+    """Load schema-aligned error rows for snapshot composition."""
+    return _load_sheet_rows(ERRORS_SHEET_NAME)
+
+
+def _load_sheet_rows(tab_name: str) -> List[Dict[str, str]]:
+    headers = get_headers(tab_name)
+
+    response = _get_sheet().values().get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{tab_name}!A2:ZZ",
+    ).execute()
+
+    rows = response.get("values", [])
+    records: List[Dict[str, str]] = []
+
+    for raw_row in rows:
+        padded_row = list(raw_row) + [""] * (len(headers) - len(raw_row))
+        row_dict = {
+            header: str(value).strip() if value is not None else ""
+            for header, value in zip(headers, padded_row)
+        }
+
+        if not row_dict.get("submission_id", ""):
+            continue
+
+        records.append(row_dict)
+
+    return records
 
 
 # ---------- Helpers ----------
