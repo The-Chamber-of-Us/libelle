@@ -270,18 +270,15 @@ def _split_location(raw: str) -> Tuple[str, str]:
 
 def _run_libelle(pdf_path: Path) -> Tuple[Dict[str, Any], float]:
     """Extract text with PyMuPDF and run Libelle parser. Returns (raw_parsed, runtime_ms)."""
-    import fitz  # PyMuPDF
-    from parser import parse_resume  # Libelle's parser
+    from services.pdf_text_extraction import extract_text_from_pdf_path
+    from parser import parse_resume
 
-    doc = fitz.open(str(pdf_path))
-    text = "\n".join(page.get_text("text") for page in doc)
-    doc.close()
+    text = extract_text_from_pdf_path(pdf_path)
 
     t0 = time.perf_counter()
     result = parse_resume(text)
     runtime_ms = (time.perf_counter() - t0) * 1000
     return result, runtime_ms
-
 
 def _run_pyresparser(pdf_path: Path) -> Tuple[Dict[str, Any], float]:
     """Run pyresparser on a PDF. Returns (raw_parsed, runtime_ms)."""

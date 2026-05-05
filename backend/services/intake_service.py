@@ -5,8 +5,6 @@ import traceback
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
-import fitz
-
 from config import MAX_PDF_MB
 from storage.drive_repo import upload_pdf
 from storage.sheets_repo import write_base_row
@@ -78,10 +76,8 @@ def _parse_interests(raw: Union[str, List[str], None]) -> str:
 
 def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
     try:
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        text = "\n".join([p.get_text("text") for p in doc])
-        doc.close()
-        return text
+        from services.pdf_text_extraction import extract_text_from_pdf_bytes
+        return extract_text_from_pdf_bytes(pdf_bytes)
     except Exception:
         traceback.print_exc()
         raise IntakeError("PDF_PARSE_FAILED", "PDF parsing failed", status_code=400)
