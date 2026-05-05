@@ -1,4 +1,4 @@
-"""Pure dashboard snapshot composition service."""
+"""Dashboard snapshot composition service."""
 
 import json
 from typing import Any, Dict, List, Mapping, Optional
@@ -31,6 +31,28 @@ RESOLVED_FIELDS = (
     "unknown_skills",
     "resolver_coverage",
 )
+
+
+def get_snapshot_records() -> List[SnapshotRecord]:
+    """
+    Load dashboard data layers and compose reviewer-facing snapshot records.
+
+    The row readers stay in storage, while snapshot selection and formatting stay
+    in this service layer so API routes can remain thin.
+    """
+    from storage.sheets_repo import (
+        load_error_rows,
+        load_ops_rows,
+        load_parser_result_rows,
+        load_submission_records,
+    )
+
+    return assemble_snapshot_records(
+        load_submission_records(),
+        load_parser_result_rows(),
+        load_ops_rows(),
+        load_error_rows(),
+    )
 
 
 def assemble_snapshot_records(
