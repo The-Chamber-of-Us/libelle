@@ -1,10 +1,88 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from api.models.dashboard import ReviewerSubmissionSnapshot
 from api.routes import dashboard
 
 
-def test_get_snapshot_returns_dashboard_service_payload(monkeypatch) -> None:
+def _snapshot_payload() -> list[dict]:
+    return [
+        {
+            "submission_id": "sub_001",
+            "raw": {
+                "created_at": "2026-04-19T10:00:00",
+                "full_name": "First Person",
+                "email": "first@example.org",
+                "location_raw": "Raleigh, NC",
+                "timezone": "",
+                "skills_raw": "Python",
+                "interests": "Engineering",
+                "experience_level": "Senior",
+                "availability": "6 hours",
+                "motivation": "",
+                "linkedin_url": "",
+                "github_url": "",
+                "consent_given": "TRUE",
+                "resume_filename": "sub_001-resume.pdf",
+                "resume_status": "uploaded",
+            },
+            "parsed": {
+                "parser_state": "pending",
+                "parser_run_id": "",
+                "created_at": "",
+                "parser_version": "",
+                "parsed_skills_raw": "",
+                "parsed_location_raw": "",
+                "parser_confidence": "",
+            },
+            "resolved": {
+                "resolver_state": "not_run",
+                "resolver_version": "",
+                "aliases_version": "",
+                "resolved_skill_ids": "",
+                "unknown_skills": "",
+                "resolver_coverage": "",
+            },
+            "ops": {
+                "status": "new",
+                "notes": "",
+                "tags": "",
+                "contact_tracking": "",
+                "updated_at": "",
+                "updated_by": "",
+            },
+            "errors": {
+                "has_error": False,
+                "latest_error_summary": "",
+                "latest_error_stage": "",
+                "latest_error_code": "",
+            },
+        }
+    ]
+
+
+def test_get_snapshot_declares_reviewer_snapshot_response_model() -> None:
+    route = next(route for route in dashboard.router.routes if route.path == "/snapshot")
+
+    assert route.response_model == list[ReviewerSubmissionSnapshot]
+
+
+def test_get_snapshot_returns_typed_dashboard_service_payload(monkeypatch) -> None:
+    payload = _snapshot_payload()
+
+    monkeypatch.setattr(dashboard, "get_snapshot_records", lambda: payload)
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.get("/snapshot")
+
+    assert response.status_code == 200
+    assert response.json() == payload
+
+
+def test_get_snapshot_response_model_rejects_missing_required_fields(monkeypatch) -> None:
     payload = [
         {
             "submission_id": "sub_001",
@@ -20,9 +98,8 @@ def test_get_snapshot_returns_dashboard_service_payload(monkeypatch) -> None:
 
     app = FastAPI()
     app.include_router(dashboard.router)
-    client = TestClient(app)
+    client = TestClient(app, raise_server_exceptions=False)
 
     response = client.get("/snapshot")
 
-    assert response.status_code == 200
-    assert response.json() == payload
+    assert response.status_code == 500
