@@ -2,14 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-from ops_schema import (
-    OPS_STATUS_CLOSED,
-    OPS_STATUS_CONTACTED,
-    OPS_STATUS_IN_PROGRESS,
-    OPS_STATUS_NEW,
-    OPS_STATUS_PAUSED,
-    OPS_STATUS_REVIEWED,
-)
+from ops_schema import VALID_OPS_STATUSES
 
 
 class SnapshotModel(BaseModel):
@@ -54,14 +47,7 @@ class SnapshotResolvedData(SnapshotModel):
 
 
 class SnapshotOpsData(SnapshotModel):
-    status: Literal[
-        OPS_STATUS_NEW,
-        OPS_STATUS_REVIEWED,
-        OPS_STATUS_CONTACTED,
-        OPS_STATUS_IN_PROGRESS,
-        OPS_STATUS_PAUSED,
-        OPS_STATUS_CLOSED,
-    ]
+    status: Literal[VALID_OPS_STATUSES]
     notes: str
     tags: str
     contact_tracking: str
