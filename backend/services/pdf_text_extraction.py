@@ -20,23 +20,23 @@ def _extract_text_from_fitz_doc(doc: fitz.Document) -> str:
     Internal helper: extract and spatially sort text blocks from an open
     PyMuPDF document.
 
-    Each page's text blocks are collected with their bounding box coordinates.
-    Blocks are sorted top-to-bottom (y0), then left-to-right (x0) so the
-    resulting string follows visual reading order rather than the internal
-    PDF storage order fitz uses by default.
+    Each page's text blocks are sorted independently by (y0, x0) to preserve
+    visual reading order within each page. Pages are then joined in document
+    order. Sorting is done per-page rather than globally because PyMuPDF resets
+    y0 to 0 at the top of every page — a global sort would cause blocks from
+    different pages to be interleaved.
 
     Only text blocks (block type 0) are included — image blocks (type 1)
     are skipped.
     """
-    blocks = []
+    pages_text = []
     for page in doc:
-        blocks.extend(page.get_text("blocks"))
-
-    # sort by vertical position first, then horizontal
-    blocks.sort(key=lambda b: (b[1], b[0]))
-
-    # b[4] is the text content, b[6] is the block type (0 = text, 1 = image)
-    return "\n".join(b[4] for b in blocks if b[6] == 0)
+        blocks = page.get_text("blocks")
+        # filter to text blocks only, then sort within this page
+        text_blocks = [b for b in blocks if b[6] == 0]
+        text_blocks.sort(key=lambda b: (b[1], b[0]))
+        pages_text.append("\n".join(b[4] for b in text_blocks))
+    return "\n".join(pages_text)
 
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
