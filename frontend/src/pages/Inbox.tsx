@@ -21,8 +21,13 @@ export default function Inbox() {
           throw new Error(`Snapshot request failed with ${response.status}`)
         }
 
-        const submissions = (await response.json()) as ReviewerSubmissionSnapshot[]
-        setState({ status: 'ready', submissions })
+        const data = await response.json()
+
+        if (!Array.isArray(data)) {
+          throw new Error('Snapshot response must be an array')
+        }
+
+        setState({ status: 'ready', submissions: data as ReviewerSubmissionSnapshot[] })
       } catch (error) {
         if (controller.signal.aborted) return
 
