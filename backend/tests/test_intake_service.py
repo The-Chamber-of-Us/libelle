@@ -1,7 +1,5 @@
 import uuid
 
-import pytest
-
 from services import intake_service
 
 
@@ -35,12 +33,8 @@ def _patch_io(monkeypatch, captured):
     monkeypatch.setattr(intake_service, "write_base_row", fake_write_base_row)
 
 
-def test_finalize_submission_returns_full_uuidv4(monkeypatch):
-    """#129: submission_id must be a full UUIDv4 string, not truncated."""
-    captured = {}
-    _patch_io(monkeypatch, captured)
-
-    result = intake_service.finalize_submission(
+def _finalize():
+    return intake_service.finalize_submission(
         pdf_bytes=_VALID_PDF_BYTES,
         normalized=_normalized(),
         linkedin_url=None,
@@ -48,7 +42,13 @@ def test_finalize_submission_returns_full_uuidv4(monkeypatch):
         motivation=None,
     )
 
-    submission_id = result["submission_id"]
+
+def test_finalize_submission_returns_full_uuidv4(monkeypatch):
+    """#129: submission_id must be a full UUIDv4 string, not truncated."""
+    _patch_io(monkeypatch, {})
+
+    submission_id = _finalize()["submission_id"]
+
     parsed = uuid.UUID(submission_id)
     assert parsed.version == 4
     assert str(parsed) == submission_id
@@ -60,13 +60,7 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
     captured = {}
     _patch_io(monkeypatch, captured)
 
-    result = intake_service.finalize_submission(
-        pdf_bytes=_VALID_PDF_BYTES,
-        normalized=_normalized(),
-        linkedin_url=None,
-        github_url=None,
-        motivation=None,
-    )
+    result = _finalize()
 
     assert captured["drive_submission_id"] == result["submission_id"]
     assert captured["sheets_submission_id"] == result["submission_id"]
@@ -74,22 +68,9 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
 
 def test_finalize_submission_generates_unique_ids(monkeypatch):
     """Two separate intakes must produce distinct submission_ids."""
-    captured = {}
-    _patch_io(monkeypatch, captured)
+    _patch_io(monkeypatch, {})
 
-    first = intake_service.finalize_submission(
-        pdf_bytes=_VALID_PDF_BYTES,
-        normalized=_normalized(),
-        linkedin_url=None,
-        github_url=None,
-        motivation=None,
-    )
-    second = intake_service.finalize_submission(
-        pdf_bytes=_VALID_PDF_BYTES,
-        normalized=_normalized(),
-        linkedin_url=None,
-        github_url=None,
-        motivation=None,
-    )
+    first = _finalize()
+    second = _finalize()
 
     assert first["submission_id"] != second["submission_id"]
