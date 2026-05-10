@@ -191,13 +191,13 @@ def finalize_submission(
     size/extraction failure. Returns a dict with submission_id, drive_file_id,
     drive_file_url, and pre_text (for the parser job).
     """
+    submission_id = str(uuid.uuid4())
+
     _validate_file_size(pdf_bytes)
 
     pre_text = _extract_text_from_pdf(pdf_bytes)
     if not pre_text.strip():
         raise IntakeError("NO_TEXT_EXTRACTED", "PDF has no extractable text", status_code=400)
-
-    submission_id = str(uuid.uuid4())[:8]
 
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
