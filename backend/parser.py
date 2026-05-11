@@ -1,6 +1,7 @@
 import re
 import us
 from typing import List, Dict, Tuple, Any
+import unicodedata
 
 
 def _get_lines(text: str) -> List[str]:
@@ -12,19 +13,29 @@ def _clean_line(line: str) -> str:
 def _is_section_header(line: str) -> bool:
     if not line or len(line.strip()) == 0:
         return False
+    
+    # exclude single uppercase skills like 'SQL' on its own line
+    if line.strip().startswith(('•','-', '—', '*')): # generally used for indidividual skills
+        return False
+    
     s = _clean_line(line)
-    headers = [
 
+    # fixing garbled spacing e.g. "Sk i ll s" to "Skills"
+    tokens = s.split()
+    if len(tokens) >= 3 and sum(len(t) for t in tokens) / len(tokens) <= 2.5:
+        s = s.replace(' ', '')
+
+    headers = [
         r'^(summary|objective|contact|education|certifi|certificate|skills|'
         r'work experience|professional experience|experience|employment|'
         r'job experience|'
         r'career history|work history|relevant experience|'
         r'projects|project experience|project|research|publications|'
-        r'awards|volunteer|volunteer experience|honors|activities):?$'
+        r'awards|volunteer|volunteering|volunteer experience|honors|activities|'
+        r'additional information|references|languages|interests|certifications):?$'
     ]
+
     if re.match(headers[0], s.lower()):
-        return True
-    if s == s.upper() and len(s) < 60 and ' ' in s:
         return True
     return False
 
@@ -35,6 +46,11 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
     end_index = len(lines)
     for i, line in enumerate(lines):
         cleaned = _clean_line(line)
+        # for garbled spacing
+        tokens = cleaned.split()
+        if len(tokens) >= 3 and sum(len(t) for t in tokens) / len(tokens) <= 2.5:
+            cleaned = cleaned.replace(' ', '')
+        
         if not capturing and start_re.match(cleaned):
             capturing = True
             continue
@@ -80,6 +96,30 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
         current.append(stripped)
     flush_current()
     return entries
+
+# Shared normalization utility — adapted from dev branch (authored by [betty ann's github @BA88])
+# to-do: consolidate into a shared module when that branch is merged
+
+_PUNCT_TRANSLATION = str.maketrans({
+    '\u2018': "'", '\u2019': "'", '\u201c': '"', '\u201d': '"',
+    '\u2013': '-', '\u2014': '-', '\uFB00': 'ff', '\uFB01': 'fi',
+    '\uFB02': 'fl', '\uFB03': 'ffi', '\uFB04': 'ffl',
+})
+_WS_COLLAPSE = re.compile(r'\s+')
+
+def _normalize(value: str | None) -> str:
+    if value is None:
+        return ""
+    s = str(value)
+    if not s:
+        return ""
+    s = unicodedata.normalize("NFKC", s)
+    nfd = unicodedata.normalize("NFD", s)
+    s = "".join(ch for ch in nfd if unicodedata.combining(ch) == 0)
+    s = s.translate(_PUNCT_TRANSLATION)
+    s = s.strip().lower()
+    s = _WS_COLLAPSE.sub(" ", s)
+    return s
 
 
 def extract_phone(text: str) -> Tuple[List[str], float]:
@@ -132,7 +172,14 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
 
     lines = _get_lines(text)
     skills_lines, _ = _collect_section_lines(lines, skills_patterns)
-    skills = [p.strip() for l in skills_lines for p in re.split(r'[•,·;|]', l) if p.strip()]
+    cleaned = []
+    for l in skills_lines:
+        if re.match(r'^[^:]{1,40}:\s+\S', l):
+            l = re.sub(r'^[^:]+:\s*', '', l)
+        l = re.sub(r'\s*\(.*?\)', '', l) # strips parentheses
+        cleaned.append(l)
+
+    skills = [_normalize(p.strip()) for l in cleaned for p in re.split(r'[•,·;|]', l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 
