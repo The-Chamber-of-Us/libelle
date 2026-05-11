@@ -34,9 +34,8 @@ def _is_section_header(line: str) -> bool:
         r'awards|volunteer|volunteering|volunteer experience|honors|activities|'
         r'additional information|references|languages|interests|certifications):?$'
     ]
+
     if re.match(headers[0], s.lower()):
-        return True
-    if s == s.upper() and len(s) > 2:
         return True
     return False
 
