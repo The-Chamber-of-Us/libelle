@@ -11,9 +11,13 @@ const statusStyles: Record<string, string> = {
 }
 
 export default function InboxSubmissionRow({
-  submission
+  submission,
+  isSelected,
+  onSelect
 }: {
   submission: ReviewerSubmissionSnapshot
+  isSelected: boolean
+  onSelect: () => void
 }) {
   const skills = getListSignals(submission)
   const submittedDate = formatSubmittedDate(submission.raw.created_at)
@@ -21,7 +25,17 @@ export default function InboxSubmissionRow({
     submission.parsed.parsed_location_raw.trim() || submission.raw.location_raw.trim()
 
   return (
-    <article className="grid gap-4 border-b border-slate-200 bg-white px-4 py-4 transition hover:bg-slate-50 sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:items-center sm:px-5">
+    <button
+      type="button"
+      aria-pressed={isSelected}
+      onClick={onSelect}
+      className={[
+        'grid w-full gap-4 border-b px-4 py-4 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-libelle-indigo sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:items-center sm:px-5',
+        isSelected
+          ? 'border-libelle-indigo/30 bg-indigo-50'
+          : 'border-slate-200 bg-white hover:bg-slate-50'
+      ].join(' ')}
+    >
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-base font-semibold leading-6 text-slate-950">
@@ -55,7 +69,10 @@ export default function InboxSubmissionRow({
           skills.map((skill, index) => (
             <span
               key={`${submission.submission_id}-${skill}-${index}`}
-              className="max-w-full truncate rounded-full border border-slate-200 bg-white px-3 py-1 text-sm leading-5 text-slate-700"
+              className={[
+                'max-w-full truncate rounded-full border px-3 py-1 text-sm leading-5 text-slate-700',
+                isSelected ? 'border-indigo-200 bg-white' : 'border-slate-200 bg-white'
+              ].join(' ')}
             >
               {skill}
             </span>
@@ -75,7 +92,7 @@ export default function InboxSubmissionRow({
           {formatStatus(submission.ops.status)}
         </span>
       </div>
-    </article>
+    </button>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
 import type { ReviewerSubmissionSnapshot } from '../types/dashboard'
 
@@ -9,6 +9,17 @@ type InboxState =
 
 export default function Inbox() {
   const [state, setState] = useState<InboxState>({ status: 'loading' })
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
+
+  const selectedSubmission = useMemo(() => {
+    if (state.status !== 'ready' || selectedSubmissionId === null) return null
+
+    return (
+      state.submissions.find(
+        (submission) => submission.submission_id === selectedSubmissionId
+      ) ?? null
+    )
+  }, [selectedSubmissionId, state])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -55,34 +66,110 @@ export default function Inbox() {
           </h1>
         </header>
 
-        <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:px-5">
-            <span>Applicant</span>
-            <span>Top Signals</span>
-            <span className="sm:text-right">Status</span>
-          </div>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:px-5">
+              <span>Applicant</span>
+              <span>Top Signals</span>
+              <span className="sm:text-right">Status</span>
+            </div>
 
-          {state.status === 'loading' && (
-            <div className="px-5 py-10 text-sm text-slate-600">Loading submissions...</div>
-          )}
+            {state.status === 'loading' && (
+              <div className="px-5 py-10 text-sm text-slate-600">Loading submissions...</div>
+            )}
 
-          {state.status === 'error' && (
-            <div className="px-5 py-10 text-sm text-rose-700">{state.message}</div>
-          )}
+            {state.status === 'error' && (
+              <div className="px-5 py-10 text-sm text-rose-700">{state.message}</div>
+            )}
 
-          {state.status === 'ready' && state.submissions.length === 0 && (
-            <div className="px-5 py-10 text-sm text-slate-600">No submissions yet.</div>
-          )}
+            {state.status === 'ready' && state.submissions.length === 0 && (
+              <div className="px-5 py-10 text-sm text-slate-600">No submissions yet.</div>
+            )}
 
-          {state.status === 'ready' &&
-            state.submissions.map((submission) => (
-              <InboxSubmissionRow
-                key={submission.submission_id}
-                submission={submission}
-              />
-            ))}
-        </section>
+            {state.status === 'ready' &&
+              state.submissions.map((submission) => (
+                <InboxSubmissionRow
+                  key={submission.submission_id}
+                  submission={submission}
+                  isSelected={submission.submission_id === selectedSubmissionId}
+                  onSelect={() => setSelectedSubmissionId(submission.submission_id)}
+                />
+              ))}
+          </section>
+
+          <InboxDetailPanel submission={selectedSubmission} />
+        </div>
       </div>
     </main>
   )
+}
+
+function InboxDetailPanel({
+  submission
+}: {
+  submission: ReviewerSubmissionSnapshot | null
+}) {
+  if (submission === null) {
+    return (
+      <aside className="rounded-lg border border-dashed border-slate-300 bg-white px-5 py-8 text-sm text-slate-600">
+        Select a submission to open its review details.
+      </aside>
+    )
+  }
+
+  const displayName = submission.raw.full_name.trim() || 'Unnamed submission'
+  const location =
+    submission.parsed.parsed_location_raw.trim() || submission.raw.location_raw.trim()
+
+  return (
+    <aside className="rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-200 px-5 py-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+          Selected Submission
+        </p>
+        <h2 className="mt-1 text-xl font-semibold tracking-normal text-slate-950">
+          {displayName}
+        </h2>
+      </div>
+
+      <dl className="grid gap-4 px-5 py-5 text-sm">
+        <DetailField label="Submission ID" value={submission.submission_id} />
+        <DetailField label="Status" value={formatStatus(submission.ops.status)} />
+        <DetailField label="Email" value={submission.raw.email} />
+        <DetailField label="Location" value={location || 'Location not provided'} />
+        <DetailField
+          label="Submitted"
+          value={formatSubmittedDate(submission.raw.created_at)}
+        />
+      </dl>
+    </aside>
+  )
+}
+
+function DetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-1 break-words text-slate-900">{value.trim() || 'Not provided'}</dd>
+    </div>
+  )
+}
+
+function formatSubmittedDate(value: string) {
+  if (!value.trim()) return 'No date'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(date)
+}
+
+function formatStatus(status: string) {
+  return status.replace(/_/g, ' ')
 }
