@@ -140,6 +140,8 @@ function InboxDetailPanel({
       </dl>
 
       <RawSubmissionSection submission={submission} />
+      <ParsedOutputSection submission={submission} />
+      <ResolvedOutputSection submission={submission} />
     </aside>
   )
 }
@@ -183,6 +185,171 @@ function RawSubmissionSection({
   )
 }
 
+function ParsedOutputSection({
+  submission
+}: {
+  submission: ReviewerSubmissionSnapshot
+}) {
+  const parsed = submission.parsed
+  const hasParserResults = parsed.parser_state === 'complete'
+
+  return (
+    <section className="border-t border-slate-200 px-5 py-5">
+      <SectionHeader
+        title="Raw Parsed Output"
+        description="Parser-emitted values, kept separate from user-entered and resolved data."
+        status={formatStatus(parsed.parser_state)}
+        statusTone={hasParserResults ? 'success' : 'neutral'}
+      />
+
+      {!hasParserResults ? (
+        <StateCallout tone="neutral">
+          No parser results yet. The parser has not produced a row for this submission.
+        </StateCallout>
+      ) : (
+        <dl className="grid gap-4 text-sm">
+          <DetailField label="Parser Run ID" value={parsed.parser_run_id} />
+          <DetailField
+            label="Parser Created"
+            value={formatSubmittedDate(parsed.created_at)}
+          />
+          <DetailField label="Parser Version" value={parsed.parser_version} />
+          <DetailField
+            label="Parsed Skills Raw"
+            value={parsed.parsed_skills_raw}
+            multiline
+          />
+          <DetailField
+            label="Parsed Location Raw"
+            value={parsed.parsed_location_raw}
+            multiline
+          />
+          <DetailField label="Parser Confidence" value={parsed.parser_confidence} />
+        </dl>
+      )}
+    </section>
+  )
+}
+
+function ResolvedOutputSection({
+  submission
+}: {
+  submission: ReviewerSubmissionSnapshot
+}) {
+  const resolved = submission.resolved
+  const resolvedSkillIds = parseSnapshotList(resolved.resolved_skill_ids)
+  const unknownSkills = parseSnapshotList(resolved.unknown_skills)
+  const hasUnknowns = unknownSkills.length > 0
+  const hasResolverRun = resolved.resolver_state !== 'not_run'
+
+  return (
+    <section className="border-t border-slate-200 px-5 py-5">
+      <SectionHeader
+        title="Resolved Canonical Output"
+        description="Resolver/canonical values derived from parser output. Raw parsed values are not replaced here."
+        status={formatStatus(resolved.resolver_state)}
+        statusTone={getResolverStatusTone(resolved.resolver_state)}
+      />
+
+      {!hasResolverRun ? (
+        <StateCallout tone="neutral">
+          Resolver has not run for this parser result yet.
+        </StateCallout>
+      ) : (
+        <div className="grid gap-4">
+          {resolved.resolver_state === 'zero_matches' && (
+            <StateCallout tone="warning">
+              Resolver ran but found zero canonical skill matches.
+            </StateCallout>
+          )}
+
+          {resolved.resolver_state === 'resolved' && hasUnknowns && (
+            <StateCallout tone="warning">
+              Partial resolution: some parsed values resolved, while unknown fields remain.
+            </StateCallout>
+          )}
+
+          <dl className="grid gap-4 text-sm">
+            <DetailField label="Resolver Version" value={resolved.resolver_version} />
+            <DetailField label="Aliases Version" value={resolved.aliases_version} />
+            <ListDetailField
+              label="Resolved Skill IDs"
+              values={resolvedSkillIds}
+              emptyLabel="No resolved skill IDs"
+            />
+            <ListDetailField
+              label="Unknown Skills"
+              values={unknownSkills}
+              emptyLabel="No unknown skills"
+              tone={hasUnknowns ? 'warning' : 'neutral'}
+            />
+            <DetailField
+              label="Resolver Coverage"
+              value={resolved.resolver_coverage}
+            />
+          </dl>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function SectionHeader({
+  title,
+  description,
+  status,
+  statusTone
+}: {
+  title: string
+  description: string
+  status: string
+  statusTone: 'neutral' | 'success' | 'warning'
+}) {
+  return (
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-libelle-indigo">
+          {title}
+        </h3>
+        <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
+      </div>
+      <span
+        className={[
+          'inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em]',
+          statusTone === 'success'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : statusTone === 'warning'
+              ? 'border-amber-200 bg-amber-50 text-amber-700'
+              : 'border-slate-200 bg-slate-50 text-slate-600'
+        ].join(' ')}
+      >
+        {status}
+      </span>
+    </div>
+  )
+}
+
+function StateCallout({
+  tone,
+  children
+}: {
+  tone: 'neutral' | 'warning'
+  children: string
+}) {
+  return (
+    <p
+      className={[
+        'rounded-md border px-3 py-2 text-sm leading-5',
+        tone === 'warning'
+          ? 'border-amber-200 bg-amber-50 text-amber-800'
+          : 'border-slate-200 bg-slate-50 text-slate-600'
+      ].join(' ')}
+    >
+      {children}
+    </p>
+  )
+}
+
 function DetailField({
   label,
   value,
@@ -204,6 +371,47 @@ function DetailField({
         ].join(' ')}
       >
         {value.trim() || 'Not provided'}
+      </dd>
+    </div>
+  )
+}
+
+function ListDetailField({
+  label,
+  values,
+  emptyLabel,
+  tone = 'neutral'
+}: {
+  label: string
+  values: string[]
+  emptyLabel: string
+  tone?: 'neutral' | 'warning'
+}) {
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-2">
+        {values.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {values.map((value, index) => (
+              <li
+                key={`${label}-${value}-${index}`}
+                className={[
+                  'max-w-full break-words rounded-md border px-2.5 py-1 text-sm',
+                  tone === 'warning'
+                    ? 'border-amber-200 bg-amber-50 text-amber-800'
+                    : 'border-slate-200 bg-slate-50 text-slate-800'
+                ].join(' ')}
+              >
+                {value}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <span className="text-sm text-slate-500">{emptyLabel}</span>
+        )}
       </dd>
     </div>
   )
@@ -250,4 +458,35 @@ function formatSubmittedDate(value: string) {
 
 function formatStatus(status: string) {
   return status.replace(/_/g, ' ')
+}
+
+function getResolverStatusTone(status: string) {
+  if (status === 'resolved') return 'success'
+  if (status === 'zero_matches') return 'warning'
+  return 'neutral'
+}
+
+function parseSnapshotList(value: string) {
+  const text = value.trim()
+
+  if (!text) return []
+
+  try {
+    const parsed = JSON.parse(text)
+
+    if (Array.isArray(parsed)) {
+      return parsed.map(String).map((item) => item.trim()).filter(Boolean)
+    }
+  } catch {
+    return splitSnapshotList(text)
+  }
+
+  return splitSnapshotList(text)
+}
+
+function splitSnapshotList(value: string) {
+  return value
+    .split(/[,;\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
