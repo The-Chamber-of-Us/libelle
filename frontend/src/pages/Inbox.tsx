@@ -118,8 +118,6 @@ function InboxDetailPanel({
   }
 
   const displayName = submission.raw.full_name.trim() || 'Unnamed submission'
-  const location =
-    submission.parsed.parsed_location_raw.trim() || submission.raw.location_raw.trim()
 
   return (
     <aside className="rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -132,27 +130,107 @@ function InboxDetailPanel({
         </h2>
       </div>
 
-      <dl className="grid gap-4 px-5 py-5 text-sm">
+      <dl className="grid gap-4 border-b border-slate-200 px-5 py-5 text-sm">
         <DetailField label="Submission ID" value={submission.submission_id} />
         <DetailField label="Status" value={formatStatus(submission.ops.status)} />
-        <DetailField label="Email" value={submission.raw.email} />
-        <DetailField label="Location" value={location || 'Location not provided'} />
         <DetailField
           label="Submitted"
           value={formatSubmittedDate(submission.raw.created_at)}
         />
       </dl>
+
+      <RawSubmissionSection submission={submission} />
     </aside>
   )
 }
 
-function DetailField({ label, value }: { label: string; value: string }) {
+function RawSubmissionSection({
+  submission
+}: {
+  submission: ReviewerSubmissionSnapshot
+}) {
+  return (
+    <section className="px-5 py-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-libelle-indigo">
+          Raw Submission
+        </h3>
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          Source-of-truth user-entered values from submissions.
+        </p>
+      </div>
+
+      <dl className="grid gap-4 text-sm">
+        <DetailField label="Full Name" value={submission.raw.full_name} />
+        <DetailField label="Email" value={submission.raw.email} />
+        <DetailField label="Location" value={submission.raw.location_raw} />
+        <DetailField label="Timezone" value={submission.raw.timezone} />
+        <DetailField label="Skills" value={submission.raw.skills_raw} multiline />
+        <DetailField label="Interests" value={submission.raw.interests} multiline />
+        <DetailField
+          label="Experience Level"
+          value={submission.raw.experience_level}
+        />
+        <DetailField label="Availability" value={submission.raw.availability} multiline />
+        <DetailField label="Motivation" value={submission.raw.motivation} multiline />
+        <LinkDetailField label="LinkedIn" value={submission.raw.linkedin_url} />
+        <LinkDetailField label="GitHub" value={submission.raw.github_url} />
+        <DetailField label="Consent Given" value={submission.raw.consent_given} />
+        <DetailField label="Resume Filename" value={submission.raw.resume_filename} />
+        <DetailField label="Resume Status" value={submission.raw.resume_status} />
+      </dl>
+    </section>
+  )
+}
+
+function DetailField({
+  label,
+  value,
+  multiline = false
+}: {
+  label: string
+  value: string
+  multiline?: boolean
+}) {
   return (
     <div>
       <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
         {label}
       </dt>
-      <dd className="mt-1 break-words text-slate-900">{value.trim() || 'Not provided'}</dd>
+      <dd
+        className={[
+          'mt-1 break-words text-slate-900',
+          multiline ? 'whitespace-pre-wrap' : ''
+        ].join(' ')}
+      >
+        {value.trim() || 'Not provided'}
+      </dd>
+    </div>
+  )
+}
+
+function LinkDetailField({ label, value }: { label: string; value: string }) {
+  const href = value.trim()
+
+  if (!href) {
+    return <DetailField label={label} value="" />
+  }
+
+  return (
+    <div>
+      <dt className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+        {label}
+      </dt>
+      <dd className="mt-1 break-words">
+        <a
+          className="text-libelle-indigo underline decoration-libelle-indigo/30 underline-offset-2 hover:decoration-libelle-indigo"
+          href={href}
+          rel="noreferrer"
+          target="_blank"
+        >
+          {href}
+        </a>
+      </dd>
     </div>
   )
 }
