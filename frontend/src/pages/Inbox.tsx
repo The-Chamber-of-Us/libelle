@@ -191,7 +191,15 @@ function ParsedOutputSection({
   submission: ReviewerSubmissionSnapshot
 }) {
   const parsed = submission.parsed
-  const hasParserResults = parsed.parser_state === 'complete'
+  const isParserComplete = parsed.parser_state === 'complete'
+  const hasParserOutput = hasSnapshotValue([
+    parsed.parser_run_id,
+    parsed.created_at,
+    parsed.parser_version,
+    parsed.parsed_skills_raw,
+    parsed.parsed_location_raw,
+    parsed.parser_confidence
+  ])
 
   return (
     <section className="border-t border-slate-200 px-5 py-5">
@@ -199,10 +207,10 @@ function ParsedOutputSection({
         title="Raw Parsed Output"
         description="Parser-emitted values, kept separate from user-entered and resolved data."
         status={formatStatus(parsed.parser_state)}
-        statusTone={hasParserResults ? 'success' : 'neutral'}
+        statusTone={isParserComplete ? 'success' : 'neutral'}
       />
 
-      {!hasParserResults ? (
+      {!isParserComplete && !hasParserOutput ? (
         <StateCallout tone="neutral">
           No parser results yet. The parser has not produced a row for this submission.
         </StateCallout>
@@ -458,6 +466,10 @@ function formatSubmittedDate(value: string) {
 
 function formatStatus(status: string) {
   return status.replace(/_/g, ' ')
+}
+
+function hasSnapshotValue(values: string[]) {
+  return values.some((value) => value.trim() !== '')
 }
 
 function getResolverStatusTone(status: string) {
