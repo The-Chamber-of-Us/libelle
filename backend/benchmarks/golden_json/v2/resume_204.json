@@ -1,0 +1,117 @@
+{
+  "resume_id": "resume_204",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Academic / Research Resume",
+  "name": "Elena Moreau",
+  "email": "elena.moreau@example.net",
+  "phone": "+1 438 555 0198",
+  "location": "Montréal, QC, Canada",
+  "links": [
+    "orcid.org/0000-0002-1845-0182"
+  ],
+  "skills": [
+    "R",
+    "tidyverse",
+    "REDCap",
+    "Zotero",
+    "SAS",
+    "French",
+    "English"
+  ],
+  "notes": "Publication and presentation lines should not be labeled as jobs.",
+  "sections": [
+    {
+      "heading": "Education",
+      "items": [
+        {
+          "title": "McGill University, Montréal, QC",
+          "meta": "Expected May 2027",
+          "subtitle": "Master of Science in Epidemiology",
+          "bullets": [
+            "Thesis: Neighborhood heat exposure and emergency department utilization among older adults"
+          ]
+        },
+        {
+          "title": "University of Ottawa, Ottawa, ON",
+          "meta": "June 2024",
+          "subtitle": "Honours Bachelor of Health Sciences",
+          "bullets": [
+            "Graduated magna cum laude"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Research Experience",
+      "items": [
+        {
+          "title": "Graduate Research Assistant, Urban Health Metrics Lab",
+          "meta": "Sept 2025-Present",
+          "subtitle": "McGill University",
+          "bullets": [
+            "Clean and link weather station, census, and emergency department datasets covering 11 Montréal boroughs.",
+            "Draft reproducible R scripts for sensitivity analyses involving lagged temperature exposure windows.",
+            "Prepare weekly data notes for a cross-disciplinary team of epidemiologists, clinicians, and municipal analysts."
+          ]
+        },
+        {
+          "title": "Summer Research Student, Ottawa Hospital Research Institute",
+          "meta": "May-Aug 2024",
+          "subtitle": "Ottawa, ON",
+          "bullets": [
+            "Abstracted clinical variables from 210 anonymized charts for a study of post-discharge follow-up after sepsis.",
+            "Flagged inconsistent coding patterns that informed a revised chart review guide for incoming assistants."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Publications",
+      "items": [
+        "Moreau E., Singh P., Caron L. Heat-alert messaging and care-seeking behavior among older adults. Canadian Journal of Public Health. In review.",
+        "Caron L., Moreau E., Tran V. Built environment predictors of summer respiratory visits. Environmental Health Abstracts. 2025;12(3)."
+      ]
+    },
+    {
+      "heading": "Selected Presentations",
+      "items": [
+        "Moreau E. Neighborhood heat exposure and emergency department utilization. Poster presented at Canadian Public Health Association Annual Conference; 2026 May; Winnipeg, MB.",
+        "Moreau E., Tran V. Chart review reliability in sepsis follow-up studies. Lightning talk presented at Ottawa Hospital Trainee Research Day; 2024 Aug; Ottawa, ON."
+      ]
+    },
+    {
+      "heading": "Skills",
+      "items": [
+        "R, tidyverse, REDCap, Zotero, SAS basic, French and English fluent"
+      ]
+    },
+    {
+      "heading": "Methods Training",
+      "items": [
+        {
+          "title": "Graduate Methods Sequence",
+          "meta": "2025-2026",
+          "subtitle": "McGill University",
+          "bullets": [
+            "Completed coursework in causal inference, survival analysis, longitudinal data methods, and reproducible research workflows.",
+            "Built R Markdown templates for analysis notes so collaborators could review assumptions, exclusions, and model changes."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Professional Service",
+      "items": [
+        {
+          "title": "Student Reviewer, Population Health Journal Club",
+          "meta": "Sept 2025-Present",
+          "subtitle": "Montréal, QC",
+          "bullets": [
+            "Summarize methods limitations and data-source constraints for monthly article discussions.",
+            "Coordinate speaker questions for visiting researchers presenting climate and health work."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "resume_id": "resume_201",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Sparse Early-Career Resume",
+  "name": "Maya R. Chen",
+  "email": "maya.chen@example.com",
+  "phone": "(315) 555-0184",
+  "location": "Ithaca, NY",
+  "links": [
+    "github.com/mayarchen"
+  ],
+  "skills": [
+    "Python",
+    "Java",
+    "JavaScript",
+    "React",
+    "Flask",
+    "SQL",
+    "Git",
+    "Excel",
+    "Spanish"
+  ],
+  "notes": "Low-signal recent graduate; do not infer missing work history beyond visible entries.",
+  "sections": [
+    {
+      "heading": "OBJECTIVE",
+      "items": [
+        "Recent computer science graduate seeking an entry-level software engineering role focused on internal tools, data workflows, and user-centered automation."
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "Cornell University, College of Engineering, Ithaca, NY",
+          "meta": "May 2026",
+          "subtitle": "Bachelor of Science in Computer Science, Minor in Information Science",
+          "bullets": [
+            "GPA: 3.41; Dean's List, Spring 2025",
+            "Relevant Courses: Data Structures, Databases, Web Programming, Human-Computer Interaction"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "PROJECTS",
+      "items": [
+        {
+          "title": "Course Planner Web App",
+          "meta": "Jan-May 2026",
+          "subtitle": "Class project",
+          "bullets": [
+            "Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.",
+            "Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits."
+          ]
+        },
+        {
+          "title": "Campus Food Pantry Inventory Sheet",
+          "meta": "Sep-Dec 2025",
+          "subtitle": "Volunteer technical project",
+          "bullets": [
+            "Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.",
+            "Documented the handoff process for three student volunteers with limited technical background."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Library Technology Assistant, Cornell University Library",
+          "meta": "Aug 2024-May 2026",
+          "subtitle": "Ithaca, NY",
+          "bullets": [
+            "Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.",
+            "Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Python, Java, JavaScript, React, Flask, SQL, Git, Excel; basic Spanish"
+      ]
+    },
+    {
+      "heading": "ADDITIONAL PROJECTS",
+      "items": [
+        {
+          "title": "Student Organization Check-In Tracker",
+          "meta": "Feb-Apr 2026",
+          "subtitle": "Python and Airtable",
+          "bullets": [
+            "Created a small script that compared event sign-in exports against member rosters and highlighted duplicate or missing check-ins.",
+            "Shared weekly attendance summaries with two club officers so they could follow up with inactive members before elections."
+          ]
+        },
+        {
+          "title": "Intro Programming Review Notes",
+          "meta": "Fall 2025",
+          "subtitle": "Peer learning resource",
+          "bullets": [
+            "Compiled short examples for recursion, dictionaries, and file input/output after tutoring first-year students during office hours.",
+            "Organized examples into a GitHub repository with README files and expected output for each exercise."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "LEADERSHIP & SERVICE",
+      "items": [
+        {
+          "title": "Peer Tutor, Engineering Learning Initiatives",
+          "meta": "Sep 2025-May 2026",
+          "subtitle": "Ithaca, NY",
+          "bullets": [
+            "Tutored 6-8 students weekly in introductory Python and data structures, focusing on debugging habits and test-case design.",
+            "Coordinated review sessions before two prelims and collected anonymized questions to improve future study guides."
+          ]
+        }
+      ]
+    }
+  ]
+}

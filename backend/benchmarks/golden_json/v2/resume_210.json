@@ -1,0 +1,120 @@
+{
+  "resume_id": "resume_210",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Non-Traditional Order Resume",
+  "name": "Hannah Weiss",
+  "email": "hannah.weiss@example.com",
+  "phone": "(612) 555-0126",
+  "location": "Minneapolis, MN",
+  "links": [
+    "github.com/hweiss-ml"
+  ],
+  "skills": [
+    "Python",
+    "pandas",
+    "scikit-learn",
+    "PyTorch",
+    "SQL",
+    "MLflow",
+    "Jupyter",
+    "Git",
+    "Tableau"
+  ],
+  "notes": "Projects and skills intentionally appear before work experience and education.",
+  "sections": [
+    {
+      "heading": "MACHINE LEARNING PROJECTS",
+      "items": [
+        {
+          "title": "Retail Demand Forecasting",
+          "meta": "Jan-Apr 2026",
+          "subtitle": "Python, scikit-learn, LightGBM",
+          "bullets": [
+            "Built baseline and gradient-boosted forecasting models for 48 store-item pairs using calendar, price, and promotion features.",
+            "Compared MAE across sparse and high-volume products and wrote a short model-card-style summary of failure modes."
+          ]
+        },
+        {
+          "title": "Support Ticket Classifier",
+          "meta": "Oct-Dec 2025",
+          "subtitle": "NLP project",
+          "bullets": [
+            "Fine-tuned a small transformer model to route simulated support tickets into billing, login, integration, and bug categories.",
+            "Added confidence thresholds so low-confidence tickets were flagged for human review rather than auto-routed."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "TECHNICAL SKILLS",
+      "items": [
+        "Python, pandas, scikit-learn, PyTorch, SQL, MLflow, Jupyter, Git, Tableau"
+      ]
+    },
+    {
+      "heading": "WORK EXPERIENCE",
+      "items": [
+        {
+          "title": "Business Intelligence Analyst, Prairie Market Foods",
+          "meta": "July 2023-Present",
+          "subtitle": "Minneapolis, MN",
+          "bullets": [
+            "Maintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.",
+            "Partner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.",
+            "Automated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes."
+          ]
+        },
+        {
+          "title": "Category Analyst Intern, Prairie Market Foods",
+          "meta": "May-Aug 2022",
+          "subtitle": "Minneapolis, MN",
+          "bullets": [
+            "Reviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Minnesota",
+          "meta": "May 2023",
+          "subtitle": "Bachelor of Science in Statistics",
+          "bullets": [
+            "Minor in Computer Science"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "SELECTED COURSEWORK",
+      "items": [
+        "Machine Learning, Regression Analysis, Database Systems, Experimental Design, Data Visualization"
+      ]
+    },
+    {
+      "heading": "ANALYTICS PROJECTS AT WORK",
+      "items": [
+        {
+          "title": "Promotion Lift Review",
+          "meta": "2025",
+          "subtitle": "Prairie Market Foods",
+          "bullets": [
+            "Compared promoted and non-promoted product families across store clusters to identify where assumed lift overstated actual demand.",
+            "Created a Tableau view that let category managers inspect outliers before finalizing seasonal buy plans."
+          ]
+        },
+        {
+          "title": "Store Clustering Experiment",
+          "meta": "2024",
+          "subtitle": "Internal analysis",
+          "bullets": [
+            "Grouped stores by basket size, weekday traffic, and seasonal category mix to improve peer comparisons in weekly dashboards.",
+            "Documented limitations around rural stores and new locations with incomplete historical data."
+          ]
+        }
+      ]
+    }
+  ]
+}
