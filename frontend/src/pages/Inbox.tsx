@@ -251,40 +251,49 @@ function getInboxSearchText(submission: ReviewerSubmissionSnapshot) {
   return normalizeFilterText(
     [
       submission.submission_id,
-      submission.raw.full_name,
-      submission.raw.email,
-      submission.raw.location_raw,
-      submission.raw.timezone,
-      submission.raw.skills_raw,
-      submission.raw.interests,
-      submission.raw.experience_level,
-      submission.raw.availability,
-      submission.raw.motivation,
-      submission.raw.resume_filename,
-      submission.raw.resume_status,
-      submission.parsed.parser_state,
-      submission.parsed.parsed_skills_raw,
-      submission.parsed.parsed_location_raw,
-      submission.resolved.resolver_state,
-      submission.resolved.resolved_skill_ids,
-      submission.resolved.unknown_skills,
-      submission.ops.status,
-      submission.ops.notes,
-      submission.ops.tags,
-      submission.ops.contact_tracking,
-      submission.errors.latest_error_summary,
-      submission.errors.latest_error_stage,
-      submission.errors.latest_error_code
-    ].join(' ')
+      submission.raw?.full_name,
+      submission.raw?.email,
+      submission.raw?.location_raw,
+      submission.raw?.timezone,
+      submission.raw?.skills_raw,
+      submission.raw?.interests,
+      submission.raw?.experience_level,
+      submission.raw?.availability,
+      submission.raw?.motivation,
+      submission.raw?.resume_filename,
+      submission.raw?.resume_status,
+      submission.parsed?.parser_state,
+      submission.parsed?.parsed_skills_raw,
+      submission.parsed?.parsed_location_raw,
+      submission.resolved?.resolver_state,
+      submission.resolved?.resolved_skill_ids,
+      submission.resolved?.unknown_skills,
+      submission.ops?.status,
+      submission.ops?.notes,
+      submission.ops?.tags,
+      submission.ops?.contact_tracking,
+      submission.errors?.latest_error_summary,
+      submission.errors?.latest_error_stage,
+      submission.errors?.latest_error_code
+    ]
+      .map(safeText)
+      .join(' ')
   )
 }
 
 function getPreferredLocation(submission: ReviewerSubmissionSnapshot) {
-  return submission.parsed.parsed_location_raw.trim() || submission.raw.location_raw.trim()
+  return (
+    safeText(submission.parsed?.parsed_location_raw).trim() ||
+    safeText(submission.raw?.location_raw).trim()
+  )
 }
 
-function normalizeFilterText(value: string) {
-  return value.trim().toLowerCase()
+function normalizeFilterText(value: unknown) {
+  return safeText(value).trim().toLowerCase()
+}
+
+function safeText(value: unknown) {
+  return typeof value === 'string' ? value : ''
 }
 
 function InboxDetailPanel({
