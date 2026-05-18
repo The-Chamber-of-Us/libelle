@@ -222,7 +222,9 @@ function matchesInboxFilters(
     locationFilter: string
   }
 ) {
-  if (filters.statusFilter !== 'all' && submission.ops.status !== filters.statusFilter) {
+  const submissionStatus = safeText(submission.ops?.status)
+
+  if (filters.statusFilter !== 'all' && submissionStatus !== filters.statusFilter) {
     return false
   }
 
