@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Search, X } from 'lucide-react'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
-import type { ReviewerSubmissionSnapshot } from '../types/dashboard'
+import type { OpsStatus, ReviewerSubmissionSnapshot } from '../types/dashboard'
 
 type InboxState =
   | { status: 'loading' }
@@ -10,16 +11,40 @@ type InboxState =
 export default function Inbox() {
   const [state, setState] = useState<InboxState>({ status: 'loading' })
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<OpsStatus | 'all'>('all')
+  const [locationFilter, setLocationFilter] = useState('')
+
+  const filteredSubmissions = useMemo(() => {
+    if (state.status !== 'ready') return []
+
+    return state.submissions.filter((submission) =>
+      matchesInboxFilters(submission, {
+        searchQuery,
+        statusFilter,
+        locationFilter
+      })
+    )
+  }, [locationFilter, searchQuery, state, statusFilter])
 
   const selectedSubmission = useMemo(() => {
     if (state.status !== 'ready' || selectedSubmissionId === null) return null
 
     return (
-      state.submissions.find(
+      filteredSubmissions.find(
         (submission) => submission.submission_id === selectedSubmissionId
       ) ?? null
     )
-  }, [selectedSubmissionId, state])
+  }, [filteredSubmissions, selectedSubmissionId, state.status])
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' || statusFilter !== 'all' || locationFilter.trim() !== ''
+
+  const clearFilters = () => {
+    setSearchQuery('')
+    setStatusFilter('all')
+    setLocationFilter('')
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -68,6 +93,74 @@ export default function Inbox() {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
           <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <label className="grid gap-1 text-sm font-medium text-slate-700 lg:flex-1">
+                  Search
+                  <span className="relative">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                      aria-hidden="true"
+                    />
+                    <input
+                      className="h-10 w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20"
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder="Name, email, skills, tags, notes"
+                    />
+                  </span>
+                </label>
+
+                <label className="grid gap-1 text-sm font-medium text-slate-700 lg:w-44">
+                  Status
+                  <select
+                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20"
+                    value={statusFilter}
+                    onChange={(event) =>
+                      setStatusFilter(event.target.value as OpsStatus | 'all')
+                    }
+                  >
+                    <option value="all">All statuses</option>
+                    {inboxStatusOptions.map((status) => (
+                      <option key={status} value={status}>
+                        {formatStatus(status)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-1 text-sm font-medium text-slate-700 lg:w-52">
+                  Location
+                  <input
+                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20"
+                    type="search"
+                    value={locationFilter}
+                    onChange={(event) => setLocationFilter(event.target.value)}
+                    placeholder="City, state, region"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={clearFilters}
+                  disabled={!hasActiveFilters}
+                  title="Clear filters"
+                >
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  Clear
+                </button>
+              </div>
+
+              {state.status === 'ready' && (
+                <p className="mt-3 text-sm text-slate-500">
+                  Showing {filteredSubmissions.length} of {state.submissions.length}{' '}
+                  submissions
+                </p>
+              )}
+            </div>
+
             <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:px-5">
               <span>Applicant</span>
               <span>Top Signals</span>
@@ -87,7 +180,15 @@ export default function Inbox() {
             )}
 
             {state.status === 'ready' &&
-              state.submissions.map((submission) => (
+              state.submissions.length > 0 &&
+              filteredSubmissions.length === 0 && (
+                <div className="px-5 py-10 text-sm text-slate-600">
+                  No submissions match the current filters.
+                </div>
+              )}
+
+            {state.status === 'ready' &&
+              filteredSubmissions.map((submission) => (
                 <InboxSubmissionRow
                   key={submission.submission_id}
                   submission={submission}
@@ -102,6 +203,99 @@ export default function Inbox() {
       </div>
     </main>
   )
+}
+
+const inboxStatusOptions: OpsStatus[] = [
+  'new',
+  'reviewed',
+  'contacted',
+  'in_progress',
+  'paused',
+  'closed'
+]
+
+function matchesInboxFilters(
+  submission: ReviewerSubmissionSnapshot,
+  filters: {
+    searchQuery: string
+    statusFilter: OpsStatus | 'all'
+    locationFilter: string
+  }
+) {
+  const submissionStatus = safeText(submission.ops?.status)
+
+  if (filters.statusFilter !== 'all' && submissionStatus !== filters.statusFilter) {
+    return false
+  }
+
+  const normalizedLocationFilter = normalizeFilterText(filters.locationFilter)
+  if (
+    normalizedLocationFilter &&
+    !normalizeFilterText(getPreferredLocation(submission)).includes(
+      normalizedLocationFilter
+    )
+  ) {
+    return false
+  }
+
+  const normalizedSearchQuery = normalizeFilterText(filters.searchQuery)
+  if (
+    normalizedSearchQuery &&
+    !getInboxSearchText(submission).includes(normalizedSearchQuery)
+  ) {
+    return false
+  }
+
+  return true
+}
+
+function getInboxSearchText(submission: ReviewerSubmissionSnapshot) {
+  return normalizeFilterText(
+    [
+      submission.submission_id,
+      submission.raw?.full_name,
+      submission.raw?.email,
+      submission.raw?.location_raw,
+      submission.raw?.timezone,
+      submission.raw?.skills_raw,
+      submission.raw?.interests,
+      submission.raw?.experience_level,
+      submission.raw?.availability,
+      submission.raw?.motivation,
+      submission.raw?.resume_filename,
+      submission.raw?.resume_status,
+      submission.parsed?.parser_state,
+      submission.parsed?.parsed_skills_raw,
+      submission.parsed?.parsed_location_raw,
+      submission.resolved?.resolver_state,
+      submission.resolved?.resolved_skill_ids,
+      submission.resolved?.unknown_skills,
+      submission.ops?.status,
+      submission.ops?.notes,
+      submission.ops?.tags,
+      submission.ops?.contact_tracking,
+      submission.errors?.latest_error_summary,
+      submission.errors?.latest_error_stage,
+      submission.errors?.latest_error_code
+    ]
+      .map(safeText)
+      .join(' ')
+  )
+}
+
+function getPreferredLocation(submission: ReviewerSubmissionSnapshot) {
+  return (
+    safeText(submission.parsed?.parsed_location_raw).trim() ||
+    safeText(submission.raw?.location_raw).trim()
+  )
+}
+
+function normalizeFilterText(value: unknown) {
+  return safeText(value).trim().toLowerCase()
+}
+
+function safeText(value: unknown) {
+  return typeof value === 'string' ? value : ''
 }
 
 function InboxDetailPanel({
