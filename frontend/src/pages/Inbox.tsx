@@ -18,13 +18,15 @@ export default function Inbox() {
   const filteredSubmissions = useMemo(() => {
     if (state.status !== 'ready') return []
 
-    return state.submissions.filter((submission) =>
-      matchesInboxFilters(submission, {
-        searchQuery,
-        statusFilter,
-        locationFilter
-      })
-    )
+    return state.submissions
+      .filter((submission) =>
+        matchesInboxFilters(submission, {
+          searchQuery,
+          statusFilter,
+          locationFilter
+        })
+      )
+      .sort(compareInboxSubmissions)
   }, [locationFilter, searchQuery, state, statusFilter])
 
   const selectedSubmission = useMemo(() => {
@@ -213,6 +215,54 @@ const inboxStatusOptions: OpsStatus[] = [
   'paused',
   'closed'
 ]
+
+const actionableStatusRank: Record<OpsStatus, number> = {
+  new: 2,
+  paused: 3,
+  in_progress: 4,
+  contacted: 5,
+  reviewed: 6,
+  closed: 7
+}
+
+function compareInboxSubmissions(
+  first: ReviewerSubmissionSnapshot,
+  second: ReviewerSubmissionSnapshot
+) {
+  const firstRank = getInboxActionableRank(first)
+  const secondRank = getInboxActionableRank(second)
+
+  if (firstRank !== secondRank) return firstRank - secondRank
+
+  const firstCreatedAt = getSortableDateValue(first.raw?.created_at)
+  const secondCreatedAt = getSortableDateValue(second.raw?.created_at)
+
+  if (firstCreatedAt !== secondCreatedAt) return secondCreatedAt - firstCreatedAt
+
+  return first.submission_id.localeCompare(second.submission_id)
+}
+
+function getInboxActionableRank(submission: ReviewerSubmissionSnapshot) {
+  if (submission.errors?.has_error) return 0
+  if (hasResolverAttentionSignal(submission)) return 1
+
+  const status = submission.ops?.status
+  return actionableStatusRank[status] ?? actionableStatusRank.new
+}
+
+function hasResolverAttentionSignal(submission: ReviewerSubmissionSnapshot) {
+  return (
+    submission.resolved?.resolver_state === 'zero_matches' ||
+    parseSnapshotList(safeText(submission.resolved?.unknown_skills)).length > 0
+  )
+}
+
+function getSortableDateValue(value: unknown) {
+  if (typeof value !== 'string') return 0
+
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
 
 function matchesInboxFilters(
   submission: ReviewerSubmissionSnapshot,
