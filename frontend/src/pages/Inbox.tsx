@@ -18,8 +18,7 @@ export default function Inbox() {
   const filteredSubmissions = useMemo(() => {
     if (state.status !== 'ready') return []
 
-    return [...state.submissions]
-      .sort(compareInboxSubmissions)
+    return state.submissions
       .filter((submission) =>
         matchesInboxFilters(submission, {
           searchQuery,
@@ -27,6 +26,7 @@ export default function Inbox() {
           locationFilter
         })
       )
+      .sort(compareInboxSubmissions)
   }, [locationFilter, searchQuery, state, statusFilter])
 
   const selectedSubmission = useMemo(() => {
@@ -217,12 +217,12 @@ const inboxStatusOptions: OpsStatus[] = [
 ]
 
 const actionableStatusRank: Record<OpsStatus, number> = {
-  new: 0,
-  paused: 1,
-  in_progress: 2,
-  contacted: 3,
-  reviewed: 4,
-  closed: 5
+  new: 2,
+  paused: 3,
+  in_progress: 4,
+  contacted: 5,
+  reviewed: 6,
+  closed: 7
 }
 
 function compareInboxSubmissions(
@@ -257,7 +257,9 @@ function hasResolverAttentionSignal(submission: ReviewerSubmissionSnapshot) {
   )
 }
 
-function getSortableDateValue(value: string) {
+function getSortableDateValue(value: unknown) {
+  if (typeof value !== 'string') return 0
+
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
