@@ -15,7 +15,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
-from backend.utils.text_normalization import (
+from utils.text_normalization import (
     expand_ligatures,
     normalize_quotes,
     normalize_dashes,

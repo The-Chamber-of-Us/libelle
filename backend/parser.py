@@ -1,7 +1,7 @@
 import re
 import us
 from typing import List, Dict, Tuple, Any
-from backend.utils.text_normalization import normalize_text
+from utils.text_normalization import normalize_text
 
 
 def _get_lines(text: str) -> List[str]:
