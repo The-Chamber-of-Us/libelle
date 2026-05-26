@@ -19,6 +19,7 @@ ERRORS_SHEET_NAME = "errors"
 
 _sheet = None
 _sheet_lock = threading.Lock()
+_ops_write_lock = threading.Lock()
 
 
 def _get_sheet():
@@ -129,6 +130,55 @@ def load_parser_result_rows() -> List[Dict[str, str]]:
 def load_ops_rows() -> List[Dict[str, str]]:
     """Load schema-aligned ops rows for snapshot composition."""
     return _load_sheet_rows(OPS_SHEET_NAME)
+
+
+def create_ops_row_if_missing(
+    *,
+    submission_id: str,
+    status: str,
+    notes: str = "",
+    tags: str = "",
+    contact_tracking: str = "",
+    updated_by: str,
+) -> Optional[Dict[str, str]]:
+    """
+    Create the first mutable ops row for a submission if one does not exist.
+
+    The v0.3 ops layer has one current-state row per submission_id. This helper
+    intentionally does not update existing rows; it returns None when a row is
+    already present.
+    """
+    normalized_submission_id = str(submission_id).strip()
+    if not normalized_submission_id:
+        raise ValueError("submission_id is required")
+
+    with _ops_write_lock:
+        existing_rows = load_ops_rows()
+        for row in existing_rows:
+            if str(row.get("submission_id", "")).strip() == normalized_submission_id:
+                return None
+
+        row_data = {
+            "submission_id": normalized_submission_id,
+            "status": status,
+            "notes": notes or "",
+            "tags": tags or "",
+            "contact_tracking": contact_tracking or "",
+            "updated_at": _local_timestamp(),
+            "updated_by": str(updated_by).strip(),
+        }
+        ops_row = build_row("ops", row_data)
+
+        _get_sheet().values().append(
+            spreadsheetId=GOOGLE_SHEET_ID,
+            range=f"{OPS_SHEET_NAME}!A2",
+            valueInputOption="RAW",
+            insertDataOption="INSERT_ROWS",
+            body={"values": [ops_row]},
+        ).execute()
+
+    print(f"[SHEETS] Ops row created → submission_id={normalized_submission_id}, status={status}")
+    return row_data
 
 
 def load_error_rows() -> List[Dict[str, str]]:
