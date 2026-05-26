@@ -1,7 +1,7 @@
 import re
 import us
 from typing import List, Dict, Tuple, Any
-import unicodedata
+from utils.text_normalization import normalize_text
 
 
 def _get_lines(text: str) -> List[str]:
@@ -97,31 +97,6 @@ def _group_into_entries(section_lines: List[str]) -> List[str]:
     flush_current()
     return entries
 
-# Shared normalization utility — adapted from dev branch (authored by [betty ann's github @BA88])
-# to-do: consolidate into a shared module when that branch is merged
-
-_PUNCT_TRANSLATION = str.maketrans({
-    '\u2018': "'", '\u2019': "'", '\u201c': '"', '\u201d': '"',
-    '\u2013': '-', '\u2014': '-', '\uFB00': 'ff', '\uFB01': 'fi',
-    '\uFB02': 'fl', '\uFB03': 'ffi', '\uFB04': 'ffl',
-})
-_WS_COLLAPSE = re.compile(r'\s+')
-
-def _normalize(value: str | None) -> str:
-    if value is None:
-        return ""
-    s = str(value)
-    if not s:
-        return ""
-    s = unicodedata.normalize("NFKC", s)
-    nfd = unicodedata.normalize("NFD", s)
-    s = "".join(ch for ch in nfd if unicodedata.combining(ch) == 0)
-    s = s.translate(_PUNCT_TRANSLATION)
-    s = s.strip().lower()
-    s = _WS_COLLAPSE.sub(" ", s)
-    return s
-
-
 def extract_phone(text: str) -> Tuple[List[str], float]:
     pattern = r"(\+?\d[\d\s().-]{8,}\d)"
     raw_matches = re.findall(pattern, text)
@@ -179,7 +154,7 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
         l = re.sub(r'\s*\(.*?\)', '', l) # strips parentheses
         cleaned.append(l)
 
-    skills = [_normalize(p.strip()) for l in cleaned for p in re.split(r'[•,·;|]', l) if p.strip()]
+    skills = [normalize_text(p.strip(), lowercase=True) for l in cleaned for p in re.split(r'[•,·;|]', l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 

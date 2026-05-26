@@ -35,8 +35,9 @@ from typing import Any, Dict, List, Optional, Tuple
 BASE_DIR = Path(__file__).parent.parent
 BACKEND_DIR = BASE_DIR / "backend"
 
-if str(BACKEND_DIR) not in sys.path:
-    sys.path.insert(0, str(BACKEND_DIR))
+for p in [str(BASE_DIR), str(BACKEND_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 
 # ---------------------------------------------------------------------------
