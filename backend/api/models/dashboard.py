@@ -55,6 +55,20 @@ class SnapshotOpsData(SnapshotModel):
     updated_by: str
 
 
+class OpsWorkflowStateCreateRequest(SnapshotModel):
+    status: str
+    notes: str = ""
+    tags: str = ""
+    contact_tracking: str = ""
+    updated_by: str
+
+
+class OpsWorkflowStateCreateResponse(SnapshotModel):
+    status: Literal["created", "already_exists"]
+    submission_id: str
+    ops: SnapshotOpsData | None
+
+
 class SnapshotErrorsData(SnapshotModel):
     has_error: bool
     latest_error_summary: str
