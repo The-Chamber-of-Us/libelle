@@ -31,3 +31,26 @@ def create_first_ops_workflow_state(
         contact_tracking=workflow_fields.get("contact_tracking", ""),
         updated_by=workflow_fields["updated_by"],
     )
+
+
+class OpsWorkflowUpdateFields(TypedDict, total=False):
+    status: str
+    notes: str
+    updated_by: str
+
+
+def update_existing_ops_workflow_state(
+    submission_id: str,
+    workflow_fields: OpsWorkflowUpdateFields,
+) -> Optional[dict[str, str]]:
+    """
+    Update the mutable ops workflow state for an existing submission row.
+
+    Missing ops rows are intentionally left missing for this update-only path.
+    """
+    return sheets_repo.update_ops_row_if_exists(
+        submission_id=submission_id,
+        status=workflow_fields.get("status"),
+        notes=workflow_fields.get("notes"),
+        updated_by=workflow_fields["updated_by"],
+    )

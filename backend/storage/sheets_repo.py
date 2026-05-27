@@ -181,6 +181,62 @@ def create_ops_row_if_missing(
     return row_data
 
 
+def update_ops_row_if_exists(
+    *,
+    submission_id: str,
+    status: Optional[str] = None,
+    notes: Optional[str] = None,
+    updated_by: str,
+) -> Optional[Dict[str, str]]:
+    """
+    Update the existing mutable ops row for a submission.
+
+    The v0.3 ops writeback path is update-in-place only. Missing rows are not
+    created, and fields omitted from the update are preserved.
+    """
+    normalized_submission_id = str(submission_id).strip()
+    if not normalized_submission_id:
+        raise ValueError("submission_id is required")
+
+    with _ops_write_lock:
+        matching_row = None
+        matching_sheet_row_number = None
+        for sheet_row_number, row in _load_ops_rows_with_sheet_row_numbers():
+            if str(row.get("submission_id", "")).strip() == normalized_submission_id:
+                matching_row = row
+                matching_sheet_row_number = sheet_row_number
+                break
+
+        if matching_row is None or matching_sheet_row_number is None:
+            return None
+
+        row_data = dict(matching_row)
+        if status is not None:
+            row_data["status"] = status
+        if notes is not None:
+            row_data["notes"] = notes
+
+        row_data["submission_id"] = normalized_submission_id
+        row_data["updated_at"] = _local_timestamp()
+        row_data["updated_by"] = str(updated_by).strip()
+
+        ops_row = build_row("ops", row_data)
+        end_column = chr(ord("A") + len(get_headers(OPS_SHEET_NAME)) - 1)
+
+        _get_sheet().values().update(
+            spreadsheetId=GOOGLE_SHEET_ID,
+            range=f"{OPS_SHEET_NAME}!A{matching_sheet_row_number}:{end_column}{matching_sheet_row_number}",
+            valueInputOption="RAW",
+            body={"values": [ops_row]},
+        ).execute()
+
+    print(
+        f"[SHEETS] Ops row updated → submission_id={normalized_submission_id}, "
+        f"status={row_data.get('status', '')}"
+    )
+    return row_data
+
+
 def load_error_rows() -> List[Dict[str, str]]:
     """Load schema-aligned error rows for snapshot composition."""
     return _load_sheet_rows(ERRORS_SHEET_NAME)
@@ -208,6 +264,32 @@ def _load_sheet_rows(tab_name: str) -> List[Dict[str, str]]:
             continue
 
         records.append(row_dict)
+
+    return records
+
+
+def _load_ops_rows_with_sheet_row_numbers() -> List[tuple[int, Dict[str, str]]]:
+    headers = get_headers(OPS_SHEET_NAME)
+
+    response = _get_sheet().values().get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{OPS_SHEET_NAME}!A2:ZZ",
+    ).execute()
+
+    rows = response.get("values", [])
+    records: List[tuple[int, Dict[str, str]]] = []
+
+    for sheet_row_number, raw_row in enumerate(rows, start=2):
+        padded_row = list(raw_row) + [""] * (len(headers) - len(raw_row))
+        row_dict = {
+            header: str(value).strip() if value is not None else ""
+            for header, value in zip(headers, padded_row)
+        }
+
+        if not row_dict.get("submission_id", ""):
+            continue
+
+        records.append((sheet_row_number, row_dict))
 
     return records
 

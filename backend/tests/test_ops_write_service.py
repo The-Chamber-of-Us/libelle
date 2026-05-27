@@ -1,4 +1,4 @@
-from services.ops_write_service import create_first_ops_workflow_state
+from services.ops_write_service import create_first_ops_workflow_state, update_existing_ops_workflow_state
 from storage import sheets_repo
 
 
@@ -7,18 +7,42 @@ class _FakeAppendRequest:
         return {}
 
 
+class _FakeGetRequest:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def execute(self):
+        return {"values": self.rows}
+
+
+class _FakeUpdateRequest:
+    def execute(self):
+        return {}
+
+
 class _FakeValues:
-    def __init__(self):
+    def __init__(self, rows=None):
+        self.rows = rows or []
         self.append_calls = []
+        self.get_calls = []
+        self.update_calls = []
 
     def append(self, **kwargs):
         self.append_calls.append(kwargs)
         return _FakeAppendRequest()
 
+    def get(self, **kwargs):
+        self.get_calls.append(kwargs)
+        return _FakeGetRequest(self.rows)
+
+    def update(self, **kwargs):
+        self.update_calls.append(kwargs)
+        return _FakeUpdateRequest()
+
 
 class _FakeSheet:
-    def __init__(self):
-        self.values_api = _FakeValues()
+    def __init__(self, rows=None):
+        self.values_api = _FakeValues(rows)
 
     def values(self):
         return self.values_api
@@ -129,3 +153,114 @@ def test_create_first_ops_workflow_state_rechecks_existing_rows_before_each_appe
     assert create_first_ops_workflow_state("sub_001", fields) is not None
     assert create_first_ops_workflow_state("sub_001", fields) is None
     assert stored_rows == [{"submission_id": "sub_001", "status": "reviewed"}]
+
+
+def test_update_existing_ops_workflow_state_updates_row_in_place(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        rows=[
+            [
+                "sub_001",
+                "new",
+                "Original note",
+                "priority",
+                "email",
+                "05-25-2026 09:00:00 UTC",
+                "old@example.org",
+            ]
+        ]
+    )
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+
+    updated = update_existing_ops_workflow_state(
+        " sub_001 ",
+        {
+            "status": "reviewed",
+            "notes": "Looks good",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert updated == {
+        "submission_id": "sub_001",
+        "status": "reviewed",
+        "notes": "Looks good",
+        "tags": "priority",
+        "contact_tracking": "email",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": "reviewer@example.org",
+    }
+    assert fake_sheet.values_api.append_calls == []
+    assert fake_sheet.values_api.update_calls == [
+        {
+            "spreadsheetId": "test-sheet-id",
+            "range": "ops!A2:G2",
+            "valueInputOption": "RAW",
+            "body": {
+                "values": [
+                    [
+                        "sub_001",
+                        "reviewed",
+                        "Looks good",
+                        "priority",
+                        "email",
+                        "05-26-2026 10:00:00 UTC",
+                        "reviewer@example.org",
+                    ]
+                ]
+            },
+        }
+    ]
+
+
+def test_update_existing_ops_workflow_state_preserves_non_updated_fields(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        rows=[
+            [
+                "sub_001",
+                "contacted",
+                "Original note",
+                "priority",
+                "call",
+                "05-25-2026 09:00:00 UTC",
+                "old@example.org",
+            ]
+        ]
+    )
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+
+    updated = update_existing_ops_workflow_state(
+        "sub_001",
+        {
+            "notes": "Updated note only",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert updated["status"] == "contacted"
+    assert updated["notes"] == "Updated note only"
+    assert updated["tags"] == "priority"
+    assert updated["contact_tracking"] == "call"
+    assert updated["updated_at"] == "05-26-2026 10:00:00 UTC"
+    assert updated["updated_by"] == "reviewer@example.org"
+
+
+def test_update_existing_ops_workflow_state_returns_none_when_row_missing(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(rows=[["sub_002", "new"]])
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+
+    updated = update_existing_ops_workflow_state(
+        "sub_001",
+        {
+            "status": "reviewed",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert updated is None
+    assert fake_sheet.values_api.append_calls == []
+    assert fake_sheet.values_api.update_calls == []
