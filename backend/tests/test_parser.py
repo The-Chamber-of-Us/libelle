@@ -1,4 +1,4 @@
-from parser import _is_section_header
+from parser import _is_section_header, _split_skill_line
 
 
 def test_volunteering_is_section_header():
@@ -40,3 +40,27 @@ def test_bullet_prefixed_skill_is_not_section_header():
     """Bullet-prefixed lines should never be treated as section headers."""
     assert _is_section_header("• SQL") == False
     assert _is_section_header("- Python") == False
+
+def test_slash_list_splits_into_separate_skills():
+    """Clear slash-delimited list should split into separate skills."""
+    assert _split_skill_line("Python / Java / Go / Rust") == ["Python", "Java", "Go", "Rust"]
+
+def test_slash_in_url_not_split():
+    """Slashes in URLs should not be treated as delimiters."""
+    result = _split_skill_line("https://github.com/user")
+    assert len(result) == 1
+
+def test_slash_in_version_string_not_split():
+    """Version strings like Node.js 18/20 should not be split."""
+    result = _split_skill_line("Node.js 18/20")
+    assert len(result) == 1
+
+def test_slash_with_long_parts_not_split():
+    """Slash where parts are long compound phrases should not split."""
+    result = _split_skill_line("Machine Learning / Deep Neural Network Architectures and Training")
+    assert len(result) == 1
+
+def test_no_slash_falls_back_to_standard_delimiters():
+    """Lines without slash should still split on standard delimiters."""
+    assert _split_skill_line("Python, Java, Go") == ["Python", " Java", " Go"]
+    assert _split_skill_line("Python • Java • Go") == ["Python ", " Java ", " Go"]
