@@ -300,3 +300,176 @@ def test_update_ops_workflow_state_rejects_invalid_status_before_write(monkeypat
 
     assert response.status_code == 400
     assert calls == []
+
+
+def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch) -> None:
+    updated_row = {
+        "submission_id": "sub_001",
+        "status": "reviewed",
+        "notes": "Original note",
+        "tags": "priority",
+        "contact_tracking": "call",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+    }
+    captured = {}
+
+    def fake_update(submission_id, workflow_fields):
+        captured["submission_id"] = submission_id
+        captured["workflow_fields"] = workflow_fields
+        return updated_row
+
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", fake_update)
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "status": "reviewed",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "updated",
+        "submission_id": "sub_001",
+        "ops": {
+            "status": "reviewed",
+            "notes": "Original note",
+            "tags": "priority",
+            "contact_tracking": "call",
+            "updated_at": "05-26-2026 10:00:00 UTC",
+            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+        },
+    }
+    assert captured == {
+        "submission_id": "sub_001",
+        "workflow_fields": {
+            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+            "status": "reviewed",
+        },
+    }
+
+
+def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch) -> None:
+    updated_row = {
+        "submission_id": "sub_001",
+        "status": "contacted",
+        "notes": "Updated note only",
+        "tags": "priority",
+        "contact_tracking": "call",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+    }
+    captured = {}
+
+    def fake_update(submission_id, workflow_fields):
+        captured["submission_id"] = submission_id
+        captured["workflow_fields"] = workflow_fields
+        return updated_row
+
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", fake_update)
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "notes": "Updated note only",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured == {
+        "submission_id": "sub_001",
+        "workflow_fields": {
+            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+            "notes": "Updated note only",
+        },
+    }
+
+
+def test_update_ops_dashboard_state_rejects_missing_mutable_fields(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+        },
+    )
+
+    assert response.status_code == 422
+    assert calls == []
+
+
+def test_update_ops_dashboard_state_rejects_invalid_status_before_write(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "status": "pending",
+        },
+    )
+
+    assert response.status_code == 400
+    assert calls == []
+
+
+def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "notes": "Updated note",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert response.status_code == 422
+    assert calls == []
+
+
+def test_update_ops_dashboard_state_returns_not_found_for_missing_ops_row(monkeypatch) -> None:
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: None)
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "notes": "Updated note",
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "OPS_ROW_NOT_FOUND"

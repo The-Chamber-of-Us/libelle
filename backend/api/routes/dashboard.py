@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Response, status as http_status
 
 from api.models.dashboard import (
+    OpsDashboardUpdateRequest,
+    OpsDashboardUpdateResponse,
     OpsWorkflowStateCreateRequest,
     OpsWorkflowStateCreateResponse,
     OpsWorkflowStateUpdateRequest,
@@ -12,6 +14,8 @@ from services.dashboard_service import get_snapshot_records
 from services.ops_write_service import create_first_ops_workflow_state, update_existing_ops_workflow_state
 
 router = APIRouter()
+
+OPS_DASHBOARD_ACTOR = "dashboard_ops_endpoint"
 
 
 @router.get("/snapshot", response_model=list[ReviewerSubmissionSnapshot])
@@ -103,6 +107,43 @@ def update_ops_workflow_state(
     return {
         "status": "updated",
         "submission_id": submission_id,
+        "ops": {
+            "status": updated_row["status"],
+            "notes": updated_row["notes"],
+            "tags": updated_row["tags"],
+            "contact_tracking": updated_row["contact_tracking"],
+            "updated_at": updated_row["updated_at"],
+            "updated_by": updated_row["updated_by"],
+        },
+    }
+
+
+@router.post(
+    "/ops/update",
+    response_model=OpsDashboardUpdateResponse,
+    status_code=200,
+)
+def update_ops_dashboard_state(payload: OpsDashboardUpdateRequest):
+    workflow_fields = {"updated_by": OPS_DASHBOARD_ACTOR}
+    if payload.status is not None:
+        workflow_fields["status"] = validate_incoming_ops_status(payload.status)
+    if payload.notes is not None:
+        workflow_fields["notes"] = payload.notes
+
+    updated_row = update_existing_ops_workflow_state(payload.submission_id, workflow_fields)
+    if updated_row is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "status": "error",
+                "code": "OPS_ROW_NOT_FOUND",
+                "message": "No existing ops row found for submission_id.",
+            },
+        )
+
+    return {
+        "status": "updated",
+        "submission_id": payload.submission_id,
         "ops": {
             "status": updated_row["status"],
             "notes": updated_row["notes"],

@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from ops_schema import VALID_OPS_STATUSES
 
@@ -76,6 +76,24 @@ class OpsWorkflowStateUpdateRequest(SnapshotModel):
 
 
 class OpsWorkflowStateUpdateResponse(SnapshotModel):
+    status: Literal["updated"]
+    submission_id: str
+    ops: SnapshotOpsData
+
+
+class OpsDashboardUpdateRequest(SnapshotModel):
+    submission_id: str
+    status: str | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def require_mutable_ops_field(self):
+        if self.status is None and self.notes is None:
+            raise ValueError("At least one ops field must be provided.")
+        return self
+
+
+class OpsDashboardUpdateResponse(SnapshotModel):
     status: Literal["updated"]
     submission_id: str
     ops: SnapshotOpsData
