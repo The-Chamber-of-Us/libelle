@@ -69,6 +69,18 @@ class OpsWorkflowStateCreateResponse(SnapshotModel):
     ops: SnapshotOpsData | None
 
 
+class OpsWorkflowStateUpdateRequest(SnapshotModel):
+    status: str | None = None
+    notes: str | None = None
+    updated_by: str
+
+
+class OpsWorkflowStateUpdateResponse(SnapshotModel):
+    status: Literal["updated"]
+    submission_id: str
+    ops: SnapshotOpsData
+
+
 class SnapshotErrorsData(SnapshotModel):
     has_error: bool
     latest_error_summary: str
