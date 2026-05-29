@@ -3,12 +3,27 @@ import { Search, X } from 'lucide-react'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
 import { formatStatus, parseSnapshotList } from '../components/inbox/detailUtils'
-import type { OpsStatus, ReviewerSubmissionSnapshot } from '../types/dashboard'
+import type { StatusSaveState } from '../components/inbox/WorkflowSection'
+import type {
+  OpsDashboardUpdateResponse,
+  OpsStatus,
+  OpsStatusListResponse,
+  ReviewerSubmissionSnapshot
+} from '../types/dashboard'
 
 type InboxState =
   | { status: 'loading' }
-  | { status: 'ready'; submissions: ReviewerSubmissionSnapshot[] }
+  | {
+      status: 'ready'
+      submissions: ReviewerSubmissionSnapshot[]
+      statusOptions: OpsStatus[]
+    }
   | { status: 'error'; message: string }
+
+type PendingStatusUpdate = {
+  submissionId: string
+  status: OpsStatus
+} | null
 
 export default function Inbox() {
   const [state, setState] = useState<InboxState>({ status: 'loading' })
@@ -16,6 +31,14 @@ export default function Inbox() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<OpsStatus | 'all'>('all')
   const [locationFilter, setLocationFilter] = useState('')
+  const [statusSaveState, setStatusSaveState] = useState<StatusSaveState>({
+    status: 'idle'
+  })
+  const [statusSaveSubmissionId, setStatusSaveSubmissionId] = useState<string | null>(
+    null
+  )
+  const [pendingStatusUpdate, setPendingStatusUpdate] =
+    useState<PendingStatusUpdate>(null)
 
   const filteredSubmissions = useMemo(() => {
     if (state.status !== 'ready') return []
@@ -44,6 +67,16 @@ export default function Inbox() {
   const hasActiveFilters =
     searchQuery.trim() !== '' || statusFilter !== 'all' || locationFilter.trim() !== ''
 
+  const statusOptions = state.status === 'ready' ? state.statusOptions : []
+  const selectedStatusSaveState =
+    statusSaveSubmissionId === selectedSubmissionId
+      ? statusSaveState
+      : { status: 'idle' as const }
+  const selectedPendingStatus =
+    pendingStatusUpdate?.submissionId === selectedSubmissionId
+      ? pendingStatusUpdate.status
+      : null
+
   const clearFilters = () => {
     setSearchQuery('')
     setStatusFilter('all')
@@ -55,19 +88,35 @@ export default function Inbox() {
 
     async function loadSnapshot() {
       try {
-        const response = await fetch('/snapshot', { signal: controller.signal })
+        const [snapshotResponse, statusesResponse] = await Promise.all([
+          fetch('/snapshot', { signal: controller.signal }),
+          fetch('/ops/statuses', { signal: controller.signal })
+        ])
 
-        if (!response.ok) {
-          throw new Error(`Snapshot request failed with ${response.status}`)
+        if (!snapshotResponse.ok) {
+          throw new Error(`Snapshot request failed with ${snapshotResponse.status}`)
         }
 
-        const data = await response.json()
+        if (!statusesResponse.ok) {
+          throw new Error(`Status list request failed with ${statusesResponse.status}`)
+        }
+
+        const data = await snapshotResponse.json()
+        const statusesData = (await statusesResponse.json()) as OpsStatusListResponse
 
         if (!Array.isArray(data)) {
           throw new Error('Snapshot response must be an array')
         }
 
-        setState({ status: 'ready', submissions: data as ReviewerSubmissionSnapshot[] })
+        if (!Array.isArray(statusesData.statuses) || statusesData.statuses.length === 0) {
+          throw new Error('Status list response must include statuses')
+        }
+
+        setState({
+          status: 'ready',
+          submissions: data as ReviewerSubmissionSnapshot[],
+          statusOptions: statusesData.statuses
+        })
       } catch (error) {
         if (controller.signal.aborted) return
 
@@ -82,6 +131,65 @@ export default function Inbox() {
 
     return () => controller.abort()
   }, [])
+
+  async function handleStatusChange(nextStatus: OpsStatus) {
+    if (
+      state.status !== 'ready' ||
+      selectedSubmission === null ||
+      nextStatus === selectedSubmission.ops.status
+    ) {
+      return
+    }
+
+    const submissionId = selectedSubmission.submission_id
+    setPendingStatusUpdate({ submissionId, status: nextStatus })
+    setStatusSaveSubmissionId(submissionId)
+    setStatusSaveState({ status: 'saving', message: 'Saving status...' })
+
+    try {
+      const response = await fetch('/ops/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          status: nextStatus
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(getOpsUpdateErrorMessage(data, response.status))
+      }
+
+      const updateResponse = data as OpsDashboardUpdateResponse
+      if (updateResponse.status !== 'updated' || updateResponse.submission_id !== submissionId) {
+        throw new Error('Status update returned an unexpected response')
+      }
+
+      setState((currentState) => {
+        if (currentState.status !== 'ready') return currentState
+
+        return {
+          ...currentState,
+          submissions: currentState.submissions.map((submission) =>
+            submission.submission_id === submissionId
+              ? { ...submission, ops: updateResponse.ops }
+              : submission
+          )
+        }
+      })
+      setStatusSaveState({ status: 'saved', message: 'Status saved.' })
+    } catch (error) {
+      setStatusSaveState({
+        status: 'error',
+        message:
+          error instanceof Error ? error.message : 'Unable to save workflow status.'
+      })
+    } finally {
+      setPendingStatusUpdate(null)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
@@ -126,7 +234,7 @@ export default function Inbox() {
                     }
                   >
                     <option value="all">All statuses</option>
-                    {inboxStatusOptions.map((status) => (
+                    {statusOptions.map((status) => (
                       <option key={status} value={status}>
                         {formatStatus(status)}
                       </option>
@@ -202,21 +310,18 @@ export default function Inbox() {
               ))}
           </section>
 
-          <InboxDetailPanel submission={selectedSubmission} />
+          <InboxDetailPanel
+            submission={selectedSubmission}
+            statusOptions={statusOptions}
+            pendingStatus={selectedPendingStatus}
+            statusSaveState={selectedStatusSaveState}
+            onStatusChange={handleStatusChange}
+          />
         </div>
       </div>
     </main>
   )
 }
-
-const inboxStatusOptions: OpsStatus[] = [
-  'new',
-  'reviewed',
-  'contacted',
-  'in_progress',
-  'paused',
-  'closed'
-]
 
 const actionableStatusRank: Record<OpsStatus, number> = {
   new: 2,
@@ -264,6 +369,21 @@ function getSortableDateValue(value: unknown) {
 
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+}
+
+function getOpsUpdateErrorMessage(data: unknown, status: number) {
+  if (isErrorPayload(data)) {
+    return data.detail.message ?? `Status update failed with ${status}`
+  }
+
+  return `Status update failed with ${status}`
+}
+
+function isErrorPayload(data: unknown): data is { detail: { message?: string } } {
+  if (typeof data !== 'object' || data === null || !('detail' in data)) return false
+
+  const detail = (data as { detail: unknown }).detail
+  return typeof detail === 'object' && detail !== null
 }
 
 function matchesInboxFilters(
