@@ -126,6 +126,15 @@ def extract_location(text: str) -> Tuple[List[str], float]:
                 continue
     return [], 0.0
 
+def _split_skill_line(line: str) -> List[str]:
+    if '/' in line and '://' not in line:
+        parts = [p.strip() for p in line.split('/')]
+        if (all(p and len(p) < 40 and not p.isdigit() for p in parts)
+                and not any(re.search(r'\b[A-Z]{1,3}$', p) for p in parts)
+                and not any(re.match(r'^[A-Z]{1,3}$', p) for p in parts)):  # catches CI, CD, AB etc
+            return parts
+    return re.split(r'[•,·;|]', line)
+
 def extract_skills(text: str) -> Tuple[List[str], float]:
     skills_patterns = [
         r'^skills:?$',
@@ -154,7 +163,7 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
         l = re.sub(r'\s*\(.*?\)', '', l) # strips parentheses
         cleaned.append(l)
 
-    skills = [normalize_text(p.strip(), lowercase=True) for l in cleaned for p in re.split(r'[•,·;|]', l) if p.strip()]
+    skills = [normalize_text(p.strip(), lowercase=True) for l in cleaned for p in _split_skill_line(l) if p.strip()]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 
