@@ -201,7 +201,7 @@ def finalize_submission(
 
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
-    print(f"[UPLOAD] Drive uploaded: file_id={drive_file_id}")
+    print(f"[UPLOAD] Drive uploaded: submission_id={submission_id} file_id={drive_file_id}")
 
     ui_data = {
         "name": normalized["full_name"],
