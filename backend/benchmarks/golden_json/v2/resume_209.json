@@ -5,7 +5,11 @@
   "name": "Omar Haddad",
   "email": "omar.haddad@example.com",
   "phone": "(347) 555 0191",
-  "location": "Brooklyn, NY",
+  "location": {
+    "city": "Brooklyn",
+    "country": "United States",
+    "raw": "Brooklyn, NY"
+  },
   "links": [
     "github.com/ohaddad"
   ],

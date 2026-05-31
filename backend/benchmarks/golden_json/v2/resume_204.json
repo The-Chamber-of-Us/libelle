@@ -5,7 +5,11 @@
   "name": "Elena Moreau",
   "email": "elena.moreau@example.net",
   "phone": "+1 438 555 0198",
-  "location": "Montréal, QC, Canada",
+  "location": {
+    "city": "Montréal",
+    "country": "Canada",
+    "raw": "Montréal, QC, Canada"
+  },
   "links": [
     "orcid.org/0000-0002-1845-0182"
   ],

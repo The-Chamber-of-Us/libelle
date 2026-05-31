@@ -5,7 +5,11 @@
   "name": "Aisha Okafor",
   "email": "aisha.okafor@example.com",
   "phone": "+44 20 7946 0186",
-  "location": "London SW9 8AB, United Kingdom",
+  "location": {
+    "city": "London",
+    "country": "United Kingdom",
+    "raw": "London SW9 8AB, United Kingdom"
+  },
   "links": [
     "linkedin.com/in/aishaokafor"
   ],

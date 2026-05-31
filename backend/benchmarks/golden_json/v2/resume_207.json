@@ -5,7 +5,11 @@
   "name": "Leo Banerjee",
   "email": "leo.banerjee@example.com",
   "phone": "(206) 555-0107",
-  "location": "Seattle, WA",
+  "location": {
+    "city": "Seattle",
+    "country": "United States",
+    "raw": "Seattle, WA"
+  },
   "links": [
     "linkedin.com/in/leobanerjee",
     "github.com/leobuilds",

@@ -5,7 +5,11 @@
   "name": "Jordan Kim",
   "email": "jordan.kim@example.test",
   "phone": null,
-  "location": "Ithaca, NY",
+  "location": {
+    "city": "Ithaca",
+    "country": "United States",
+    "raw": "Ithaca, NY"
+  },
   "links": [
     "github.com/jordankim-labs",
     "jordankim.dev"

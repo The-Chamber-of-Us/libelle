@@ -5,7 +5,11 @@
   "name": "Maya R. Chen",
   "email": "maya.chen@example.com",
   "phone": "(315) 555-0184",
-  "location": "Ithaca, NY",
+  "location": {
+    "city": "Ithaca",
+    "country": "United States",
+    "raw": "Ithaca, NY"
+  },
   "links": [
     "github.com/mayarchen"
   ],

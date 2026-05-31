@@ -5,7 +5,11 @@
   "name": "Nadia Patel",
   "email": "nadia.patel@example.com",
   "phone": "(773) 555-0162",
-  "location": "Chicago, IL",
+  "location": {
+    "city": "Chicago",
+    "country": "United States",
+    "raw": "Chicago, IL"
+  },
   "links": [
     "github.com/nadiapatel-data"
   ],

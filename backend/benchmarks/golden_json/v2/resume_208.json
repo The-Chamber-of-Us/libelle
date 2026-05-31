@@ -5,7 +5,11 @@
   "name": "Priya N. Shah",
   "email": "priya.shah@example.com",
   "phone": "(201) 555-0133",
-  "location": "Jersey City, NJ",
+  "location": {
+    "city": "Jersey City",
+    "country": "United States",
+    "raw": "Jersey City, NJ"
+  },
   "links": [
     "linkedin.com/in/priyanshah"
   ],

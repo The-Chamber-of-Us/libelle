@@ -5,7 +5,11 @@
   "name": "Victor Alvarez",
   "email": "victor.alvarez@example.com",
   "phone": "(512) 555-0149",
-  "location": "Austin, TX",
+  "location": {
+    "city": "Austin",
+    "country": "United States",
+    "raw": "Austin, TX"
+  },
   "links": [
     "linkedin.com/in/victoralvarez"
   ],

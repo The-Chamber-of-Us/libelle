@@ -5,7 +5,11 @@
   "name": "Hannah Weiss",
   "email": "hannah.weiss@example.com",
   "phone": "(612) 555-0126",
-  "location": "Minneapolis, MN",
+  "location": {
+    "city": "Minneapolis",
+    "country": "United States",
+    "raw": "Minneapolis, MN"
+  },
   "links": [
     "github.com/hweiss-ml"
   ],
