@@ -1,0 +1,126 @@
+{
+  "resume_id": "resume_209",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Ambiguous Formatting Resume",
+  "name": "Omar Haddad",
+  "email": "omar.haddad@example.com",
+  "phone": "(347) 555 0191",
+  "location": {
+    "city": "Brooklyn",
+    "country": "United States",
+    "raw": "Brooklyn, NY"
+  },
+  "links": [
+    "github.com/ohaddad"
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "Java",
+    "Excel",
+    "Arabic"
+  ],
+  "notes": "Intentionally awkward contact and date formatting; normalize Brooklyn NY to Brooklyn, NY.",
+  "sections": [
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "City College of New York",
+          "meta": "Expected Dec 2026",
+          "subtitle": "B.S. Computer Science",
+          "bullets": [
+            "GPA 3.57; SEEK peer mentor"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "RELEVANT EXPERIENCE",
+      "items": [
+        {
+          "title": "Data Intern - Community Energy Co-op",
+          "meta": "May 2025-Aug 2025, Brooklyn, NY",
+          "subtitle": "",
+          "bullets": [
+            "Cleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.",
+            "Wrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups."
+          ]
+        },
+        {
+          "title": "IT Help Desk Assistant",
+          "meta": "CCNY Student Technology Services | Sept 2024 - present",
+          "subtitle": "New York, NY",
+          "bullets": [
+            "Answer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.",
+            "Use a shared ticket queue; sometimes update KB notes when the answer is not already there."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Projects",
+      "items": [
+        {
+          "title": "Budget Splitter",
+          "meta": "github.com/ohaddad/budget-split",
+          "subtitle": "Python / Flask",
+          "bullets": [
+            "Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.",
+            "Dates are stored as text because the bank export has two date formats."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS & INTERESTS",
+      "items": [
+        "Python; SQL; Java; Excel; Arabic fluent; interests: pickup soccer, public libraries"
+      ]
+    },
+    {
+      "heading": "Additional Campus Work",
+      "items": [
+        {
+          "title": "Peer Mentor",
+          "meta": "SEEK Program, Spring 2025",
+          "subtitle": "City College of New York",
+          "bullets": [
+            "Met biweekly with first-year students to review registration steps, tutoring resources, and common technology setup issues.",
+            "Maintained a shared FAQ document for account access, lab hours, and scholarship paperwork deadlines."
+          ]
+        },
+        {
+          "title": "Computer Lab Monitor",
+          "meta": "Fall 2024-Spring 2025",
+          "subtitle": "City College of New York",
+          "bullets": [
+            "Checked equipment at opening and closing, logged broken peripherals, and helped students connect to campus printing.",
+            "Noted recurring account-lockout questions for the student technology services knowledge base."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "More Projects",
+      "items": [
+        {
+          "title": "Subway Delay Notes",
+          "meta": "class exercise, 2025",
+          "subtitle": "SQL / spreadsheet cleanup",
+          "bullets": [
+            "Imported a small public transit CSV and grouped delays by route, day of week, and stated cause.",
+            "Kept the report intentionally simple, with a short README explaining assumptions and missing fields."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Coursework",
+      "items": [
+        "Data Structures; Discrete Mathematics; Intro to Databases; Technical Writing; Statistics",
+        "Small formatting note: this resume intentionally keeps mixed capitalization and uneven date placement for benchmark coverage."
+      ]
+    }
+  ]
+}

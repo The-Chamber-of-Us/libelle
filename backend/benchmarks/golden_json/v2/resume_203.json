@@ -1,0 +1,134 @@
+{
+  "resume_id": "resume_203",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Career Changer / Project-Heavy",
+  "name": "Nadia Patel",
+  "email": "nadia.patel@example.com",
+  "phone": "(773) 555-0162",
+  "location": {
+    "city": "Chicago",
+    "country": "United States",
+    "raw": "Chicago, IL"
+  },
+  "links": [
+    "github.com/nadiapatel-data"
+  ],
+  "skills": [
+    "SQL",
+    "Python",
+    "pandas",
+    "Tableau",
+    "Excel pivot tables",
+    "healthcare operations",
+    "Spanish"
+  ],
+  "notes": "Gold skills come from the visible SKILLS section; location comes from the header.",
+  "sections": [
+    {
+      "heading": "PROFILE",
+      "items": [
+        "Operations analyst transitioning into data analytics, with experience improving hospital workflows and building SQL/Python projects around staffing, scheduling, and quality metrics."
+      ]
+    },
+    {
+      "heading": "TECHNICAL PROJECTS",
+      "items": [
+        {
+          "title": "Clinic No-Show Dashboard",
+          "meta": "Mar-May 2026",
+          "subtitle": "Independent project",
+          "bullets": [
+            "Modeled 18 months of de-identified appointment data in PostgreSQL and created cohort views by clinic, referral source, and appointment type.",
+            "Built a Streamlit dashboard that highlighted weekday and reminder-message patterns associated with missed appointments."
+          ]
+        },
+        {
+          "title": "Supply Cart Restock Forecast",
+          "meta": "Nov 2025-Jan 2026",
+          "subtitle": "Python analysis",
+          "bullets": [
+            "Cleaned CSV exports from three supply rooms and used pandas to identify items with recurring stockouts before Monday clinics.",
+            "Presented a reorder threshold model that would have avoided 63% of urgent restock requests in the sample period."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Patient Access Coordinator, Lakeside Medical Group",
+          "meta": "Jun 2022-Present",
+          "subtitle": "Chicago, IL",
+          "bullets": [
+            "Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.",
+            "Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.",
+            "Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records."
+          ]
+        },
+        {
+          "title": "Administrative Assistant, West Loop Physical Therapy",
+          "meta": "Aug 2020-May 2022",
+          "subtitle": "Chicago, IL",
+          "bullets": [
+            "Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.",
+            "Trained four new front-desk staff members on intake scripts and claims documentation standards."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "DePaul University",
+          "meta": "Certificate expected Dec 2026",
+          "subtitle": "Data Analytics Certificate",
+          "bullets": [
+            "Coursework: SQL for Analytics, Python Programming, Data Visualization"
+          ]
+        },
+        {
+          "title": "University of Illinois Chicago",
+          "meta": "May 2020",
+          "subtitle": "Bachelor of Science in Public Health",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "SQL, Python, pandas, Tableau, Excel pivot tables, healthcare operations, Spanish conversational"
+      ]
+    },
+    {
+      "heading": "ADDITIONAL ANALYTICS WORK",
+      "items": [
+        {
+          "title": "Referral Queue Aging Review",
+          "meta": "Feb 2026",
+          "subtitle": "Workplace analysis",
+          "bullets": [
+            "Exported referral queue snapshots and grouped delayed records by payer, clinic, and missing-document reason.",
+            "Recommended a daily triage view that helped supervisors separate true bottlenecks from duplicate or already-scheduled referrals."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "COMMUNITY & TRAINING",
+      "items": [
+        {
+          "title": "Volunteer Data Coach, South Side Tech Circle",
+          "meta": "Sep 2025-Present",
+          "subtitle": "Chicago, IL",
+          "bullets": [
+            "Help adult learners practice spreadsheet cleanup, filtering, and chart interpretation using public health sample datasets.",
+            "Prepared short exercises on pivot tables and basic SQL-style grouping for learners exploring analyst careers."
+          ]
+        }
+      ]
+    }
+  ]
+}

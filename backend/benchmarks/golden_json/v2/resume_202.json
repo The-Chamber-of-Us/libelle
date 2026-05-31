@@ -1,0 +1,128 @@
+{
+  "resume_id": "resume_202",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Dense Senior Specialist",
+  "name": "Victor Alvarez",
+  "email": "victor.alvarez@example.com",
+  "phone": "(512) 555-0149",
+  "location": {
+    "city": "Austin",
+    "country": "United States",
+    "raw": "Austin, TX"
+  },
+  "links": [
+    "linkedin.com/in/victoralvarez"
+  ],
+  "skills": [
+    "Python",
+    "Django",
+    "Java",
+    "Go",
+    "TypeScript",
+    "SQL",
+    "Bash",
+    "AWS",
+    "GCP",
+    "Kubernetes",
+    "Docker",
+    "PostgreSQL",
+    "Kafka",
+    "Redis",
+    "Snowflake",
+    "Datadog",
+    "Terraform",
+    "GitHub Actions",
+    "CI/CD pipelines"
+  ],
+  "notes": "Dense skills list with slash-combined terms and senior experience.",
+  "sections": [
+    {
+      "heading": "SUMMARY",
+      "items": [
+        "Senior platform engineer with 18 years of experience modernizing data-intensive systems for logistics, payments, and enterprise operations."
+      ]
+    },
+    {
+      "heading": "TECHNICAL TOOLKIT",
+      "items": [
+        "Languages: Python/Django, Java, Go, TypeScript, SQL, Bash",
+        "Platforms: AWS/GCP, Kubernetes, Docker, PostgreSQL, Kafka, Redis, Snowflake, Datadog, Terraform, GitHub Actions, CI/CD pipelines"
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL EXPERIENCE",
+      "items": [
+        {
+          "title": "Principal Software Engineer, Northstar Freight Systems",
+          "meta": "Feb 2018-Present",
+          "subtitle": "Austin, TX",
+          "bullets": [
+            "Led a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling 4.2M quotes per month.",
+            "Reduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks across six teams.",
+            "Designed a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.",
+            "Mentored staff engineers on technical design reviews, migration plans, and production readiness checklists."
+          ]
+        },
+        {
+          "title": "Senior Backend Engineer, Meridian Payments",
+          "meta": "Jul 2011-Jan 2018",
+          "subtitle": "Denver, CO",
+          "bullets": [
+            "Built Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.",
+            "Implemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail periods.",
+            "Partnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements."
+          ]
+        },
+        {
+          "title": "Software Developer, Arrowline Manufacturing",
+          "meta": "Jun 2007-Jun 2011",
+          "subtitle": "Cleveland, OH",
+          "bullets": [
+            "Maintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.",
+            "Created Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Colorado Boulder",
+          "meta": "May 2007",
+          "subtitle": "Bachelor of Science in Computer Science",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL AFFILIATIONS",
+      "items": [
+        "Association for Computing Machinery; Austin Cloud Native Meetup organizer"
+      ]
+    },
+    {
+      "heading": "SELECTED IMPACT",
+      "items": [
+        {
+          "title": "Reliability and Migration Planning",
+          "meta": "2021-2026",
+          "subtitle": "Cross-team architecture work",
+          "bullets": [
+            "Authored migration plans for three legacy services, including rollback criteria, data validation checks, and customer-support communication steps.",
+            "Introduced lightweight architecture decision records that made tradeoffs visible across product, operations, and compliance stakeholders."
+          ]
+        },
+        {
+          "title": "Developer Enablement",
+          "meta": "2019-Present",
+          "subtitle": "Internal platform practice",
+          "bullets": [
+            "Built reusable service templates with logging, health checks, metrics, and deployment defaults, reducing new-service setup time from days to hours.",
+            "Led monthly production-readiness reviews for teams launching new event consumers and external partner APIs."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "resume_id": "resume_207",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Portfolio Candidate",
+  "name": "Leo Banerjee",
+  "email": "leo.banerjee@example.com",
+  "phone": "(206) 555-0107",
+  "location": {
+    "city": "Seattle",
+    "country": "United States",
+    "raw": "Seattle, WA"
+  },
+  "links": [
+    "linkedin.com/in/leobanerjee",
+    "github.com/leobuilds",
+    "leobanerjee.dev"
+  ],
+  "skills": [
+    "React",
+    "TypeScript",
+    "Node.js",
+    "PostgreSQL",
+    "Figma",
+    "Playwright",
+    "accessibility testing",
+    "GitHub Actions"
+  ],
+  "notes": "Header contains candidate links while project rows contain project-specific links.",
+  "sections": [
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Washington",
+          "meta": "June 2025",
+          "subtitle": "Master of Science in Human Centered Design & Engineering",
+          "bullets": []
+        },
+        {
+          "title": "Oregon State University",
+          "meta": "June 2021",
+          "subtitle": "Bachelor of Science in Computer Science",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "PORTFOLIO PROJECTS",
+      "items": [
+        {
+          "title": "Civic Permit Tracker",
+          "meta": "demo.leobanerjee.dev/permits | github.com/leobuilds/permit-tracker",
+          "subtitle": "React, Node.js, PostgreSQL",
+          "bullets": [
+            "Built a searchable dashboard for public permit records with filters for neighborhood, status, reviewer, and expected decision date.",
+            "Added project-level deep links so reviewers could share a filtered permit record directly with community partners."
+          ]
+        },
+        {
+          "title": "Trail Notes Offline",
+          "meta": "github.com/leobuilds/trail-notes",
+          "subtitle": "Progressive web app",
+          "bullets": [
+            "Implemented offline-first trip notes with IndexedDB, service workers, and conflict handling when mobile connectivity returned.",
+            "Designed a compact route summary page after usability testing with six hikers."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Frontend Engineering Intern, BrightCart",
+          "meta": "June-Sept 2025",
+          "subtitle": "Remote",
+          "bullets": [
+            "Improved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.",
+            "Refactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states."
+          ]
+        },
+        {
+          "title": "UX Research Assistant, UW Civic Design Lab",
+          "meta": "Oct 2024-May 2025",
+          "subtitle": "Seattle, WA",
+          "bullets": [
+            "Conducted task-based interviews with small business owners navigating city licensing forms.",
+            "Synthesized findings into issue labels and design recommendations for a partner engineering team."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "React, TypeScript, Node.js, PostgreSQL, Figma, Playwright, accessibility testing, GitHub Actions"
+      ]
+    },
+    {
+      "heading": "SELECTED DESIGN RESEARCH",
+      "items": [
+        {
+          "title": "Small Business Licensing Study",
+          "meta": "Winter 2025",
+          "subtitle": "UW Civic Design Lab",
+          "bullets": [
+            "Interviewed business owners about permit terminology, document upload confusion, and status-notification gaps.",
+            "Converted research findings into user stories and acceptance criteria for a partner engineering backlog."
+          ]
+        },
+        {
+          "title": "Portfolio Accessibility Pass",
+          "meta": "2026",
+          "subtitle": "Personal site",
+          "bullets": [
+            "Audited project pages for heading order, keyboard navigation, color contrast, and descriptive link text.",
+            "Added concise case-study summaries so project links were meaningful outside the visual portfolio context."
+          ]
+        }
+      ]
+    }
+  ]
+}

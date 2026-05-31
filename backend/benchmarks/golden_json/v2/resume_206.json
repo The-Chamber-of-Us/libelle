@@ -1,0 +1,110 @@
+{
+  "resume_id": "resume_206",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Global Applicant",
+  "name": "Aisha Okafor",
+  "email": "aisha.okafor@example.com",
+  "phone": "+44 20 7946 0186",
+  "location": {
+    "city": "London",
+    "country": "United Kingdom",
+    "raw": "London SW9 8AB, United Kingdom"
+  },
+  "links": [
+    "linkedin.com/in/aishaokafor"
+  ],
+  "skills": [
+    "AutoCAD Civil 3D",
+    "ArcGIS Pro",
+    "QGIS",
+    "Python",
+    "TfL Healthy Streets checks",
+    "junction modelling",
+    "Excel",
+    "English",
+    "Yoruba",
+    "French"
+  ],
+  "notes": "Non-US address and UK-style synthetic phone number.",
+  "sections": [
+    {
+      "heading": "PROFILE",
+      "items": [
+        "Civil and transport engineer focused on bus-priority design, public-realm safety, and data-informed corridor planning across UK and EU contexts."
+      ]
+    },
+    {
+      "heading": "SPECIALISED SKILLS",
+      "items": [
+        "Technical: AutoCAD Civil 3D, ArcGIS Pro, QGIS, Python, TfL Healthy Streets checks, junction modelling, Excel",
+        "Languages: English, Yoruba, French working proficiency"
+      ]
+    },
+    {
+      "heading": "ENGINEERING EXPERIENCE",
+      "items": [
+        {
+          "title": "Transport Engineer, Meridian Mobility Partners",
+          "meta": "March 2023-Present",
+          "subtitle": "London, UK",
+          "bullets": [
+            "Prepare concept designs for bus-priority corridors, cycle-lane tie-ins, and pedestrian crossing upgrades across three London boroughs.",
+            "Analyse Oyster-style passenger count extracts and turning-count surveys to identify delay hotspots during AM and PM peaks.",
+            "Coordinate design comments from local authority officers, accessibility advocates, and utility stakeholders."
+          ]
+        },
+        {
+          "title": "Graduate Civil Engineer, Ardent Infrastructure",
+          "meta": "September 2020-February 2023",
+          "subtitle": "Birmingham, UK",
+          "bullets": [
+            "Supported detailed design packages for drainage, kerb alignment, and temporary traffic management on high-street improvement schemes.",
+            "Created GIS maps linking collision records, school entrances, and bus-stop locations for safer-routes-to-school funding bids."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Leeds",
+          "meta": "July 2020",
+          "subtitle": "MEng Civil and Structural Engineering, First Class Honours",
+          "bullets": [
+            "Dissertation: Bus stop spacing and dwell-time reliability on mixed-traffic corridors"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "CERTIFICATIONS",
+      "items": [
+        "Engineering Council UK, Engineer in Training; Construction Skills Certification Scheme card"
+      ]
+    },
+    {
+      "heading": "PROJECT HIGHLIGHTS",
+      "items": [
+        {
+          "title": "High Street Bus Priority Concept Package",
+          "meta": "2025",
+          "subtitle": "Meridian Mobility Partners",
+          "bullets": [
+            "Prepared option drawings comparing kerbside bus lanes, signal-priority changes, and loading-zone consolidation for a constrained retail corridor.",
+            "Summarised tradeoffs for journey time, pedestrian delay, and disabled-parking access in a briefing used by borough officers."
+          ]
+        },
+        {
+          "title": "School Streets Safety Review",
+          "meta": "2024",
+          "subtitle": "London borough programme",
+          "bullets": [
+            "Mapped collision records, school gate locations, and proposed modal filters to support consultation materials for three primary schools.",
+            "Reviewed public comments and tagged recurring concerns around access, enforcement, and bus-stop relocation."
+          ]
+        }
+      ]
+    }
+  ]
+}

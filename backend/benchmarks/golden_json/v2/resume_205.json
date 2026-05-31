@@ -1,0 +1,124 @@
+{
+  "resume_id": "resume_205",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Project-Heavy Student Resume",
+  "name": "Jordan Kim",
+  "email": "jordan.kim@example.test",
+  "phone": null,
+  "location": {
+    "city": "Ithaca",
+    "country": "United States",
+    "raw": "Ithaca, NY"
+  },
+  "links": [
+    "github.com/jordankim-labs",
+    "jordankim.dev"
+  ],
+  "skills": [
+    "Python",
+    "C++",
+    "TypeScript",
+    "Next.js",
+    "Firebase",
+    "Flask",
+    "OpenCV",
+    "PyTorch",
+    "Arduino",
+    "Git"
+  ],
+  "notes": "Several project-specific links should stay attached to project entries.",
+  "sections": [
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "Cornell University, College of Engineering, Ithaca, NY",
+          "meta": "Expected May 2027",
+          "subtitle": "Bachelor of Science in Electrical and Computer Engineering",
+          "bullets": [
+            "Relevant Courses: Machine Learning, Embedded Systems, Computer Vision, Algorithms"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "PROJECTS",
+      "items": [
+        {
+          "title": "Bike Lane Hazard Detector",
+          "meta": "github.com/jordankim-labs/bike-lane",
+          "subtitle": "Computer vision project",
+          "bullets": [
+            "Trained a YOLOv8 model on 1,800 labeled street images to identify potholes, blocked bike lanes, and construction cones.",
+            "Built a small Flask API and map view that grouped hazards by route segment for a student cycling club pilot."
+          ]
+        },
+        {
+          "title": "Meal Match",
+          "meta": "demo.jordankim.dev/meal-match",
+          "subtitle": "Full-stack web app",
+          "bullets": [
+            "Developed a Next.js and Firebase app that matched students by dining hall preferences and overlapping free time.",
+            "Added privacy controls for preferred first name, contact method, and blocked time slots after testing with 16 users."
+          ]
+        },
+        {
+          "title": "Microcontroller Greenhouse Monitor",
+          "meta": "Fall 2025",
+          "subtitle": "Embedded systems lab",
+          "bullets": [
+            "Programmed an ESP32 to collect humidity, soil moisture, and light readings every 10 minutes.",
+            "Displayed sensor summaries in a simple web interface and logged threshold alerts for later calibration."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "TECHNICAL SKILLS",
+      "items": [
+        "Python, C++, TypeScript, Next.js, Firebase, Flask, OpenCV, PyTorch, Arduino, Git"
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Student App Developer, Cornell AppDev",
+          "meta": "Sep 2025-Present",
+          "subtitle": "Ithaca, NY",
+          "bullets": [
+            "Contribute bug fixes and UI polish to a campus events app used by student organizations.",
+            "Review pull requests for accessibility labels, state handling, and mobile layout regressions."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "ACTIVITIES",
+      "items": [
+        "Association of Computer Science Undergraduates; Cornell Cycling Club"
+      ]
+    },
+    {
+      "heading": "LEADERSHIP EXPERIENCE",
+      "items": [
+        {
+          "title": "Hardware Lead, Greenhouse Automation Team",
+          "meta": "Jan 2026-Present",
+          "subtitle": "Cornell Design Collaborative",
+          "bullets": [
+            "Coordinate a five-student subgroup building sensor mounts, wiring diagrams, and calibration logs for a campus greenhouse pilot.",
+            "Track hardware issues in GitHub Projects so firmware, enclosure, and data-dashboard work remain aligned before weekly demos."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "COURSEWORK & AWARDS",
+      "items": [
+        "Coursework: Signals and Systems, Data Structures, Probability Models, Digital Logic, Product Studio",
+        "Awards: Cornell Engineering Project Showcase finalist, 2026; Dean's List, Fall 2025"
+      ]
+    }
+  ]
+}

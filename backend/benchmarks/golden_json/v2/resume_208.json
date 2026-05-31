@@ -1,0 +1,127 @@
+{
+  "resume_id": "resume_208",
+  "source_persona": "Nadia Patel benchmark slice",
+  "persona": "Unusual Header Resume",
+  "name": "Priya N. Shah",
+  "email": "priya.shah@example.com",
+  "phone": "(201) 555-0133",
+  "location": {
+    "city": "Jersey City",
+    "country": "United States",
+    "raw": "Jersey City, NJ"
+  },
+  "links": [
+    "linkedin.com/in/priyanshah"
+  ],
+  "skills": [
+    "Revenue operations",
+    "Salesforce reporting",
+    "SQL",
+    "customer onboarding analytics",
+    "stakeholder communication",
+    "dashboard QA",
+    "Salesforce",
+    "Excel",
+    "Tableau",
+    "Looker Studio",
+    "Zendesk",
+    "Notion"
+  ],
+  "notes": "Skills-equivalent content appears under Core Competencies and Technical Toolkit.",
+  "sections": [
+    {
+      "heading": "CORE COMPETENCIES",
+      "items": [
+        "Revenue operations, Salesforce reporting, SQL basics, customer onboarding analytics, stakeholder communication, dashboard QA"
+      ]
+    },
+    {
+      "heading": "IMPACT HIGHLIGHTS",
+      "items": [
+        {
+          "title": "Customer Expansion Analysis",
+          "meta": "2026",
+          "subtitle": "RevOps initiative",
+          "bullets": [
+            "Merged product-usage exports with Salesforce opportunity data to identify 42 accounts showing expansion-ready activity patterns.",
+            "Created a review sheet used by account managers to prioritize renewal conversations before quarter close."
+          ]
+        },
+        {
+          "title": "Onboarding Health Score",
+          "meta": "2025",
+          "subtitle": "Selected Work",
+          "bullets": [
+            "Defined a simple score combining implementation milestones, unresolved support tickets, and admin training attendance.",
+            "Piloted the score with 18 new customers and surfaced four delayed launches before executive escalation."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "PROFESSIONAL BACKGROUND",
+      "items": [
+        {
+          "title": "Revenue Operations Associate, Clearpath Software",
+          "meta": "Jan 2024-Present",
+          "subtitle": "New York, NY",
+          "bullets": [
+            "Maintain Salesforce fields, account assignment rules, and weekly pipeline dashboards for a 32-person go-to-market team.",
+            "Partner with customer success leaders to reconcile renewal forecasts against product adoption and support trends."
+          ]
+        },
+        {
+          "title": "Customer Success Coordinator, HarborLearn",
+          "meta": "Jun 2021-Dec 2023",
+          "subtitle": "Hoboken, NJ",
+          "bullets": [
+            "Tracked onboarding tasks for school district customers and prepared launch summaries for implementation consultants.",
+            "Built Excel trackers that reduced missing data in monthly customer-health reviews."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "ACADEMIC TRAINING",
+      "items": [
+        {
+          "title": "Rutgers University",
+          "meta": "May 2021",
+          "subtitle": "Bachelor of Arts in Economics",
+          "bullets": [
+            "Coursework: Econometrics, Statistics, Information Systems"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "TECHNICAL TOOLKIT",
+      "items": [
+        "Salesforce, Excel, SQL, Tableau, Looker Studio, Zendesk, Notion"
+      ]
+    },
+    {
+      "heading": "SELECTED REPORTING WORK",
+      "items": [
+        {
+          "title": "Renewal Forecast Hygiene",
+          "meta": "Q4 2025",
+          "subtitle": "Clearpath Software",
+          "bullets": [
+            "Compared customer-success notes, billing dates, and product-usage trends to flag renewal records with stale probability values.",
+            "Built a manager review tab that separated data-quality issues from true commercial risk."
+          ]
+        },
+        {
+          "title": "Implementation Milestone Audit",
+          "meta": "2024",
+          "subtitle": "Clearpath Software",
+          "bullets": [
+            "Reviewed 96 onboarding projects to identify where milestone labels drifted between implementation, support, and account-management teams.",
+            "Proposed a smaller milestone set that made reporting easier without hiding delayed technical setup work."
+          ]
+        }
+      ]
+    }
+  ]
+}
