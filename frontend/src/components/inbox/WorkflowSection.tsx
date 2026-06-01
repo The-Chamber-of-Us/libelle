@@ -1,4 +1,4 @@
-import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
+import type { OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField, SectionHeader } from './DetailPrimitives'
 import {
   formatStatus,
@@ -8,12 +8,22 @@ import {
 } from './detailUtils'
 
 export default function WorkflowSection({
-  submission
+  submission,
+  statusOptions,
+  pendingStatus,
+  statusSaveState,
+  onStatusChange
 }: {
   submission: ReviewerSubmissionSnapshot
+  statusOptions: OpsStatus[]
+  pendingStatus: OpsStatus | null
+  statusSaveState: StatusSaveState
+  onStatusChange: (status: OpsStatus) => void
 }) {
   const ops = submission.ops
   const errors = submission.errors
+  const selectedStatus = pendingStatus ?? ops.status
+  const isSaving = statusSaveState.status === 'saving'
   const hasOpsMetadata = hasSnapshotValue([
     ops.tags,
     ops.contact_tracking,
@@ -31,6 +41,35 @@ export default function WorkflowSection({
       />
 
       <div className="grid gap-4 text-sm">
+        <label className="grid gap-2 text-sm font-medium text-slate-700">
+          Workflow Status
+          <select
+            className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20 disabled:cursor-wait disabled:bg-slate-100 disabled:text-slate-500"
+            value={selectedStatus}
+            onChange={(event) => onStatusChange(event.target.value as OpsStatus)}
+            disabled={isSaving}
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {formatStatus(status)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {statusSaveState.status !== 'idle' && (
+          <p
+            className={[
+              'rounded-md border px-3 py-2 text-sm leading-5',
+              statusSaveState.status === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-700'
+                : 'border-slate-200 bg-white text-slate-600'
+            ].join(' ')}
+          >
+            {statusSaveState.message}
+          </p>
+        )}
+
         <DetailField label="Notes Preview" value={ops.notes} multiline />
 
         {hasOpsMetadata && (
@@ -82,3 +121,9 @@ export default function WorkflowSection({
     </section>
   )
 }
+
+export type StatusSaveState =
+  | { status: 'idle'; message?: undefined }
+  | { status: 'saving'; message: string }
+  | { status: 'saved'; message: string }
+  | { status: 'error'; message: string }
