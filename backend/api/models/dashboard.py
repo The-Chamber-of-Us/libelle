@@ -99,6 +99,10 @@ class OpsDashboardUpdateResponse(SnapshotModel):
     ops: SnapshotOpsData
 
 
+class OpsStatusListResponse(SnapshotModel):
+    statuses: list[Literal[VALID_OPS_STATUSES]]
+
+
 class SnapshotErrorsData(SnapshotModel):
     has_error: bool
     latest_error_summary: str

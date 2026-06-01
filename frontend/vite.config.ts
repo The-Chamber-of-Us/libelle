@@ -17,6 +17,10 @@ export default defineConfig({
       '/snapshot': {
         target: 'http://localhost:8000',
         changeOrigin: true
+      },
+      '/ops': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
       }
     }
   }
