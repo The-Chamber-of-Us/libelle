@@ -27,6 +27,29 @@ def test_parse_and_update_passes_submission_id_and_parsed_to_writeback(monkeypat
     assert captured["parsed"]["drive_file_id"] == "drive-xyz"
 
 
+def test_parse_and_update_stamps_submission_id_onto_parsed_payload(monkeypatch):
+    """#126: the parser context must stamp submission_id onto the parsed payload
+    so the parser's output is reliably linked back to the original submission."""
+    captured = {}
+
+    def fake_parse_resume(text):
+        return {"skills": {"value": ["python"]}}
+
+    def fake_update(submission_id, parsed):
+        captured["parsed"] = parsed
+
+    monkeypatch.setattr(parser_service, "parse_resume", fake_parse_resume)
+    monkeypatch.setattr(parser_service, "update_resume_in_sheet", fake_update)
+
+    parser_service.parse_and_update(
+        submission_id="sub-xyz-canonical",
+        drive_file_id="drive-1",
+        pre_extracted_text="resume text",
+    )
+
+    assert captured["parsed"]["submission_id"] == "sub-xyz-canonical"
+
+
 def test_parse_and_update_swallows_exceptions(monkeypatch):
     """Background task must not propagate exceptions — callers rely on fire-and-forget."""
     def fake_parse_resume(text):
