@@ -69,3 +69,13 @@ export interface ReviewerSubmissionSnapshot {
   ops: SnapshotOpsData
   errors: SnapshotErrorsData
 }
+
+export interface OpsStatusListResponse {
+  statuses: OpsStatus[]
+}
+
+export interface OpsDashboardUpdateResponse {
+  status: 'updated'
+  submission_id: string
+  ops: SnapshotOpsData
+}

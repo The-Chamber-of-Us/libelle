@@ -1,15 +1,23 @@
-import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
+import type { OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField } from './DetailPrimitives'
 import ParsedOutputSection from './ParsedOutputSection'
 import RawSubmissionSection from './RawSubmissionSection'
 import ResolvedOutputSection from './ResolvedOutputSection'
-import WorkflowSection from './WorkflowSection'
+import WorkflowSection, { type StatusSaveState } from './WorkflowSection'
 import { formatSubmittedDate } from './detailUtils'
 
 export default function InboxDetailPanel({
-  submission
+  submission,
+  statusOptions,
+  pendingStatus,
+  statusSaveState,
+  onStatusChange
 }: {
   submission: ReviewerSubmissionSnapshot | null
+  statusOptions: OpsStatus[]
+  pendingStatus: OpsStatus | null
+  statusSaveState: StatusSaveState
+  onStatusChange: (status: OpsStatus) => void
 }) {
   if (submission === null) {
     return (
@@ -40,7 +48,13 @@ export default function InboxDetailPanel({
         />
       </dl>
 
-      <WorkflowSection submission={submission} />
+      <WorkflowSection
+        submission={submission}
+        statusOptions={statusOptions}
+        pendingStatus={pendingStatus}
+        statusSaveState={statusSaveState}
+        onStatusChange={onStatusChange}
+      />
       <RawSubmissionSection submission={submission} />
       <ParsedOutputSection submission={submission} />
       <ResolvedOutputSection submission={submission} />

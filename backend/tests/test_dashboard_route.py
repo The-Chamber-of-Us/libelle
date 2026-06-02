@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from api.models.dashboard import ReviewerSubmissionSnapshot
 from api.routes import dashboard
+from ops_schema import VALID_OPS_STATUSES
 
 
 def _snapshot_payload() -> list[dict]:
@@ -353,6 +354,17 @@ def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch
             "status": "reviewed",
         },
     }
+
+
+def test_get_ops_statuses_returns_repo_owned_status_list() -> None:
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.get("/ops/statuses")
+
+    assert response.status_code == 200
+    assert response.json() == {"statuses": list(VALID_OPS_STATUSES)}
 
 
 def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch) -> None:
