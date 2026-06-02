@@ -17,20 +17,21 @@ PARSER_RESULTS_SHEET_NAME = "parser_results"
 OPS_SHEET_NAME = "ops"
 ERRORS_SHEET_NAME = "errors"
 
-_sheet = None
-_sheet_lock = threading.Lock()
+_sheet_build_lock = threading.Lock()
 _ops_write_lock = threading.Lock()
 
 
 def _get_sheet():
-    """Lazily build and cache the Sheets API client."""
-    global _sheet
-    if _sheet is None:
-        with _sheet_lock:
-            if _sheet is None:
-                creds = load_service_account_creds(SHEETS_SCOPES)
-                _sheet = build("sheets", "v4", credentials=creds).spreadsheets()
-    return _sheet
+    """
+    Build a fresh Sheets API resource for each operation.
+
+    googleapiclient uses an httplib2 transport under the hood, and that transport
+    can retain stale TLS connections between FastAPI requests. Building per
+    operation avoids reusing a bad connection after startup validation or writes.
+    """
+    with _sheet_build_lock:
+        creds = load_service_account_creds(SHEETS_SCOPES)
+        return build("sheets", "v4", credentials=creds).spreadsheets()
 
 
 def fetch_live_schema() -> Dict[str, Any]:
