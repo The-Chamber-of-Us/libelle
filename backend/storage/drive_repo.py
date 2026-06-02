@@ -41,7 +41,7 @@ def upload_pdf(file_bytes: bytes, submission_id: str, parent_folder_id: str = No
 
     file_id = file["id"]
     web_view = file.get("webViewLink", f"https://drive.google.com/file/d/{file_id}/view")
-    print(f"[DRIVE] Uploaded '{filename}' → {file_id}")
+    print(f"[DRIVE] Uploaded submission_id={submission_id} file='{filename}' → {file_id}")
     return file_id, web_view
 
 
