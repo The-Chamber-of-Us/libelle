@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField, SectionHeader } from './DetailPrimitives'
 import {
@@ -12,24 +13,35 @@ export default function WorkflowSection({
   statusOptions,
   pendingStatus,
   statusSaveState,
-  onStatusChange
+  notesSaveState,
+  onStatusChange,
+  onNotesSave
 }: {
   submission: ReviewerSubmissionSnapshot
   statusOptions: OpsStatus[]
   pendingStatus: OpsStatus | null
   statusSaveState: StatusSaveState
+  notesSaveState: StatusSaveState
   onStatusChange: (status: OpsStatus) => void
+  onNotesSave: (notes: string) => void
 }) {
   const ops = submission.ops
   const errors = submission.errors
+  const [notesDraft, setNotesDraft] = useState(ops.notes)
   const selectedStatus = pendingStatus ?? ops.status
-  const isSaving = statusSaveState.status === 'saving'
+  const isStatusSaving = statusSaveState.status === 'saving'
+  const isNotesSaving = notesSaveState.status === 'saving'
+  const hasNotesChanges = notesDraft !== ops.notes
   const hasOpsMetadata = hasSnapshotValue([
     ops.tags,
     ops.contact_tracking,
     ops.updated_at,
     ops.updated_by
   ])
+
+  useEffect(() => {
+    setNotesDraft(ops.notes)
+  }, [ops.notes, submission.submission_id])
 
   return (
     <section className="border-b border-slate-200 bg-slate-50/60 px-5 py-5">
@@ -47,7 +59,7 @@ export default function WorkflowSection({
             className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20 disabled:cursor-wait disabled:bg-slate-100 disabled:text-slate-500"
             value={selectedStatus}
             onChange={(event) => onStatusChange(event.target.value as OpsStatus)}
-            disabled={isSaving}
+            disabled={isStatusSaving}
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>
@@ -70,7 +82,49 @@ export default function WorkflowSection({
           </p>
         )}
 
-        <DetailField label="Notes Preview" value={ops.notes} multiline />
+        <div className="grid gap-2">
+          <label
+            className="grid gap-2 text-sm font-medium text-slate-700"
+            htmlFor={`ops-notes-${submission.submission_id}`}
+          >
+            Notes
+            <textarea
+              id={`ops-notes-${submission.submission_id}`}
+              className="min-h-[9rem] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-normal leading-5 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20 disabled:cursor-wait disabled:bg-slate-100 disabled:text-slate-500"
+              value={notesDraft}
+              onChange={(event) => setNotesDraft(event.target.value)}
+              placeholder="Add internal context, follow-up tasks, or reviewer notes."
+              disabled={isNotesSaving}
+            />
+          </label>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs leading-5 text-slate-500">
+              Saves internal notes only. Workflow status is unchanged.
+            </p>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-libelle-indigo px-4 text-sm font-semibold text-white transition hover:bg-libelle-indigo/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+              onClick={() => onNotesSave(notesDraft)}
+              disabled={!hasNotesChanges || isNotesSaving}
+            >
+              {isNotesSaving ? 'Saving...' : 'Save Notes'}
+            </button>
+          </div>
+
+          {notesSaveState.status !== 'idle' && (
+            <p
+              className={[
+                'rounded-md border px-3 py-2 text-sm leading-5',
+                notesSaveState.status === 'error'
+                  ? 'border-rose-200 bg-rose-50 text-rose-700'
+                  : 'border-slate-200 bg-white text-slate-600'
+              ].join(' ')}
+            >
+              {notesSaveState.message}
+            </p>
+          )}
+        </div>
 
         {hasOpsMetadata && (
           <dl className="grid gap-4 border-t border-slate-200 pt-4 text-sm">
