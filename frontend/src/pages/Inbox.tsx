@@ -37,6 +37,12 @@ export default function Inbox() {
   const [statusSaveSubmissionId, setStatusSaveSubmissionId] = useState<string | null>(
     null
   )
+  const [notesSaveState, setNotesSaveState] = useState<StatusSaveState>({
+    status: 'idle'
+  })
+  const [notesSaveSubmissionId, setNotesSaveSubmissionId] = useState<string | null>(
+    null
+  )
   const [pendingStatusUpdate, setPendingStatusUpdate] =
     useState<PendingStatusUpdate>(null)
 
@@ -71,6 +77,10 @@ export default function Inbox() {
   const selectedStatusSaveState =
     statusSaveSubmissionId === selectedSubmissionId
       ? statusSaveState
+      : { status: 'idle' as const }
+  const selectedNotesSaveState =
+    notesSaveSubmissionId === selectedSubmissionId
+      ? notesSaveState
       : { status: 'idle' as const }
   const selectedPendingStatus =
     pendingStatusUpdate?.submissionId === selectedSubmissionId
@@ -167,18 +177,7 @@ export default function Inbox() {
         throw new Error('Status update returned an unexpected response')
       }
 
-      setState((currentState) => {
-        if (currentState.status !== 'ready') return currentState
-
-        return {
-          ...currentState,
-          submissions: currentState.submissions.map((submission) =>
-            submission.submission_id === submissionId
-              ? { ...submission, ops: updateResponse.ops }
-              : submission
-          )
-        }
-      })
+      applyConfirmedOpsUpdate(submissionId, updateResponse)
       setStatusSaveState({ status: 'saved', message: 'Status saved.' })
     } catch (error) {
       setStatusSaveState({
@@ -189,6 +188,64 @@ export default function Inbox() {
     } finally {
       setPendingStatusUpdate(null)
     }
+  }
+
+  async function handleNotesSave(nextNotes: string) {
+    if (state.status !== 'ready' || selectedSubmission === null) {
+      return
+    }
+
+    const submissionId = selectedSubmission.submission_id
+    setNotesSaveSubmissionId(submissionId)
+    setNotesSaveState({ status: 'saving', message: 'Saving notes...' })
+
+    try {
+      const response = await fetch('/ops/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: submissionId,
+          notes: nextNotes
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(getOpsUpdateErrorMessage(data, response.status, 'Notes save'))
+      }
+
+      const updateResponse = data as OpsDashboardUpdateResponse
+      if (updateResponse.status !== 'updated' || updateResponse.submission_id !== submissionId) {
+        throw new Error('Notes update returned an unexpected response')
+      }
+
+      applyConfirmedOpsUpdate(submissionId, updateResponse)
+      setNotesSaveState({ status: 'saved', message: 'Notes saved.' })
+    } catch (error) {
+      setNotesSaveState({
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unable to save notes.'
+      })
+    }
+  }
+
+  function applyConfirmedOpsUpdate(
+    submissionId: string,
+    updateResponse: OpsDashboardUpdateResponse
+  ) {
+    setState((currentState) => {
+      if (currentState.status !== 'ready') return currentState
+
+      return {
+        ...currentState,
+        submissions: currentState.submissions.map((submission) =>
+          submission.submission_id === submissionId
+            ? { ...submission, ops: updateResponse.ops }
+            : submission
+        )
+      }
+    })
   }
 
   return (
@@ -315,7 +372,9 @@ export default function Inbox() {
             statusOptions={statusOptions}
             pendingStatus={selectedPendingStatus}
             statusSaveState={selectedStatusSaveState}
+            notesSaveState={selectedNotesSaveState}
             onStatusChange={handleStatusChange}
+            onNotesSave={handleNotesSave}
           />
         </div>
       </div>
@@ -371,12 +430,12 @@ function getSortableDateValue(value: unknown) {
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
 
-function getOpsUpdateErrorMessage(data: unknown, status: number) {
+function getOpsUpdateErrorMessage(data: unknown, status: number, label = 'Status update') {
   if (isErrorPayload(data)) {
-    return data.detail.message ?? `Status update failed with ${status}`
+    return data.detail.message ?? `${label} failed with ${status}`
   }
 
-  return `Status update failed with ${status}`
+  return `${label} failed with ${status}`
 }
 
 function isErrorPayload(data: unknown): data is { detail: { message?: string } } {

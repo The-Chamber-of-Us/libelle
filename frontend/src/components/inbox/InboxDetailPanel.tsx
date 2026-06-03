@@ -11,13 +11,17 @@ export default function InboxDetailPanel({
   statusOptions,
   pendingStatus,
   statusSaveState,
-  onStatusChange
+  notesSaveState,
+  onStatusChange,
+  onNotesSave
 }: {
   submission: ReviewerSubmissionSnapshot | null
   statusOptions: OpsStatus[]
   pendingStatus: OpsStatus | null
   statusSaveState: StatusSaveState
+  notesSaveState: StatusSaveState
   onStatusChange: (status: OpsStatus) => void
+  onNotesSave: (notes: string) => void
 }) {
   if (submission === null) {
     return (
@@ -53,7 +57,9 @@ export default function InboxDetailPanel({
         statusOptions={statusOptions}
         pendingStatus={pendingStatus}
         statusSaveState={statusSaveState}
+        notesSaveState={notesSaveState}
         onStatusChange={onStatusChange}
+        onNotesSave={onNotesSave}
       />
       <RawSubmissionSection submission={submission} />
       <ParsedOutputSection submission={submission} />
