@@ -194,6 +194,102 @@ def test_assemble_snapshot_records_distinguishes_resolver_not_run_from_zero_matc
     assert records[1]["resolved"]["resolver_state"] == "zero_matches"
 
 
+def test_assemble_snapshot_records_uses_one_latest_parser_result_row() -> None:
+    submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
+    parser_rows = [
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "zzzzzzzz",
+            "created_at": "2026-04-20T10:00:00",
+            "parser_version": "parser-old",
+            "parsed_skills_raw": '["old parsed skill"]',
+            "parsed_location_raw": "Old City",
+            "parser_confidence": "0.20",
+            "resolver_version": "resolver-old",
+            "aliases_version": "aliases-old",
+            "resolved_skill_ids": '["old-resolved-skill"]',
+            "unknown_skills": "[]",
+            "resolver_coverage": "1.0",
+        },
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "aaaaaaaa",
+            "created_at": "2026-04-20T11:00:00",
+            "parser_version": "parser-new",
+            "parsed_skills_raw": '["new parsed skill"]',
+            "parsed_location_raw": "New City",
+            "parser_confidence": "0.95",
+            "resolver_version": "resolver-new",
+            "aliases_version": "aliases-new",
+            "resolved_skill_ids": '["new-resolved-skill"]',
+            "unknown_skills": "[]",
+            "resolver_coverage": "1.0",
+        },
+    ]
+
+    records = assemble_snapshot_records(submissions, parser_rows, [], [])
+
+    assert records[0]["parsed"] == {
+        "parser_state": "complete",
+        "parser_run_id": "aaaaaaaa",
+        "created_at": "2026-04-20T11:00:00",
+        "parser_version": "parser-new",
+        "parsed_skills_raw": '["new parsed skill"]',
+        "parsed_location_raw": "New City",
+        "parser_confidence": "0.95",
+    }
+    assert records[0]["resolved"] == {
+        "resolver_state": "resolved",
+        "resolver_version": "resolver-new",
+        "aliases_version": "aliases-new",
+        "resolved_skill_ids": '["new-resolved-skill"]',
+        "unknown_skills": "[]",
+        "resolver_coverage": "1.0",
+    }
+
+
+def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed() -> None:
+    submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
+    parser_rows = [
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "run-1",
+            "created_at": "2026-04-20T11:00:00",
+            "parser_version": "parser-v1",
+            "parsed_skills_raw": '["Python"]',
+            "parsed_location_raw": "Raleigh, NC",
+            "parser_confidence": "0.90",
+            "resolver_version": "",
+            "aliases_version": "",
+            "resolved_skill_ids": "",
+            "unknown_skills": "",
+            "resolver_coverage": "",
+        }
+    ]
+    error_rows = [
+        {
+            "submission_id": "sub_001",
+            "created_at": "2026-04-20T11:01:00",
+            "stage": "resolver",
+            "error_code": "RESOLVER_FAILED",
+            "error_summary": "Resolver failed",
+            "error_details": "do not expose",
+        }
+    ]
+
+    records = assemble_snapshot_records(submissions, parser_rows, [], error_rows)
+
+    assert records[0]["parsed"]["parser_state"] == "complete"
+    assert records[0]["parsed"]["parsed_skills_raw"] == '["Python"]'
+    assert records[0]["resolved"]["resolver_state"] == "not_run"
+    assert records[0]["errors"] == {
+        "has_error": True,
+        "latest_error_summary": "Resolver failed",
+        "latest_error_stage": "resolver",
+        "latest_error_code": "RESOLVER_FAILED",
+    }
+
+
 def test_assemble_snapshot_records_does_not_mutate_inputs() -> None:
     submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
     parser_rows = [{"submission_id": "sub_001", "parser_run_id": "1"}]

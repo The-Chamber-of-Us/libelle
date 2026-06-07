@@ -11,8 +11,10 @@ def _parser_run_sort_value(parser_run_id: Any) -> Tuple[int, Any]:
     """
     Build a deterministic sort value for parser_run_id.
 
-    Numeric-looking IDs are sorted numerically so "10" is newer than "2".
-    Other IDs are sorted as strings.
+    Numeric-looking IDs are sorted numerically so "10" is greater than "2".
+    Other IDs are sorted as strings. Parser run IDs are currently generated as
+    short UUIDs, so this is only a stable tie-breaker, not the primary
+    definition of "latest".
     """
     value = "" if parser_run_id is None else str(parser_run_id).strip()
 
@@ -55,8 +57,14 @@ def select_latest_parser_result(
     Select the latest parser_results row for one submission_id.
 
     Selection rule:
-        1. Choose the row with the highest parser_run_id.
-        2. If parser_run_id ties, choose the latest created_at.
+        1. Choose the row with the latest created_at timestamp.
+        2. If created_at ties or cannot distinguish rows, choose the highest
+           parser_run_id as a deterministic tie-breaker.
+
+    Rationale:
+        parser_results is append-only and every write sets created_at. The
+        parser_run_id may be a generated short UUID rather than a monotonic run
+        number, so created_at is the intended "latest run" signal.
 
     Empty state:
         If no parser_results rows exist, return None. This is a valid
@@ -72,8 +80,8 @@ def select_latest_parser_result(
     latest_row = max(
         parser_rows,
         key=lambda row: (
-            _parser_run_sort_value(row.get("parser_run_id")),
             _created_at_sort_value(row.get("created_at")),
+            _parser_run_sort_value(row.get("parser_run_id")),
         ),
     )
 
