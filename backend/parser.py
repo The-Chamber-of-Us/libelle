@@ -104,26 +104,46 @@ def extract_phone(text: str) -> Tuple[List[str], float]:
     confidence = 1.0 if cleaned else min(1.0, sum(1 for _ in re.findall(r"\d{5,}", text)) / 2)
     return cleaned, confidence
 
+def _strip_contact_tokens(line: str) -> str:
+    """Remove email, phone, and URL fragments from a line, leaving other text intact."""
+    # emails
+    line = re.sub(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}', '', line)
+    # URLs (before phone, so e.g. tel: links don't confuse phone pattern)
+    line = re.sub(r'https?://\S+', '', line)
+    line = re.sub(r'(?:www\.|github\.com|linkedin\.com)\S*', '', line, flags=re.IGNORECASE)
+    # phones - properly escaped this time
+    line = re.sub(r'\+?\d[\d\s().\-]{7,}\d', '', line)
+    # clean up leftover delimiters and whitespace
+    line = re.sub(r'[\|•·]+', ' ', line)
+    return line.strip()
+
+
 def extract_location(text: str) -> Tuple[List[str], float]:
-    job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]   ## Potential Job Titles  
-    state_codes = set(s.abbr for s in us.states.STATES_AND_TERRITORIES)            ## All 50 States + Abbreviations
+    job_keywords = ["Engineer", "Developer", "Manager", "Intern", "Inc.", "LLC"]
+    state_codes = set(s.abbr for s in us.states.STATES_AND_TERRITORIES)
 
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    candidate_lines = [l for l in lines[:15] if not re.search(r"[a-zA-Z0-9._%+-]+@|\\+?\\d[\\d\\s().-]{8,}\\d|https?://\S+", l)]   ##Filtering out email, phone numbers, or URLs
-    for line in candidate_lines:
-        if re.search(r'\b(remote|hybrid)\b', line, re.IGNORECASE):
-            return [line.strip()], 1.0
-    
-        parts = line.split(",")
-        if (len(parts) >= 2):
-            tokens = parts[1].strip().upper().split() # safely tokenize state segment - might be empty or malformed
+
+    for line in lines[:15]:
+        # Work with contact tokens stripped out without discarding the line
+        scrubbed = _strip_contact_tokens(line)
+        if not scrubbed:
+            continue
+
+        if re.search(r'\b(remote|hybrid)\b', scrubbed, re.IGNORECASE):
+            return [scrubbed.strip()], 1.0
+
+        parts = scrubbed.split(",")
+        if len(parts) >= 2:
+            tokens = parts[1].strip().upper().split()
             if tokens:
                 state_candidate = tokens[0]
-                if state_candidate in state_codes: # validate against known US state abbreviations
-                    return [line.strip()], 1.0
-    
-        if any(re.search(rf'\b({job})\b', line, re.IGNORECASE) for job in job_keywords):
-                continue
+                if state_candidate in state_codes:
+                    return [scrubbed.strip()], 1.0
+
+        if any(re.search(rf'\b({job})\b', scrubbed, re.IGNORECASE) for job in job_keywords):
+            continue
+
     return [], 0.0
 
 def _split_skill_line(line: str) -> List[str]:

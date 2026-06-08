@@ -1,4 +1,4 @@
-from parser import _is_section_header, _split_skill_line
+from parser import _is_section_header, _split_skill_line, extract_location
 
 
 def test_volunteering_is_section_header():
@@ -64,3 +64,42 @@ def test_no_slash_falls_back_to_standard_delimiters():
     """Lines without slash should still split on standard delimiters."""
     assert _split_skill_line("Python, Java, Go") == ["Python", " Java", " Go"]
     assert _split_skill_line("Python • Java • Go") == ["Python ", " Java ", " Go"]
+
+def test_location_contact_line_email_and_location():
+    text = "Maya Chen\nmaya.chen@example.com | Ithaca, NY"
+    locs, conf = extract_location(text)
+    assert "Ithaca, NY" in locs[0]
+    assert conf == 1.0
+
+def test_location_contact_line_email_phone_location():
+    text = "Kevin Schmidt\nkevin@example.com | 555-123-4567 | Raleigh, NC"
+    locs, conf = extract_location(text)
+    assert "Raleigh, NC" in locs[0]
+    assert conf == 1.0
+
+def test_location_contact_line_url_and_location():
+    text = "github.com/example | Austin, TX | example@email.com"
+    locs, conf = extract_location(text)
+    assert "Austin, TX" in locs[0]
+    assert conf == 1.0
+
+def test_location_no_false_positive_email_phone_url_only():
+    text = "kevin@example.com | 555-123-4567 | https://github.com/example"
+    locs, conf = extract_location(text)
+    assert locs == []
+
+def test_location_no_false_positive_email_only():
+    text = "kevin@example.com"
+    locs, conf = extract_location(text)
+    assert locs == []
+
+def test_location_no_false_positive_phone_only():
+    text = "555-123-4567"
+    locs, conf = extract_location(text)
+    assert locs == []
+
+def test_location_simple_standalone_still_works():
+    text = "Jane Doe\nPortland, OR"
+    locs, conf = extract_location(text)
+    assert "Portland, OR" in locs[0]
+    assert conf == 1.0
