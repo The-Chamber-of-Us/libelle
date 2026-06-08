@@ -24,7 +24,7 @@ import traceback
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Set
 
 
 
@@ -309,6 +309,21 @@ def _normalize(s: Any) -> str:
         return ""
     return str(s).strip().lower()
 
+def _resolve_skill(skill: str, aliases: Dict[str, str]) -> str:
+    """Resolve a single skill to its canonical ID via the alias map.
+    Falls through to normalized key if no alias exists."""
+    from resolver.normalize import normalize_key
+    key = normalize_key(skill)
+    return aliases.get(key, key) if key else ""
+
+def _resolve_skill_set(skills: List[str], aliases: Dict[str, str]) -> Set[str]:
+    resolved = set()
+    for s in skills:
+        if s:
+            r = _resolve_skill(s, aliases)
+            if r:
+                resolved.add(r)
+    return resolved
 
 def score_skills(
     predicted: List[str], golden: List[str]
@@ -329,6 +344,26 @@ def score_skills(
         "fn_examples": sorted(fn)[:10],
     }
 
+def score_skills_resolved(
+    predicted: List[str],
+    golden: List[str],
+    aliases: Dict[str, str],
+) -> Dict[str, Any]:
+    pred_set = _resolve_skill_set(predicted, aliases)
+    gold_set = _resolve_skill_set(golden, aliases)
+
+    tp = pred_set & gold_set
+    fp = pred_set - gold_set
+    fn = gold_set - pred_set
+
+    return {
+        "tp_count": len(tp),
+        "fp_count": len(fp),
+        "fn_count": len(fn),
+        "tp_examples": sorted(tp)[:10],
+        "fp_examples": sorted(fp)[:10],
+        "fn_examples": sorted(fn)[:10],
+    }
 
 def score_location(
     predicted: Dict[str, str], golden: Dict[str, str]
@@ -725,7 +760,7 @@ def main() -> None:
 
             print(f"done ({runtime_ms:.0f}ms)")
 
-            # Score skills
+            # Score skills (raw)
             skills_score = score_skills(
                 adapted["skills"], golden.get("skills", [])
             )
@@ -744,6 +779,36 @@ def main() -> None:
                 "tp_examples": json.dumps(skills_score["tp_examples"]),
                 "fp_examples": json.dumps(skills_score["fp_examples"]),
                 "fn_examples": json.dumps(skills_score["fn_examples"]),
+                "resolver_coverage": resolver_metrics["resolver_coverage"],
+                "resolver_input_count": resolver_metrics["resolver_input_count"],
+                "resolver_resolved_count": resolver_metrics["resolver_resolved_count"],
+                "resolver_unknown_count": resolver_metrics["resolver_unknown_count"],
+                "resolver_version": resolver_metrics["resolver_version"],
+                "aliases_version": resolver_metrics["aliases_version"],
+                "unknown_skills": json.dumps(resolver_metrics["unknown_skills"]),
+            })
+
+            # Score skills (resolved)
+            skills_resolved_score = score_skills_resolved(
+                adapted["skills"], golden.get("skills", []), aliases
+            )
+            p_res, r_res, f1_res = _compute_prf(
+                skills_resolved_score["tp_count"],
+                skills_resolved_score["fp_count"],
+                skills_resolved_score["fn_count"],
+            )
+            report_rows.append({
+                "resume": submission_id,
+                "parser": parser_name,
+                "field": "skills_resolved",
+                **skills_resolved_score,
+                "precision": p_res,
+                "recall": r_res,
+                "f1": f1_res,
+                "runtime_ms": round(runtime_ms, 2),
+                "tp_examples": json.dumps(skills_resolved_score["tp_examples"]),
+                "fp_examples": json.dumps(skills_resolved_score["fp_examples"]),
+                "fn_examples": json.dumps(skills_resolved_score["fn_examples"]),
                 "resolver_coverage": resolver_metrics["resolver_coverage"],
                 "resolver_input_count": resolver_metrics["resolver_input_count"],
                 "resolver_resolved_count": resolver_metrics["resolver_resolved_count"],
