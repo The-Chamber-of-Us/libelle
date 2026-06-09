@@ -8,7 +8,8 @@ from parser import parse_resume
 from resolver.normalize import normalize_key
 from resolver.resolver import resolve_extracted_profile
 from resolver.schemas import ExtractedProfileV1
-from storage.sheets_repo import update_resume_in_sheet
+from storage.sheets_repo import append_error_row, update_resume_in_sheet
+
 
 RESOLVER_VERSION = "v1"
 ALIASES_PATH = Path(__file__).resolve().parents[1] / "resolver" / "knowledge" / "aliases_v1.json"
@@ -99,13 +100,63 @@ def parse_and_update(submission_id: str, drive_file_id: str, pre_extracted_text:
         parsed = parse_resume(pre_extracted_text or "")
         parsed["submission_id"] = submission_id
         parsed["drive_file_id"] = drive_file_id
-        try:
-            _add_resolver_output(parsed, submission_id)
-        except Exception as resolver_error:
-            print(f"[JOB] Resolver error submission_id={submission_id}: {resolver_error}")
-            traceback.print_exc()
-        update_resume_in_sheet(submission_id, parsed)
-        print(f"[JOB] Parsed + updated sheet submission_id={submission_id}")
     except Exception as e:
         print(f"[JOB] Error parsing submission_id={submission_id}: {e}")
         traceback.print_exc()
+        _log_runtime_error(
+            submission_id=submission_id,
+            stage="parser",
+            error_code="PARSER_FAILED",
+            error_summary="Parser failed",
+            exc=e,
+        )
+        return
+
+    try:
+        _add_resolver_output(parsed, submission_id)
+    except Exception as e:
+        print(f"[JOB] Resolver error submission_id={submission_id}: {e}")
+        traceback.print_exc()
+        _log_runtime_error(
+            submission_id=submission_id,
+            stage="resolver",
+            error_code="RESOLVER_FAILED",
+            error_summary="Resolver failed",
+            exc=e,
+        )
+
+    try:
+        update_resume_in_sheet(submission_id, parsed)
+        print(f"[JOB] Parsed + updated sheet submission_id={submission_id}")
+    except Exception as e:
+        print(f"[JOB] Error writing parser result submission_id={submission_id}: {e}")
+        traceback.print_exc()
+
+
+def _log_runtime_error(
+    *,
+    submission_id: str,
+    stage: str,
+    error_code: str,
+    error_summary: str,
+    exc: Exception,
+) -> None:
+    try:
+        append_error_row(
+            submission_id=submission_id,
+            stage=stage,
+            error_code=error_code,
+            error_summary=error_summary,
+            error_details=_exception_details(exc),
+        )
+    except Exception as logging_exc:
+        print(
+            f"[JOB] Error logging {stage} failure submission_id={submission_id}: "
+            f"{logging_exc}"
+        )
+        traceback.print_exc()
+
+
+def _exception_details(exc: Exception) -> str:
+    detail = "".join(traceback.format_exception_only(type(exc), exc)).strip()
+    return detail[:1000]

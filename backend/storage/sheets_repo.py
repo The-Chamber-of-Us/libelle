@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
 from config import GOOGLE_SHEET_ID
+from error_schema import ErrorEventV1, build_error_event
 from sheet_schema import SHEET_SCHEMA, build_row, get_headers
 from storage._auth import load_service_account_creds, SHEETS_SCOPES
 
@@ -241,6 +242,43 @@ def update_ops_row_if_exists(
 def load_error_rows() -> List[Dict[str, str]]:
     """Load schema-aligned error rows for snapshot composition."""
     return _load_sheet_rows(ERRORS_SHEET_NAME)
+
+
+def append_error_row(
+    *,
+    submission_id: str,
+    stage: str,
+    error_code: str,
+    error_summary: str,
+    error_details: str = "",
+) -> ErrorEventV1:
+    """Append one runtime failure event to the errors tab."""
+    normalized_submission_id = str(submission_id).strip()
+    if not normalized_submission_id:
+        raise ValueError("submission_id is required")
+
+    event = build_error_event(
+        submission_id=normalized_submission_id,
+        stage=stage,
+        error_code=error_code,
+        error_summary=error_summary,
+        error_details=error_details,
+    )
+    error_row = build_row(ERRORS_SHEET_NAME, event)
+
+    _get_sheet().values().append(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{ERRORS_SHEET_NAME}!A2",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
+        body={"values": [error_row]},
+    ).execute()
+
+    print(
+        f"[SHEETS] Error row appended → submission_id={normalized_submission_id}, "
+        f"stage={stage}, error_code={error_code}"
+    )
+    return event
 
 
 def _load_sheet_rows(tab_name: str) -> List[Dict[str, str]]:
