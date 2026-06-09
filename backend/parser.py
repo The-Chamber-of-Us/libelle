@@ -27,6 +27,7 @@ def _is_section_header(line: str) -> bool:
 
     headers = [
         r'^(summary|objective|contact|education|certifi|certificate|skills|'
+        r'tools|tech\s+stack|toolkit|technical\s+toolkit|core\s+technologies|technical\s+expertise|'
         r'work experience|professional experience|experience|employment|'
         r'job experience|'
         r'career history|work history|relevant experience|'
@@ -159,6 +160,11 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
     skills_patterns = [
         r'^skills:?$',
         r'^technical\s+skills:?$',
+        r'^tools:?$',
+        r'^tech\s+stack:?$',
+        r'^toolkit:?$',
+        r'^technical\s+toolkit:?$',
+        r'^core\s+technologies:?$',
         r'^core\s+skills:?$',
         r'^key\s+skills:?$',
         r'^professional\s+skills:?$',
