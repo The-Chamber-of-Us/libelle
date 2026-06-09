@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Response, status as http_status
+from fastapi import APIRouter, HTTPException, Request, Response, status as http_status
 
+from api.internal_actor import require_internal_actor
 from api.models.dashboard import (
     OpsDashboardUpdateRequest,
     OpsDashboardUpdateResponse,
@@ -16,8 +17,6 @@ from services.dashboard_service import get_snapshot_records
 from services.ops_write_service import create_first_ops_workflow_state, update_existing_ops_workflow_state
 
 router = APIRouter()
-
-OPS_DASHBOARD_ACTOR = "dashboard_ops_endpoint"
 
 
 @router.get("/snapshot", response_model=list[ReviewerSubmissionSnapshot])
@@ -38,8 +37,10 @@ def get_ops_statuses():
 def create_ops_workflow_state(
     submission_id: str,
     payload: OpsWorkflowStateCreateRequest,
+    request: Request,
     response: Response,
 ):
+    actor = require_internal_actor(request)
     status = validate_incoming_ops_status(payload.status)
     created_row = create_first_ops_workflow_state(
         submission_id,
@@ -48,7 +49,7 @@ def create_ops_workflow_state(
             "notes": payload.notes,
             "tags": payload.tags,
             "contact_tracking": payload.contact_tracking,
-            "updated_by": payload.updated_by,
+            "updated_by": actor,
         },
     )
 
@@ -82,6 +83,7 @@ def create_ops_workflow_state(
 def update_ops_workflow_state(
     submission_id: str,
     payload: OpsWorkflowStateUpdateRequest,
+    request: Request,
 ):
     if payload.status is None and payload.notes is None:
         raise HTTPException(
@@ -94,7 +96,7 @@ def update_ops_workflow_state(
             },
         )
 
-    workflow_fields = {"updated_by": payload.updated_by}
+    workflow_fields = {"updated_by": require_internal_actor(request)}
     if payload.status is not None:
         workflow_fields["status"] = validate_incoming_ops_status(payload.status)
     if payload.notes is not None:
@@ -130,8 +132,8 @@ def update_ops_workflow_state(
     response_model=OpsDashboardUpdateResponse,
     status_code=200,
 )
-def update_ops_dashboard_state(payload: OpsDashboardUpdateRequest):
-    workflow_fields = {"updated_by": OPS_DASHBOARD_ACTOR}
+def update_ops_dashboard_state(payload: OpsDashboardUpdateRequest, request: Request):
+    workflow_fields = {"updated_by": require_internal_actor(request)}
     if payload.status is not None:
         workflow_fields["status"] = validate_incoming_ops_status(payload.status)
     if payload.notes is not None:

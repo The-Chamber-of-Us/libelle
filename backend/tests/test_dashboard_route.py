@@ -5,6 +5,8 @@ from api.models.dashboard import ReviewerSubmissionSnapshot
 from api.routes import dashboard
 from ops_schema import VALID_OPS_STATUSES
 
+ACTOR_HEADERS = {"cf-access-authenticated-user-email": "Reviewer@Example.Org"}
+
 
 def _snapshot_payload() -> list[dict]:
     return [
@@ -132,12 +134,12 @@ def test_create_ops_workflow_state_creates_first_ops_row(monkeypatch) -> None:
 
     response = client.post(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "contacted",
             "notes": "Left voicemail",
             "tags": "priority",
             "contact_tracking": "call",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -175,9 +177,9 @@ def test_create_ops_workflow_state_does_not_update_existing_ops_row(monkeypatch)
 
     response = client.post(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "reviewed",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -199,9 +201,9 @@ def test_create_ops_workflow_state_rejects_invalid_status_before_write(monkeypat
 
     response = client.post(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "pending",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -234,10 +236,10 @@ def test_update_ops_workflow_state_updates_existing_ops_row(monkeypatch) -> None
 
     response = client.patch(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "reviewed",
             "notes": "Updated note",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -273,9 +275,9 @@ def test_update_ops_workflow_state_does_not_create_missing_ops_row(monkeypatch) 
 
     response = client.patch(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "reviewed",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -293,9 +295,9 @@ def test_update_ops_workflow_state_rejects_invalid_status_before_write(monkeypat
 
     response = client.patch(
         "/submissions/sub_001/ops",
+        headers=ACTOR_HEADERS,
         json={
             "status": "pending",
-            "updated_by": "reviewer@example.org",
         },
     )
 
@@ -311,7 +313,7 @@ def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch
         "tags": "priority",
         "contact_tracking": "call",
         "updated_at": "05-26-2026 10:00:00 UTC",
-        "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+        "updated_by": "reviewer@example.org",
     }
     captured = {}
 
@@ -328,6 +330,7 @@ def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
             "status": "reviewed",
@@ -344,13 +347,13 @@ def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch
             "tags": "priority",
             "contact_tracking": "call",
             "updated_at": "05-26-2026 10:00:00 UTC",
-            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+            "updated_by": "reviewer@example.org",
         },
     }
     assert captured == {
         "submission_id": "sub_001",
         "workflow_fields": {
-            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+            "updated_by": "reviewer@example.org",
             "status": "reviewed",
         },
     }
@@ -375,7 +378,7 @@ def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch)
         "tags": "priority",
         "contact_tracking": "call",
         "updated_at": "05-26-2026 10:00:00 UTC",
-        "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+        "updated_by": "reviewer@example.org",
     }
     captured = {}
 
@@ -392,6 +395,7 @@ def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch)
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
             "notes": "Updated note only",
@@ -402,7 +406,7 @@ def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch)
     assert captured == {
         "submission_id": "sub_001",
         "workflow_fields": {
-            "updated_by": dashboard.OPS_DASHBOARD_ACTOR,
+            "updated_by": "reviewer@example.org",
             "notes": "Updated note only",
         },
     }
@@ -418,6 +422,7 @@ def test_update_ops_dashboard_state_rejects_missing_mutable_fields(monkeypatch) 
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
         },
@@ -437,6 +442,7 @@ def test_update_ops_dashboard_state_rejects_invalid_status_before_write(monkeypa
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
             "status": "pending",
@@ -444,6 +450,31 @@ def test_update_ops_dashboard_state_rejects_invalid_status_before_write(monkeypa
     )
 
     assert response.status_code == 400
+    assert calls == []
+
+
+def test_update_ops_dashboard_state_rejects_missing_actor_identity(monkeypatch) -> None:
+    calls = []
+    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        json={
+            "submission_id": "sub_001",
+            "notes": "Updated note",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == {
+        "status": "error",
+        "code": "INTERNAL_ACTOR_REQUIRED",
+        "message": "Authenticated internal actor identity is required.",
+    }
     assert calls == []
 
 
@@ -457,6 +488,7 @@ def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypat
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
             "notes": "Updated note",
@@ -477,6 +509,7 @@ def test_update_ops_dashboard_state_returns_not_found_for_missing_ops_row(monkey
 
     response = client.post(
         "/ops/update",
+        headers=ACTOR_HEADERS,
         json={
             "submission_id": "sub_001",
             "notes": "Updated note",
