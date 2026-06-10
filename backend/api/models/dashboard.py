@@ -60,7 +60,6 @@ class OpsWorkflowStateCreateRequest(SnapshotModel):
     notes: str = ""
     tags: str = ""
     contact_tracking: str = ""
-    updated_by: str
 
 
 class OpsWorkflowStateCreateResponse(SnapshotModel):
@@ -72,7 +71,6 @@ class OpsWorkflowStateCreateResponse(SnapshotModel):
 class OpsWorkflowStateUpdateRequest(SnapshotModel):
     status: str | None = None
     notes: str | None = None
-    updated_by: str
 
 
 class OpsWorkflowStateUpdateResponse(SnapshotModel):
