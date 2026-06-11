@@ -1,5 +1,5 @@
 import io
-from typing import Tuple
+from typing import Dict, Optional, Tuple
 
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -56,6 +56,40 @@ def download_file(file_id: str) -> bytes:
         status, done = downloader.next_chunk()
     print(f"[DRIVE] Downloaded file {file_id}")
     return buf.getvalue()
+
+
+def find_pdf_by_name(filename: str, parent_folder_id: str = None) -> Optional[Dict[str, str]]:
+    """Find one non-trashed PDF in the resume folder by exact filename."""
+    normalized_filename = str(filename).strip()
+    if not normalized_filename:
+        return None
+
+    folder_id = parent_folder_id or get_target_folder_id()
+    escaped_filename = normalized_filename.replace("\\", "\\\\").replace("'", "\\'")
+    escaped_folder_id = folder_id.replace("\\", "\\\\").replace("'", "\\'")
+    query = (
+        f"name = '{escaped_filename}' "
+        f"and '{escaped_folder_id}' in parents "
+        "and mimeType = 'application/pdf' "
+        "and trashed = false"
+    )
+
+    response = (
+        get_drive_service()
+        .files()
+        .list(
+            q=query,
+            spaces="drive",
+            fields="files(id, name, mimeType, size)",
+            pageSize=1,
+            orderBy="createdTime desc",
+        )
+        .execute()
+    )
+    files = response.get("files", [])
+    if not files:
+        return None
+    return files[0]
 
 
 def build_auth_url(redirect_uri: str) -> str:
