@@ -9,6 +9,7 @@ from api.routes import auth as auth_routes
 from api.routes import dashboard as dashboard_routes
 from api.routes import health as health_routes
 from api.routes import intake as intake_routes
+from api.routes import resumes as resumes_routes
 from config import ALLOWED_ORIGINS, MAX_PDF_MB
 from validator import validate_sheet_schema
 
@@ -79,3 +80,4 @@ app.include_router(health_routes.router)
 app.include_router(intake_routes.router)
 app.include_router(auth_routes.router)
 app.include_router(dashboard_routes.router)
+app.include_router(resumes_routes.router)
