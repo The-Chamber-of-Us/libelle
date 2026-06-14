@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { RefreshCw, Search, X } from 'lucide-react'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
 import { formatStatus, parseSnapshotList } from '../components/inbox/detailUtils'
@@ -25,8 +25,14 @@ type PendingStatusUpdate = {
   status: OpsStatus
 } | null
 
+type RefreshState =
+  | { status: 'idle' }
+  | { status: 'refreshing' }
+  | { status: 'error'; message: string }
+
 export default function Inbox() {
   const [state, setState] = useState<InboxState>({ status: 'loading' })
+  const [refreshState, setRefreshState] = useState<RefreshState>({ status: 'idle' })
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<OpsStatus | 'all'>('all')
@@ -86,6 +92,7 @@ export default function Inbox() {
     pendingStatusUpdate?.submissionId === selectedSubmissionId
       ? pendingStatusUpdate.status
       : null
+  const isRefreshing = refreshState.status === 'refreshing'
 
   const clearFilters = () => {
     setSearchQuery('')
@@ -98,35 +105,7 @@ export default function Inbox() {
 
     async function loadSnapshot() {
       try {
-        const [snapshotResponse, statusesResponse] = await Promise.all([
-          fetch('/snapshot', { signal: controller.signal }),
-          fetch('/ops/statuses', { signal: controller.signal })
-        ])
-
-        if (!snapshotResponse.ok) {
-          throw new Error(`Snapshot request failed with ${snapshotResponse.status}`)
-        }
-
-        if (!statusesResponse.ok) {
-          throw new Error(`Status list request failed with ${statusesResponse.status}`)
-        }
-
-        const data = await snapshotResponse.json()
-        const statusesData = (await statusesResponse.json()) as OpsStatusListResponse
-
-        if (!Array.isArray(data)) {
-          throw new Error('Snapshot response must be an array')
-        }
-
-        if (!Array.isArray(statusesData.statuses) || statusesData.statuses.length === 0) {
-          throw new Error('Status list response must include statuses')
-        }
-
-        setState({
-          status: 'ready',
-          submissions: data as ReviewerSubmissionSnapshot[],
-          statusOptions: statusesData.statuses
-        })
+        setState(await fetchInboxState(controller.signal))
       } catch (error) {
         if (controller.signal.aborted) return
 
@@ -141,6 +120,22 @@ export default function Inbox() {
 
     return () => controller.abort()
   }, [])
+
+  async function handleRefresh() {
+    const controller = new AbortController()
+    setRefreshState({ status: 'refreshing' })
+
+    try {
+      setState(await fetchInboxState(controller.signal))
+      setRefreshState({ status: 'idle' })
+    } catch (error) {
+      setRefreshState({
+        status: 'error',
+        message:
+          error instanceof Error ? error.message : 'Unable to refresh submissions.'
+      })
+    }
+  }
 
   async function handleStatusChange(nextStatus: OpsStatus) {
     if (
@@ -255,9 +250,24 @@ export default function Inbox() {
           <p className="text-sm font-semibold uppercase tracking-[0.12em] text-libelle-indigo">
             Reviewer Inbox
           </p>
-          <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-            Submissions
-          </h1>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
+              Submissions
+            </h1>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-libelle-indigo bg-libelle-indigo px-3 text-sm font-semibold text-white transition hover:bg-libelle-indigo/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              onClick={handleRefresh}
+              disabled={isRefreshing || state.status === 'loading'}
+              title="Refresh submissions"
+            >
+              <RefreshCw
+                className={['h-4 w-4', isRefreshing ? 'animate-spin' : ''].join(' ')}
+                aria-hidden="true"
+              />
+              {isRefreshing ? 'Refreshing' : 'Refresh'}
+            </button>
+          </div>
         </header>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
@@ -328,6 +338,12 @@ export default function Inbox() {
                   submissions
                 </p>
               )}
+
+              {refreshState.status === 'error' && (
+                <p className="mt-3 text-sm font-medium text-rose-700">
+                  Refresh failed: {refreshState.message}
+                </p>
+              )}
             </div>
 
             <div className="grid gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 sm:grid-cols-[minmax(0,1.5fr)_minmax(12rem,1fr)_auto] sm:px-5">
@@ -389,6 +405,38 @@ const actionableStatusRank: Record<OpsStatus, number> = {
   contacted: 5,
   reviewed: 6,
   closed: 7
+}
+
+async function fetchInboxState(signal: AbortSignal): Promise<InboxState> {
+  const [snapshotResponse, statusesResponse] = await Promise.all([
+    fetch('/snapshot', { signal }),
+    fetch('/ops/statuses', { signal })
+  ])
+
+  if (!snapshotResponse.ok) {
+    throw new Error(`Snapshot request failed with ${snapshotResponse.status}`)
+  }
+
+  if (!statusesResponse.ok) {
+    throw new Error(`Status list request failed with ${statusesResponse.status}`)
+  }
+
+  const data = await snapshotResponse.json()
+  const statusesData = (await statusesResponse.json()) as OpsStatusListResponse
+
+  if (!Array.isArray(data)) {
+    throw new Error('Snapshot response must be an array')
+  }
+
+  if (!Array.isArray(statusesData.statuses) || statusesData.statuses.length === 0) {
+    throw new Error('Status list response must include statuses')
+  }
+
+  return {
+    status: 'ready',
+    submissions: data as ReviewerSubmissionSnapshot[],
+    statusOptions: statusesData.statuses
+  }
 }
 
 function compareInboxSubmissions(
