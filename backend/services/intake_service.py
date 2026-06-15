@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from config import MAX_PDF_MB
 from storage.drive_repo import upload_pdf
-from storage.sheets_repo import write_base_row
+from storage.sheets_repo import append_error_row, write_base_row
 
 
 ALLOWED_PDF_MIMES = {"application/pdf", "application/x-pdf"}
@@ -76,8 +76,19 @@ def _parse_interests(raw: Union[str, List[str], None]) -> str:
 
 def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
     try:
-        from services.pdf_text_extraction import extract_text_from_pdf_bytes
+        from services.pdf_text_extraction import (
+            PasswordProtectedPDFError,
+            extract_text_from_pdf_bytes,
+        )
         return extract_text_from_pdf_bytes(pdf_bytes)
+    except PasswordProtectedPDFError:
+        raise IntakeError(
+            "PASSWORD_PROTECTED_PDF",
+            "Password-protected PDFs are not supported",
+            status_code=400,
+        )
+    except IntakeError:
+        raise
     except Exception:
         traceback.print_exc()
         raise IntakeError("PDF_PARSE_FAILED", "PDF parsing failed", status_code=400)
@@ -132,7 +143,11 @@ def _validate_fields(
 
 
 def _validate_file_type(filename: str, content_type: Optional[str]) -> None:
-    if content_type not in ALLOWED_PDF_MIMES and not filename.lower().endswith(".pdf"):
+    if not filename.lower().endswith(".pdf"):
+        raise IntakeError("INVALID_FILE_TYPE", "Only PDF files supported", status_code=400)
+
+    normalized_content_type = (content_type or "").split(";", 1)[0].strip().lower()
+    if normalized_content_type and normalized_content_type not in ALLOWED_PDF_MIMES:
         raise IntakeError("INVALID_FILE_TYPE", "Only PDF files supported", status_code=400)
 
 
@@ -145,9 +160,18 @@ def _validate_file_size(pdf_bytes: bytes) -> None:
         )
 
 
+def _validate_pdf_content(pdf_bytes: bytes) -> None:
+    if b"%PDF-" not in pdf_bytes[:1024]:
+        raise IntakeError(
+            "INVALID_PDF_CONTENT",
+            "The uploaded file is not a valid PDF",
+            status_code=400,
+        )
+
+
 def validate_intake(
     *,
-    filename: str,
+    filename: Optional[str],
     content_type: Optional[str],
     full_name: Optional[str],
     email: Optional[str],
@@ -172,38 +196,18 @@ def validate_intake(
         experience_level=experience_level,
         consent=consent,
     )
-    _validate_file_type(filename, content_type)
+    if filename:
+        _validate_file_type(filename, content_type)
     return normalized
 
 
-def finalize_submission(
-    *,
-    pdf_bytes: bytes,
+def _build_ui_data(
     normalized: Dict[str, Any],
     linkedin_url: Optional[str],
     github_url: Optional[str],
     motivation: Optional[str],
-) -> Dict[str, Any]:
-    """
-    Validate file size, extract text, upload to Drive, and append the base row to Sheets.
-
-    Expects `normalized` from a prior validate_intake call. Raises IntakeError on
-    size/extraction failure. Returns a dict with submission_id, drive_file_id,
-    drive_file_url, and pre_text (for the parser job).
-    """
-    submission_id = str(uuid.uuid4())
-
-    _validate_file_size(pdf_bytes)
-
-    pre_text = _extract_text_from_pdf(pdf_bytes)
-    if not pre_text.strip():
-        raise IntakeError("NO_TEXT_EXTRACTED", "PDF has no extractable text", status_code=400)
-
-    print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
-    drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
-    print(f"[UPLOAD] Drive uploaded: submission_id={submission_id} file_id={drive_file_id}")
-
-    ui_data = {
+) -> Dict[str, str]:
+    return {
         "name": normalized["full_name"],
         "email": normalized["email"],
         "location": normalized["location"],
@@ -215,12 +219,92 @@ def finalize_submission(
         "motivation": (motivation or "").strip(),
     }
 
+
+def finalize_submission(
+    *,
+    pdf_bytes: Optional[bytes],
+    normalized: Dict[str, Any],
+    linkedin_url: Optional[str],
+    github_url: Optional[str],
+    motivation: Optional[str],
+) -> Dict[str, Any]:
+    """
+    Persist an intake with an optional validated PDF resume.
+
+    Expects `normalized` from a prior validate_intake call. Raises IntakeError on
+    size/extraction failure. Upload failures are persisted with resume_status=failed.
+    """
+    submission_id = str(uuid.uuid4())
+    ui_data = _build_ui_data(normalized, linkedin_url, github_url, motivation)
+
+    if pdf_bytes is None:
+        print(f"[UPLOAD] submission_id={submission_id} no resume provided; status=missing")
+        write_base_row(
+            submission_id=submission_id,
+            ui_data=ui_data,
+            resume_filename="",
+            resume_status="missing",
+        )
+        return {
+            "submission_id": submission_id,
+            "drive_file_id": "",
+            "drive_file_url": "",
+            "pre_text": "",
+            "resume_filename": "",
+            "resume_status": "missing",
+        }
+
+    _validate_file_size(pdf_bytes)
+    _validate_pdf_content(pdf_bytes)
+    pre_text = _extract_text_from_pdf(pdf_bytes)
+    if not pre_text.strip():
+        raise IntakeError("NO_TEXT_EXTRACTED", "PDF has no extractable text", status_code=400)
+
+    resume_filename = f"{submission_id}-resume.pdf"
+    print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
+    try:
+        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
+    except Exception as exc:
+        traceback.print_exc()
+        print(
+            f"[UPLOAD] Failed submission_id={submission_id} "
+            f"error_type={type(exc).__name__}"
+        )
+        write_base_row(
+            submission_id=submission_id,
+            ui_data=ui_data,
+            resume_filename="",
+            resume_status="failed",
+        )
+        try:
+            append_error_row(
+                submission_id=submission_id,
+                stage="upload",
+                error_code="DRIVE_UPLOAD_FAILED",
+                error_summary="Resume upload failed",
+                error_details=f"{type(exc).__name__}: {exc}"[:500],
+            )
+        except Exception:
+            traceback.print_exc()
+            print(f"[UPLOAD] Error-event write failed submission_id={submission_id}")
+        return {
+            "submission_id": submission_id,
+            "drive_file_id": "",
+            "drive_file_url": "",
+            "pre_text": "",
+            "resume_filename": "",
+            "resume_status": "failed",
+        }
+    print(f"[UPLOAD] Drive uploaded: submission_id={submission_id} file_id={drive_file_id}")
+
     print(f"[SHEETS] Writing base row for submission_id={submission_id} ...")
     write_base_row(
         drive_file_id=drive_file_id,
         drive_file_url=drive_file_url,
         submission_id=submission_id,
         ui_data=ui_data,
+        resume_filename=resume_filename,
+        resume_status="uploaded",
     )
     print(f"[SHEETS] Base row written for submission_id={submission_id}")
 
@@ -229,4 +313,6 @@ def finalize_submission(
         "drive_file_id": drive_file_id,
         "drive_file_url": drive_file_url,
         "pre_text": pre_text,
+        "resume_filename": resume_filename,
+        "resume_status": "uploaded",
     }

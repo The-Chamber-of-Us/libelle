@@ -387,10 +387,12 @@ def _compute_parser_confidence(parsed: Dict[str, Any]) -> float:
 
 # ---------- Write Base Row ----------
 def write_base_row(
-    drive_file_id: str,
+    drive_file_id: str = "",
     drive_file_url: Optional[str] = None,
     submission_id: Optional[str] = None,
     ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
+    resume_filename: str = "",
+    resume_status: str = "missing",
 ) -> None:
     """
     Appends a base row using schema-driven row construction.
@@ -416,8 +418,8 @@ def write_base_row(
         "linkedin_url": ui_data.get("linkedin", ""),
         "github_url": ui_data.get("github", ""),
         "consent_given": True,
-        "resume_filename": f"{submission_id}-resume.pdf" if submission_id else "",
-        "resume_status": "uploaded",
+        "resume_filename": resume_filename,
+        "resume_status": resume_status,
     }
 
     row = build_row("submissions", row_data)

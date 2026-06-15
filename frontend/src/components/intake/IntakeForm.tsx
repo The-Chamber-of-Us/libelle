@@ -40,11 +40,9 @@ export const IntakeForm: React.FC = () => {
     const fullName = getFullName()
     const consent = getBackendConsentValue()
 
-    if (!formData.resume) {
-      throw new Error('Resume file is required before building upload payload.')
+    if (formData.resume) {
+      payload.append('file', formData.resume, formData.resume.name)
     }
-
-    payload.append('file', formData.resume, formData.resume.name)
     payload.append('full_name', fullName)
     payload.append('email', formData.email.trim())
     payload.append('location', formData.location.trim())
@@ -137,10 +135,7 @@ export const IntakeForm: React.FC = () => {
       isValid = false
     }
 
-    if (!formData.resume) {
-      newErrors.resume = 'Please upload your resume (PDF only)'
-      isValid = false
-    } else {
+    if (formData.resume) {
       if (formData.resume.type !== 'application/pdf') {
         newErrors.resume = 'Only PDF files are allowed'
         isValid = false
@@ -235,16 +230,6 @@ export const IntakeForm: React.FC = () => {
         setStatus({
           state: 'error',
           message: 'Please fix the highlighted fields and try again.'
-        })
-        scrollToError()
-        return
-      }
-
-      if (response.status === 400 && data?.code === 'FILE_REQUIRED') {
-        setErrors({ resume: data?.message || 'A resume file is required.' })
-        setStatus({
-          state: 'error',
-          message: 'Please upload your resume to continue.'
         })
         scrollToError()
         return
@@ -555,10 +540,9 @@ export const IntakeForm: React.FC = () => {
           <div className="space-y-6">
             <div className={isSubmitting ? 'pointer-events-none opacity-60' : ''}>
               <FileUpload
-                label="Resume (PDF Only)"
+                label="Resume (Optional, PDF Only)"
                 name="resume"
                 accept=".pdf"
-                required
                 value={formData.resume}
                 onChange={handleFileChange}
                 error={errors.resume}

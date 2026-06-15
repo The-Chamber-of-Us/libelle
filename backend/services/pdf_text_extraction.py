@@ -15,6 +15,10 @@ from pathlib import Path
 import fitz  # PyMuPDF
 
 
+class PasswordProtectedPDFError(ValueError):
+    """Raised when an uploaded PDF requires a password to open."""
+
+
 def _extract_text_from_fitz_doc(doc: fitz.Document) -> str:
     """
     Internal helper: extract and spatially sort text blocks from an open
@@ -48,6 +52,8 @@ def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
     """
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     try:
+        if doc.needs_pass:
+            raise PasswordProtectedPDFError("Password-protected PDFs are not supported")
         return _extract_text_from_fitz_doc(doc)
     finally:
         doc.close()
