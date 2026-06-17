@@ -30,6 +30,7 @@ DEFAULT_ENDPOINT = "/api/upload"
 SYNTHETIC_DOMAIN = "example.test"
 PRODUCTION_MARKERS = ("prod", "production", "libelle.io")
 PATH_ENV_VARS = ("GOOGLE_CREDENTIALS", "GOOGLE_OAUTH_CLIENT", "TOKEN_FILE")
+ANY_MODE = "any"
 
 
 @dataclass
@@ -207,6 +208,51 @@ def _quota_or_api_failures(results: list[AttemptResult]) -> list[AttemptResult]:
     return failures
 
 
+def _failure_code(result: AttemptResult) -> str:
+    if result.code:
+        return result.code
+    if result.status_code is not None:
+        return f"HTTP_STATUS_{result.status_code}"
+    return "UNKNOWN_FAILURE"
+
+
+def _parse_allowed_failures(raw_values: list[str]) -> set[tuple[str, str]]:
+    allowed: set[tuple[str, str]] = set()
+    for raw_value in raw_values:
+        if ":" not in raw_value:
+            raise SystemExit(
+                "Allowed failures must use MODE:CODE, such as "
+                "no_resume:FILE_REQUIRED or any:VALIDATION_ERROR."
+            )
+
+        raw_mode, raw_code = raw_value.split(":", 1)
+        mode = raw_mode.strip().lower()
+        code = raw_code.strip()
+        if mode not in {ANY_MODE, "no_resume", "resume"}:
+            raise SystemExit("--allow-failure mode must be one of any, no_resume, or resume.")
+        if not code:
+            raise SystemExit("--allow-failure code cannot be empty.")
+        allowed.add((mode, code))
+    return allowed
+
+
+def _is_allowed_failure(result: AttemptResult, allowed_failures: set[tuple[str, str]]) -> bool:
+    code = _failure_code(result)
+    mode = result.mode.lower()
+    return (mode, code) in allowed_failures or (ANY_MODE, code) in allowed_failures
+
+
+def _unexpected_failures(
+    results: list[AttemptResult],
+    allowed_failures: set[tuple[str, str]],
+) -> list[AttemptResult]:
+    return [
+        result
+        for result in results
+        if not result.ok and not _is_allowed_failure(result, allowed_failures)
+    ]
+
+
 def _assert_non_production(args: argparse.Namespace) -> None:
     target = args.target_env.strip().lower()
     base_url = args.base_url.strip().lower()
@@ -303,15 +349,33 @@ def _verify_results(
     before: SheetSnapshot | None,
     after: SheetSnapshot | None,
     results: list[AttemptResult],
+    allowed_failures: set[tuple[str, str]],
 ) -> int:
     accepted_ids = [result.submission_id for result in results if result.ok and result.submission_id]
     unique_accepted_ids = set(accepted_ids)
     resume_attempts = [result for result in results if result.mode == "resume"]
     resume_successes = [result for result in resume_attempts if result.ok]
     quota_or_api = _quota_or_api_failures([result for result in results if not result.ok])
+    unexpected_failures = _unexpected_failures(results, allowed_failures)
     exit_code = 0
 
     print("\nVerification")
+    if unexpected_failures:
+        print(f"- FAIL: {len(unexpected_failures)} unexpected synthetic submission failures occurred")
+        for result in unexpected_failures[:10]:
+            print(
+                f"  submit {result.index:03d}: mode={result.mode} "
+                f"status={result.status_code} code={_failure_code(result)} "
+                f"message={result.message or '-'}"
+            )
+        exit_code = 1
+
+    allowed_failed_results = [
+        result for result in results if not result.ok and _is_allowed_failure(result, allowed_failures)
+    ]
+    if allowed_failed_results:
+        print(f"- PASS: {len(allowed_failed_results)} failures matched explicit --allow-failure rules")
+
     if not accepted_ids:
         print("- FAIL: no submissions were accepted")
         exit_code = 1
@@ -386,9 +450,16 @@ def _verify_results(
     return exit_code
 
 
-def _print_summary(results: list[AttemptResult], before: SheetSnapshot | None, after: SheetSnapshot | None) -> None:
+def _print_summary(
+    results: list[AttemptResult],
+    before: SheetSnapshot | None,
+    after: SheetSnapshot | None,
+    allowed_failures: set[tuple[str, str]],
+) -> None:
     successes = [result for result in results if result.ok]
     failures = [result for result in results if not result.ok]
+    allowed_failed_results = [result for result in failures if _is_allowed_failure(result, allowed_failures)]
+    unexpected_failed_results = [result for result in failures if result not in allowed_failed_results]
     quota_or_api = _quota_or_api_failures(failures)
     by_mode: dict[str, dict[str, int]] = {}
     for result in results:
@@ -400,6 +471,8 @@ def _print_summary(results: list[AttemptResult], before: SheetSnapshot | None, a
     print(f"- attempted: {len(results)}")
     print(f"- successful: {len(successes)}")
     print(f"- failed: {len(failures)}")
+    print(f"- explicitly allowed failures: {len(allowed_failed_results)}")
+    print(f"- unexpected failures: {len(unexpected_failed_results)}")
     print(f"- quota/API-like failures: {len(quota_or_api)}")
     for mode, stats in sorted(by_mode.items()):
         print(
@@ -438,6 +511,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--sleep-seconds", type=float, default=0.0, help="Delay between submissions.")
     parser.add_argument("--parser-wait-seconds", type=float, default=20.0, help="Wait before final Sheet snapshot.")
     parser.add_argument("--env-file", type=Path, help="Optional env file for Sheet verification, such as backend/.env.")
+    parser.add_argument(
+        "--allow-failure",
+        action="append",
+        default=[],
+        metavar="MODE:CODE",
+        help=(
+            "Explicitly allow an expected failed attempt. MODE is any, no_resume, "
+            "or resume. CODE is the response error code, exception name, or "
+            "HTTP_STATUS_### when no code is returned. Repeat as needed."
+        ),
+    )
     parser.add_argument("--skip-sheet-verify", action="store_true", help="Only verify API responses and health.")
     parser.add_argument("--i-understand-non-production", action="store_true", help="Confirm target is staging/dev/local.")
     parser.add_argument("--allow-production", action="store_true", help="Override production guard after approval.")
@@ -447,6 +531,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv or sys.argv[1:])
     _assert_non_production(args)
+    allowed_failures = _parse_allowed_failures(args.allow_failure)
 
     if args.no_resume_count < 0 or args.resume_count < 0:
         raise SystemExit("Submission counts must be non-negative.")
@@ -512,8 +597,13 @@ def main(argv: list[str] | None = None) -> int:
     after_health_ok = _run_health_check(args.base_url, args.timeout_seconds, "post-run")
     after = None if args.skip_sheet_verify else _take_sheet_snapshot()
 
-    _print_summary(results, before, after)
-    verification_exit = _verify_results(before=before, after=after, results=results)
+    _print_summary(results, before, after, allowed_failures)
+    verification_exit = _verify_results(
+        before=before,
+        after=after,
+        results=results,
+        allowed_failures=allowed_failures,
+    )
     if not after_health_ok:
         verification_exit = 1
     return verification_exit
