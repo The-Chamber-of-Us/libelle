@@ -136,10 +136,18 @@ export const IntakeForm: React.FC = () => {
     }
 
     if (formData.resume) {
-      if (formData.resume.type !== 'application/pdf') {
+      const filename = formData.resume.name.toLowerCase()
+      const contentType = formData.resume.type.split(';', 1)[0].trim().toLowerCase()
+      const allowedPdfMimeTypes = new Set(['application/pdf', 'application/x-pdf'])
+
+      if (!filename.endsWith('.pdf')) {
+        newErrors.resume = 'Only PDF files are allowed'
+        isValid = false
+      } else if (contentType && !allowedPdfMimeTypes.has(contentType)) {
         newErrors.resume = 'Only PDF files are allowed'
         isValid = false
       }
+
       if (formData.resume.size > 5 * 1024 * 1024) {
         newErrors.resume = 'File size must be less than 5MB'
         isValid = false
