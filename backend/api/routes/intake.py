@@ -60,20 +60,10 @@ async def upload_volunteer_application(
     motivation: Optional[str] = Form(None),
     consent: Optional[bool] = Form(None),
 ):
-    if not file or not file.filename:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "status": "error",
-                "code": "FILE_REQUIRED",
-                "message": "A resume file is required to complete this submission.",
-            },
-        )
-
     try:
         normalized = validate_intake(
-            filename=file.filename,
-            content_type=file.content_type,
+            filename=file.filename if file else None,
+            content_type=file.content_type if file else None,
             full_name=full_name,
             email=email,
             location=location,
@@ -98,7 +88,7 @@ async def upload_volunteer_application(
                 },
                 headers={"Retry-After": str(decision.retry_after_seconds)},
             )
-        pdf_bytes = await file.read()
+        pdf_bytes = await file.read() if file and file.filename else None
         result = finalize_submission(
             pdf_bytes=pdf_bytes,
             normalized=normalized,
@@ -121,12 +111,13 @@ async def upload_volunteer_application(
             },
         )
 
-    background_tasks.add_task(
-        parse_and_update,
-        result["submission_id"],
-        result["drive_file_id"],
-        result["pre_text"],
-    )
+    if result["resume_status"] == "uploaded":
+        background_tasks.add_task(
+            parse_and_update,
+            result["submission_id"],
+            result["drive_file_id"],
+            result["pre_text"],
+        )
 
     return JSONResponse(
         status_code=200,
@@ -134,6 +125,13 @@ async def upload_volunteer_application(
             "status": "success",
             "submission_id": result["submission_id"],
             "drive_file_url": result["drive_file_url"],
-            "message": "Your application has been received",
+            "resume_filename": result["resume_filename"],
+            "resume_status": result["resume_status"],
+            "message": (
+                "Your application was received, but the resume upload failed. "
+                "Please keep your submission ID for follow-up."
+                if result["resume_status"] == "failed"
+                else "Your application has been received"
+            ),
         },
     )
