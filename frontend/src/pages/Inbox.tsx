@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { RefreshCw, Search, X } from 'lucide-react'
+import DashboardTabs from '../components/dashboard/DashboardTabs'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
 import { formatStatus, parseSnapshotList } from '../components/inbox/detailUtils'
@@ -246,28 +247,31 @@ export default function Inbox() {
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-6 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
-        <header className="flex flex-col gap-1">
-          <p className="text-sm font-semibold uppercase tracking-[0.12em] text-libelle-indigo">
-            Reviewer Inbox
-          </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-              Submissions
-            </h1>
-            <button
-              type="button"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-libelle-indigo bg-libelle-indigo px-3 text-sm font-semibold text-white transition hover:bg-libelle-indigo/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              onClick={handleRefresh}
-              disabled={isRefreshing || state.status === 'loading'}
-              title="Refresh submissions"
-            >
-              <RefreshCw
-                className={['h-4 w-4', isRefreshing ? 'animate-spin' : ''].join(' ')}
-                aria-hidden="true"
-              />
-              {isRefreshing ? 'Refreshing' : 'Refresh'}
-            </button>
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-libelle-indigo">
+              Reviewer Inbox
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h1 className="text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
+                Submissions
+              </h1>
+              <button
+                type="button"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-libelle-indigo bg-libelle-indigo px-3 text-sm font-semibold text-white transition hover:bg-libelle-indigo/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                onClick={handleRefresh}
+                disabled={isRefreshing || state.status === 'loading'}
+                title="Refresh submissions"
+              >
+                <RefreshCw
+                  className={['h-4 w-4', isRefreshing ? 'animate-spin' : ''].join(' ')}
+                  aria-hidden="true"
+                />
+                {isRefreshing ? 'Refreshing' : 'Refresh'}
+              </button>
+            </div>
           </div>
+          <DashboardTabs />
         </header>
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
