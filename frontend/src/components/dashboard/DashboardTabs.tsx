@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 const tabs = [
   { to: '/inbox', label: 'Inbox' },
+  { to: '/ops', label: 'Ops' },
   { to: '/parser-results', label: 'Parser Results' }
 ]
 
