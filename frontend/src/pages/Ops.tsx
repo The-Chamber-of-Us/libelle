@@ -437,13 +437,16 @@ function getOpsStateRank(submission: ReviewerSubmissionSnapshot) {
 }
 
 function hasTouchedOpsState(ops: SnapshotOpsData) {
-  return [
-    ops.notes,
-    ops.tags,
-    ops.contact_tracking,
-    ops.updated_at,
-    ops.updated_by
-  ].some((value) => value.trim() !== '')
+  return (
+    ops.status !== 'new' ||
+    parseSnapshotList(ops.tags).length > 0 ||
+    [
+      ops.notes,
+      ops.contact_tracking,
+      ops.updated_at,
+      ops.updated_by
+    ].some((value) => value.trim() !== '')
+  )
 }
 
 function matchesOpsFilters(
