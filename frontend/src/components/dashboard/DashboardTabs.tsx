@@ -3,7 +3,8 @@ import { NavLink } from 'react-router-dom'
 const tabs = [
   { to: '/inbox', label: 'Inbox' },
   { to: '/ops', label: 'Ops' },
-  { to: '/parser-results', label: 'Parser Results' }
+  { to: '/parser-results', label: 'Parser Results' },
+  { to: '/errors', label: 'Errors' }
 ]
 
 export default function DashboardTabs() {
