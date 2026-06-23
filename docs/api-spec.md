@@ -21,6 +21,20 @@ This document defines how the Libelle frontend and backend communicate. It is th
 
 ---
 
+## Dashboard Ops Write Auth
+
+Dashboard read endpoints may be available locally without reviewer identity, but ops write endpoints require an authenticated internal actor:
+
+* `POST /ops/update`
+* `POST /submissions/{submission_id}/ops`
+* `PATCH /submissions/{submission_id}/ops`
+
+In deployed environments, the actor is derived from Cloudflare Access headers, preferably `cf-access-authenticated-user-email`, or from the `email` claim in `cf-access-jwt-assertion`. If no actor can be derived, these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`.
+
+For local UI testing, see [Local Dashboard Write Testing](local-dev-dashboard-writes.md).
+
+---
+
 ## Public Endpoints
 
 ### `GET /health`
