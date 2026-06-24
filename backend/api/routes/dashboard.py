@@ -14,7 +14,12 @@ from api.models.dashboard import (
 from api.ops_status_validation import validate_incoming_ops_status
 from ops_schema import VALID_OPS_STATUSES
 from services.dashboard_service import get_snapshot_records
-from services.ops_write_service import create_first_ops_workflow_state, update_existing_ops_workflow_state
+from services.ops_write_service import (
+    create_first_ops_workflow_state,
+    OpsSubmissionNotFoundError,
+    update_existing_ops_workflow_state,
+    update_or_create_ops_workflow_state,
+)
 
 router = APIRouter()
 
@@ -139,14 +144,15 @@ def update_ops_dashboard_state(payload: OpsDashboardUpdateRequest, request: Requ
     if payload.notes is not None:
         workflow_fields["notes"] = payload.notes
 
-    updated_row = update_existing_ops_workflow_state(payload.submission_id, workflow_fields)
-    if updated_row is None:
+    try:
+        updated_row = update_or_create_ops_workflow_state(payload.submission_id, workflow_fields)
+    except OpsSubmissionNotFoundError:
         raise HTTPException(
             status_code=404,
             detail={
                 "status": "error",
-                "code": "OPS_ROW_NOT_FOUND",
-                "message": "No existing ops row found for submission_id.",
+                "code": "SUBMISSION_NOT_FOUND",
+                "message": "No submission found for submission_id.",
             },
         )
 

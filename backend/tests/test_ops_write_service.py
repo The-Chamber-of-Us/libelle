@@ -1,4 +1,9 @@
-from services.ops_write_service import create_first_ops_workflow_state, update_existing_ops_workflow_state
+from services.ops_write_service import (
+    create_first_ops_workflow_state,
+    OpsSubmissionNotFoundError,
+    update_existing_ops_workflow_state,
+    update_or_create_ops_workflow_state,
+)
 from storage import sheets_repo
 
 
@@ -262,5 +267,142 @@ def test_update_existing_ops_workflow_state_returns_none_when_row_missing(monkey
     )
 
     assert updated is None
+    assert fake_sheet.values_api.append_calls == []
+    assert fake_sheet.values_api.update_calls == []
+
+
+def test_update_or_create_ops_workflow_state_creates_missing_status_row(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(rows=[])
+
+    monkeypatch.setattr(sheets_repo, "load_ops_rows", lambda: [])
+    monkeypatch.setattr(
+        sheets_repo,
+        "load_submission_records",
+        lambda: {"sub_001": {"submission_id": "sub_001"}},
+    )
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+
+    upserted = update_or_create_ops_workflow_state(
+        "sub_001",
+        {
+            "status": "reviewed",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert upserted == {
+        "submission_id": "sub_001",
+        "status": "reviewed",
+        "notes": "",
+        "tags": "",
+        "contact_tracking": "",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": "reviewer@example.org",
+    }
+    assert fake_sheet.values_api.update_calls == []
+    assert fake_sheet.values_api.append_calls == [
+        {
+            "spreadsheetId": "test-sheet-id",
+            "range": "ops!A2",
+            "valueInputOption": "RAW",
+            "insertDataOption": "INSERT_ROWS",
+            "body": {
+                "values": [
+                    [
+                        "sub_001",
+                        "reviewed",
+                        "",
+                        "",
+                        "",
+                        "05-26-2026 10:00:00 UTC",
+                        "reviewer@example.org",
+                    ]
+                ]
+            },
+        }
+    ]
+
+
+def test_update_or_create_ops_workflow_state_creates_missing_notes_row_with_new_status(
+    monkeypatch,
+) -> None:
+    fake_sheet = _FakeSheet(rows=[])
+
+    monkeypatch.setattr(sheets_repo, "load_ops_rows", lambda: [])
+    monkeypatch.setattr(
+        sheets_repo,
+        "load_submission_records",
+        lambda: {"sub_001": {"submission_id": "sub_001"}},
+    )
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+
+    upserted = update_or_create_ops_workflow_state(
+        "sub_001",
+        {
+            "notes": "First note",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert upserted["status"] == "new"
+    assert upserted["notes"] == "First note"
+    assert upserted["updated_by"] == "reviewer@example.org"
+
+
+def test_update_or_create_ops_workflow_state_updates_existing_row(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        rows=[
+            [
+                "sub_001",
+                "contacted",
+                "Original note",
+                "priority",
+                "call",
+                "05-25-2026 09:00:00 UTC",
+                "old@example.org",
+            ]
+        ]
+    )
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+
+    upserted = update_or_create_ops_workflow_state(
+        "sub_001",
+        {
+            "notes": "Updated note",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert upserted["status"] == "contacted"
+    assert upserted["notes"] == "Updated note"
+    assert upserted["tags"] == "priority"
+    assert upserted["contact_tracking"] == "call"
+    assert fake_sheet.values_api.append_calls == []
+    assert len(fake_sheet.values_api.update_calls) == 1
+
+
+def test_update_or_create_ops_workflow_state_rejects_unknown_submission(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(rows=[])
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "load_submission_records", lambda: {})
+
+    try:
+        update_or_create_ops_workflow_state(
+            "sub_404",
+            {
+                "status": "reviewed",
+                "updated_by": "reviewer@example.org",
+            },
+        )
+    except OpsSubmissionNotFoundError as exc:
+        assert str(exc) == "No submission found for submission_id."
+    else:
+        raise AssertionError("Expected unknown submission to be rejected")
+
     assert fake_sheet.values_api.append_calls == []
     assert fake_sheet.values_api.update_calls == []

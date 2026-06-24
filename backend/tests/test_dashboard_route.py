@@ -322,7 +322,7 @@ def test_update_ops_dashboard_state_accepts_structured_status_update(monkeypatch
         captured["workflow_fields"] = workflow_fields
         return updated_row
 
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", fake_update)
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", fake_update)
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -387,7 +387,7 @@ def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch)
         captured["workflow_fields"] = workflow_fields
         return updated_row
 
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", fake_update)
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", fake_update)
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -414,7 +414,7 @@ def test_update_ops_dashboard_state_accepts_structured_notes_update(monkeypatch)
 
 def test_update_ops_dashboard_state_rejects_missing_mutable_fields(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", lambda *args: calls.append(args))
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -434,7 +434,7 @@ def test_update_ops_dashboard_state_rejects_missing_mutable_fields(monkeypatch) 
 
 def test_update_ops_dashboard_state_rejects_invalid_status_before_write(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", lambda *args: calls.append(args))
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -455,7 +455,7 @@ def test_update_ops_dashboard_state_rejects_invalid_status_before_write(monkeypa
 
 def test_update_ops_dashboard_state_rejects_missing_actor_identity(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", lambda *args: calls.append(args))
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -480,7 +480,7 @@ def test_update_ops_dashboard_state_rejects_missing_actor_identity(monkeypatch) 
 
 def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypatch) -> None:
     calls = []
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: calls.append(args))
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", lambda *args: calls.append(args))
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -500,8 +500,24 @@ def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypat
     assert calls == []
 
 
-def test_update_ops_dashboard_state_returns_not_found_for_missing_ops_row(monkeypatch) -> None:
-    monkeypatch.setattr(dashboard, "update_existing_ops_workflow_state", lambda *args: None)
+def test_update_ops_dashboard_state_creates_missing_ops_row(monkeypatch) -> None:
+    created_row = {
+        "submission_id": "sub_001",
+        "status": "new",
+        "notes": "Updated note",
+        "tags": "",
+        "contact_tracking": "",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": "reviewer@example.org",
+    }
+    captured = {}
+
+    def fake_upsert(submission_id, workflow_fields):
+        captured["submission_id"] = submission_id
+        captured["workflow_fields"] = workflow_fields
+        return created_row
+
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", fake_upsert)
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -516,5 +532,50 @@ def test_update_ops_dashboard_state_returns_not_found_for_missing_ops_row(monkey
         },
     )
 
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "updated",
+        "submission_id": "sub_001",
+        "ops": {
+            "status": "new",
+            "notes": "Updated note",
+            "tags": "",
+            "contact_tracking": "",
+            "updated_at": "05-26-2026 10:00:00 UTC",
+            "updated_by": "reviewer@example.org",
+        },
+    }
+    assert captured == {
+        "submission_id": "sub_001",
+        "workflow_fields": {
+            "updated_by": "reviewer@example.org",
+            "notes": "Updated note",
+        },
+    }
+
+
+def test_update_ops_dashboard_state_returns_not_found_for_unknown_submission(monkeypatch) -> None:
+    def fake_upsert(*args):
+        raise dashboard.OpsSubmissionNotFoundError("No submission found for submission_id.")
+
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", fake_upsert)
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        headers=ACTOR_HEADERS,
+        json={
+            "submission_id": "sub_404",
+            "notes": "Updated note",
+        },
+    )
+
     assert response.status_code == 404
-    assert response.json()["detail"]["code"] == "OPS_ROW_NOT_FOUND"
+    assert response.json()["detail"] == {
+        "status": "error",
+        "code": "SUBMISSION_NOT_FOUND",
+        "message": "No submission found for submission_id.",
+    }
