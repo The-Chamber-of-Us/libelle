@@ -91,6 +91,8 @@ Runs at: http://localhost:3000
 
 [Local Backend Google Setup](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-backend-google-setup.md)
 
+[Local Dashboard Write Testing](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-dashboard-writes.md)
+
 [API Specification](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/api-spec.md)
 
 ## Contributing
