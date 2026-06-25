@@ -54,7 +54,7 @@ cd frontend
 VITE_DEV_INTERNAL_ACTOR_EMAIL=local.reviewer@example.org npm run dev
 ```
 
-The Vite dev proxy adds `cf-access-authenticated-user-email` only to local `/ops` and `/submissions` API requests. If `VITE_DEV_INTERNAL_ACTOR_EMAIL` is absent, no actor header is added and writes should continue to fail with `401`.
+During local dev, the Vite proxy may attach `cf-access-authenticated-user-email` to `/ops/*` and `/submissions/*` proxied requests when `VITE_DEV_INTERNAL_ACTOR_EMAIL` is set. Only protected write endpoints enforce this actor identity; read endpoints such as `/snapshot` and `/ops/statuses` do not require it and should ignore it. If `VITE_DEV_INTERNAL_ACTOR_EMAIL` is absent, no actor header is added and writes should continue to fail with `401`.
 
 3. Open the dashboard through the Vite dev server:
 
