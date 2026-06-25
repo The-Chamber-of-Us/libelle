@@ -72,11 +72,15 @@ def update_or_create_ops_workflow_state(
     row exists. The dashboard writeback path should therefore upsert so the
     first reviewer status or notes save has somewhere to land.
     """
-    updated_row = update_existing_ops_workflow_state(submission_id, workflow_fields)
+    normalized_submission_id = str(submission_id).strip()
+
+    updated_row = update_existing_ops_workflow_state(
+        normalized_submission_id,
+        workflow_fields,
+    )
     if updated_row is not None:
         return updated_row
 
-    normalized_submission_id = str(submission_id).strip()
     if normalized_submission_id not in sheets_repo.load_submission_records():
         raise OpsSubmissionNotFoundError("No submission found for submission_id.")
 
@@ -95,7 +99,10 @@ def update_or_create_ops_workflow_state(
 
     # If another writer created the row between update and create, finish as an
     # update so omitted fields are preserved.
-    updated_after_create_race = update_existing_ops_workflow_state(submission_id, workflow_fields)
+    updated_after_create_race = update_existing_ops_workflow_state(
+        normalized_submission_id,
+        workflow_fields,
+    )
     if updated_after_create_race is not None:
         return updated_after_create_race
 

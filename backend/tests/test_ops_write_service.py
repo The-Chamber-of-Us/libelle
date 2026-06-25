@@ -1,3 +1,4 @@
+import services.ops_write_service as ops_write_service
 from services.ops_write_service import (
     create_first_ops_workflow_state,
     OpsSubmissionNotFoundError,
@@ -406,3 +407,42 @@ def test_update_or_create_ops_workflow_state_rejects_unknown_submission(monkeypa
 
     assert fake_sheet.values_api.append_calls == []
     assert fake_sheet.values_api.update_calls == []
+
+
+def test_update_or_create_ops_workflow_state_uses_normalized_id_for_update_paths(
+    monkeypatch,
+) -> None:
+    update_calls = []
+
+    def fake_update(submission_id, workflow_fields):
+        update_calls.append((submission_id, workflow_fields))
+        if len(update_calls) == 2:
+            return {"submission_id": submission_id, "status": "reviewed"}
+        return None
+
+    monkeypatch.setattr(
+        ops_write_service,
+        "update_existing_ops_workflow_state",
+        fake_update,
+    )
+    monkeypatch.setattr(
+        sheets_repo,
+        "load_submission_records",
+        lambda: {"sub_001": {"submission_id": "sub_001"}},
+    )
+    monkeypatch.setattr(
+        ops_write_service,
+        "create_first_ops_workflow_state",
+        lambda *args: None,
+    )
+
+    upserted = update_or_create_ops_workflow_state(
+        " sub_001 ",
+        {
+            "status": "reviewed",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert upserted == {"submission_id": "sub_001", "status": "reviewed"}
+    assert [call[0] for call in update_calls] == ["sub_001", "sub_001"]
