@@ -1,4 +1,5 @@
 import io
+import re
 from typing import Dict, Optional, Tuple
 
 from googleapiclient.discovery import build
@@ -6,6 +7,9 @@ from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
 from config import DRIVE_ROOT_FOLDER_ID, TOKEN_FILE
 from storage._auth import load_oauth_creds, build_oauth_flow, DRIVE_SCOPES
+
+
+DRIVE_FILENAME_UNSAFE_RE = re.compile(r"[\x00-\x1f\x7f/\\]+")
 
 
 def get_drive_service():
@@ -24,12 +28,25 @@ def get_target_folder_id() -> str:
     return DRIVE_ROOT_FOLDER_ID
 
 
-def upload_pdf(file_bytes: bytes, submission_id: str, parent_folder_id: str = None) -> Tuple[str, str]:
-    """Upload a resume PDF to Drive and return (file_id, webViewLink)."""
+def build_deterministic_resume_filename(submission_id: str, original_filename: str) -> str:
+    """Return the Drive filename for a resume upload."""
+    safe_original = DRIVE_FILENAME_UNSAFE_RE.sub("_", (original_filename or "").strip()).strip(" ._")
+    if not safe_original:
+        safe_original = "resume.pdf"
+    return f"{submission_id}_{safe_original}"
+
+
+def upload_pdf(
+    file_bytes: bytes,
+    submission_id: str,
+    original_filename: str,
+    parent_folder_id: str = None,
+) -> Tuple[str, str, str]:
+    """Upload a resume PDF to Drive and return (file_id, webViewLink, filename)."""
     folder_id = parent_folder_id or get_target_folder_id()
     drive_service = get_drive_service()
 
-    filename = f"{submission_id}-resume.pdf"
+    filename = build_deterministic_resume_filename(submission_id, original_filename)
     media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype="application/pdf", resumable=False)
     metadata = {"name": filename, "parents": [folder_id]}
 
@@ -42,7 +59,7 @@ def upload_pdf(file_bytes: bytes, submission_id: str, parent_folder_id: str = No
     file_id = file["id"]
     web_view = file.get("webViewLink", f"https://drive.google.com/file/d/{file_id}/view")
     print(f"[DRIVE] Uploaded submission_id={submission_id} file='{filename}' → {file_id}")
-    return file_id, web_view
+    return file_id, web_view, filename
 
 
 def download_file(file_id: str) -> bytes:

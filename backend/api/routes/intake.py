@@ -91,6 +91,7 @@ async def upload_volunteer_application(
         pdf_bytes = await file.read() if file and file.filename else None
         result = finalize_submission(
             pdf_bytes=pdf_bytes,
+            original_filename=file.filename if file and file.filename else None,
             normalized=normalized,
             linkedin_url=linkedin_url,
             github_url=github_url,
