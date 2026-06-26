@@ -1,114 +1,290 @@
 # Libelle
 
-Libelle is an open-source, volunteer-powered platform that helps people apply their skills where they matter most. 
-Built by **[The Chamber of Us (TCUS)](https://www.thechamberofus.org/)**, it supports ethical collaboration and real-world impact in ways traditional systems often fail to enable.
+Libelle is an open-source volunteer intake and coordination platform built by The Chamber of Us (TCUS).
 
----
+It helps mission-driven organizations collect volunteer information, preserve structured records, review candidate skills, and coordinate next steps through an internal dashboard.
 
-## What Libelle Does
-Libelle is designed to:
-* **Collect and organize** volunteer information in a secure, structured way.
-* **Match skills, interests, and availability** to mission-driven projects.
-* **Support transparent, ethical collaboration** using human-centered design.
-* **Run on sovereign infrastructure**, including low-cost hardware like Raspberry Pi (Pathfinder Nodes).
+Libelle is not just a resume parser. It is an early workflow system for turning volunteer interest into trusted, reviewable, and actionable organizational knowledge.
 
----
+## Current Status
+
+**Current release:** Libelle v0.3.0, “Trustworthy Volunteer Intake”
+
+Libelle v0.3.0 is complete in protected staging.
+
+v0.3.0 focused on one core problem:
+
+> How can TCUS receive volunteer interest, store it safely, parse useful signals, and give internal reviewers a reliable dashboard for follow-up?
+
+This version supports the full internal review loop: public intake, resume upload, structured storage, parser/resolver output, reviewer dashboard, status/notes writeback, actor attribution, and staging deployment behind Cloudflare Access.
+
+This release is designed for internal TCUS use first. It is not yet a general-purpose public SaaS product or full volunteer marketplace.
+
+Production promotion is intentionally deferred until the v0.4 trusted-intake hardening cycle.
+
+## What Libelle Does Today
+
+Libelle v0.3 supports:
+
+- Public volunteer intake through a web form
+- Optional resume upload
+- Structured submission storage
+- PDF resume text extraction and parsing
+- Skill and profile signal resolution
+- Internal reviewer dashboard
+- Inbox workflow for review status, notes, and follow-up
+- Parser Results inspection for understanding raw and resolved extraction output
+- Resume access through backend-mediated endpoints
+- Basic intake rate limiting and load-smoke testing
+- Current-state operational records for reviewer workflow actions
+
+The public intake form remains accessible to volunteers. The internal dashboard is intended to be protected behind Cloudflare Access or an equivalent internal access gate.
+
+## What Libelle Is Becoming
+
+Libelle is being developed as a lightweight workflow engine for small institutions that need more than a form, but less than a heavy enterprise volunteer-management system.
+
+The long-term direction is to help organizations understand:
+
+- who has offered to help
+- what skills and interests they bring
+- what projects or needs they may fit
+- what follow-up has already happened
+- what opportunities may emerge later
+
+The goal is not only “match a person to a task today.” The goal is to help an organization remember human potential over time and connect people to meaningful work when the right opportunity appears.
 
 ## Repository Structure
+
 ```text
 libelle/
-├── backend/            # FastAPI backend (Intake, Drive/Sheets integration)
-├── frontend/           # Frontend UI (React + Tailwind)
-├── infrastructure/     # Templates for Nginx, Systemd, and Cloudflare
-├── diagrams/           # System architecture and data flow
-├── docs/               # Technical guides and contributor notes
-└── scripts/            # Utility scripts for setup and maintenance
+├── backend/            # FastAPI backend for intake, parsing, resolver, dashboard APIs, Drive/Sheets integration
+├── frontend/           # React + Tailwind frontend for public intake and internal dashboard
+├── infrastructure/     # Templates for Nginx, Systemd, Cloudflare, and deployment support
+├── diagrams/           # System architecture and data-flow diagrams
+├── docs/               # Technical guides, release notes, and contributor documentation
+└── scripts/            # Utility scripts, smoke tests, and maintenance helpers
 ```
+
 ## Tech Stack
 
 ### Backend
-* Python 3.11+ (FastAPI / Uvicorn)
-* Google Drive & Sheets APIs
-* Modular Document Parsing
+
+- Python 3.11+
+- FastAPI / Uvicorn
+- Google Sheets API
+- Google Drive API
+- Resume PDF text extraction
+- Parser and resolver modules
+- Backend-mediated internal resume access
 
 ### Frontend
-* React / Tailwind CSS
-* Vite (Build tool)
+
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
 
 ### Infrastructure
-* Raspberry Pi (Pathfinder Node v0.1)
-* Cloudflare Tunnel & Zero Trust (Secure ingress and route protection)
-* NGINX (Reverse proxy & static serving)
-* Systemd (Service persistence)
 
-## ⚠️ Security & Environment
+- Cloudflare Tunnel / Cloudflare Access
+- NGINX
+- Systemd
+- Google Drive / Sheets integration
+
+Pathfinder Node / Raspberry Pi deployment remains part of the broader TCUS infrastructure exploration, but v0.3 is primarily focused on making the volunteer intake and reviewer workflow trustworthy.
+
+## Security and Environment
+
 This is a public repository. No credentials, tokens, or live secrets are stored here.
 
-### Production Configuration
-On a live Pathfinder Node, production secrets are stored securely outside the web root (e.g. `/etc/libelle/libelle.env`). Required variables include:
+Production secrets should live outside the repository and outside the web root.
 
-* **GOOGLE_SERVICE_ACCOUNT_JSON:** Path to the service account JSON file used for Google Sheets access (e.g. org_credentials.json).
-* **GOOGLE_SHEET_ID:** The ID of the master volunteer sheet.
-* **DRIVE_ROOT_FOLDER_ID:** The ID of the Drive folder for PDF uploads.
-* **APP_REDIRECT_URI:** The public OAuth callback (e.g. `https://libelle.io/oauth2callback`).
+Typical production variables include:
 
-## Google Auth Model
-Libelle utilizes a dual-authentication system to navigate Google's permission constraints:
+- `GOOGLE_SERVICE_ACCOUNT_JSON`
+- `GOOGLE_SHEET_ID`
+- `DRIVE_ROOT_FOLDER_ID`
+- OAuth-related configuration for Google Drive access
+- dashboard/internal access configuration
 
-* **Google Sheets (Service Account):** Used for appending metadata. Configured via a service account credential file referenced by GOOGLE_CREDENTIALS.
-* **Google Drive (User OAuth):** Used for PDF uploads to Gmail-owned folders. Requires a `token.json` generated via the backend setup endpoints.
+The public volunteer intake route should remain publicly reachable.
 
-## Setup / Admin Endpoints
-In production, these endpoints may be protected upstream by Cloudflare Zero Trust:
+The internal dashboard and dashboard write APIs should be protected through Cloudflare Access or the configured internal access path.
 
-* **GET /authorize:** Initiates the Google consent flow.
-* **GET /oauth2callback:** Completes the flow and saves the local `token.json`.
+## Auth and Access Model
 
-## Getting Started (Local Dev)
+Libelle uses different access models for different parts of the system.
 
-### 1. Backend Setup
+### Public volunteer intake
+
+The public intake form is intentionally accessible to volunteers.
+
+### Internal dashboard
+
+The reviewer dashboard is an internal tool. In deployed environments, it should be gated by Cloudflare Access or an equivalent access-control mechanism.
+
+Internal write actions, such as status updates and reviewer notes, require a derived internal actor identity.
+
+### Google integration
+
+Libelle uses Google services for storage and operational workflows:
+
+- Google Sheets stores structured submission and workflow records.
+- Google Drive stores uploaded resume PDFs.
+- Backend services mediate access to these resources.
+- The frontend should not call Google Sheets or Drive directly.
+
+## Getting Started: Local Development
+
+### Backend
+
 ```bash
 cd backend
 cp .env.example .env
 python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel 
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
-Runs at: http://127.0.0.1:8000
-Health Check: http://127.0.0.1:8000/health (Note: Endpoint is NOT /api/health)
-For real end-to-end local testing with Drive and Sheets, follow the local Google setup guide before running the backend linked below. 
+> Note: if PyMuPDF fails to install on a newer macOS or Python environment, do not fight local C/C++ build tooling first. Check the current dependency guidance in `docs/deployment/staging_deployment.md` or open an issue. The staging environment has successfully used a newer PyMuPDF version where older pins failed to install.
 
-### 2. Frontend Setup
+Backend runs at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Note: the health endpoint is `/health`, not `/api/health`.
+
+For real end-to-end local testing with Google Drive and Sheets, follow the local Google setup guide in `docs/`.
+
+### Windows virtual environment activation
+
+On Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+On Windows Command Prompt:
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+### Frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Runs at: http://localhost:3000
+
+Frontend runs at:
+
+```text
+http://localhost:3000
+```
+
+## Local Development Notes
+
+Some dashboard write actions require internal actor identity. In deployed environments, that identity is expected to come from Cloudflare Access or the configured internal access layer.
+
+In local development, missing actor identity may cause `401` responses for actions such as:
+
+- workflow status updates
+- reviewer notes saves
+- other internal ops write actions
+
+If this happens, check the local dashboard auth/testing documentation before assuming the frontend action is broken.
+
+## v0.3 Scope
+
+Libelle v0.3 is focused on trustworthy internal intake operations.
+
+Core v0.3 themes:
+
+- reliable public volunteer intake
+- optional resume upload
+- safer resume storage and backend-mediated access
+- parser and resolver visibility
+- internal reviewer workflow
+- dashboard tabs for Inbox, Parser Results, Ops, and Errors
+- actor-aware ops write behavior
+- basic rate limiting
+- non-production smoke/load testing
+- clearer deployment security assumptions
+
+Out of scope for v0.3:
+
+- public volunteer accounts
+- custom login system
+- role-based permissions matrix
+- full volunteer marketplace behavior
+- automated project assignment
+- AI-driven autonomous matching
+- production-grade observability suite
+- broad parser rewrite
 
 ## Documentation
 
-[Local Backend Google Setup](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-backend-google-setup.md)
+Useful docs include:
 
-[Local Dashboard Write Testing](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/local-dev-dashboard-writes.md)
+- Local backend Google setup
+- API specification
+- AI in Libelle staged approach
+- Deployment and infrastructure notes
+- Benchmark and parser evaluation notes
 
-[API Specification](https://github.com/The-Chamber-of-Us/libelle/blob/main/docs/api-spec.md)
+See the `docs/` directory for the current documentation set.
 
 ## Contributing
-We welcome contributions across engineering, design, and research!
-Ways to contribute:
 
-* Refine the resume parsing logic in /backend.
-* Improve the volunteer matching algorithm.
-* Harden the infrastructure templates in /infrastructure.
-* To access live systems or participate in TCUS operations, please open an issue titled "Request to join TCUS / Libelle" to begin the onboarding process.
+We welcome contributions across engineering, design, research, documentation, and operations.
+
+Good contribution areas include:
+
+- improving reviewer dashboard usability
+- strengthening parser and resolver benchmarks
+- improving local setup documentation
+- hardening deployment and access-control documentation
+- improving public intake trust and clarity
+- creating bounded research spikes for parser or workflow improvements
+
+Please work from a GitHub issue when possible. Libelle is moving through staged releases, so narrow, well-scoped PRs are preferred.
+
+Before making changes to parser behavior, resolver behavior, dashboard data models, auth assumptions, or Google storage structure, please open or claim an issue so the change can be reviewed against the current release scope.
+
+To participate in TCUS operations or request access to live systems, open an issue titled:
+
+```text
+Request to join TCUS / Libelle
+```
 
 ## About TCUS
-The Chamber of Us is a 501(c)(3) nonprofit building **Pathfinder** — an open, ethical, AI-augmented standard to align people, projects, and capital with a sustainable future.
-[Read the Pathfinder White Paper](https://www.thechamberofus.org/pathfinder-white-paper)
+
+The Chamber of Us is a 501(c)(3) nonprofit building Pathfinder, an open and ethical standard for aligning people, projects, and capital with a sustainable future.
+
+Libelle is one part of that larger effort: a practical system for helping skilled people contribute to meaningful work through trusted, human-centered coordination.
 
 ## License
-Licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. If you run this software as a network service, you must make your modifications available to your users.
 
-*Libelle is an experiment in different ways of working, belonging, and building. Welcome to the mission.*
+Libelle is licensed under the GNU Affero General Public License v3.0.
+
+If you run this software as a network service, you must make your modifications available to your users.
+
+## Closing Note
+
+Libelle is an experiment in different ways of working, belonging, and building.
+
+It is also becoming a real internal tool: one that helps TCUS receive volunteer interest, preserve human context, and turn scattered offers of help into coordinated action.
+
+Welcome to the mission.
