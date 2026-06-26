@@ -24,9 +24,14 @@ def _patch_io(monkeypatch, captured):
     def fake_extract(pdf_bytes):
         return "extracted resume text"
 
-    def fake_upload(pdf_bytes, submission_id):
+    def fake_upload(pdf_bytes, submission_id, original_filename):
         captured["drive_submission_id"] = submission_id
-        return ("drive-file-id", "https://drive.example/view")
+        captured["drive_original_filename"] = original_filename
+        return (
+            "drive-file-id",
+            "https://drive.example/view",
+            f"{submission_id}_{original_filename}",
+        )
 
     def fake_write_base_row(**kwargs):
         submission_id = kwargs["submission_id"]
@@ -41,6 +46,7 @@ def _patch_io(monkeypatch, captured):
 def _finalize():
     return intake_service.finalize_submission(
         pdf_bytes=_VALID_PDF_BYTES,
+        original_filename="Test Resume.PDF",
         normalized=_normalized(),
         linkedin_url=None,
         github_url=None,
@@ -68,8 +74,11 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
     result = _finalize()
 
     assert captured["drive_submission_id"] == result["submission_id"]
+    assert captured["drive_original_filename"] == "Test Resume.PDF"
     assert captured["sheets_submission_id"] == result["submission_id"]
-    assert captured["row"]["resume_filename"] == f"{result['submission_id']}-resume.pdf"
+    expected_filename = f"{result['submission_id']}_Test Resume.PDF"
+    assert captured["row"]["resume_filename"] == expected_filename
+    assert result["resume_filename"] == expected_filename
     assert captured["row"]["resume_status"] == "uploaded"
     assert result["resume_status"] == "uploaded"
 
@@ -94,6 +103,7 @@ def test_finalize_submission_without_resume_records_missing(monkeypatch):
 
     result = intake_service.finalize_submission(
         pdf_bytes=None,
+        original_filename=None,
         normalized=_normalized(),
         linkedin_url=None,
         github_url=None,
@@ -167,6 +177,7 @@ def test_finalize_submission_rejects_invalid_pdf_content(monkeypatch):
     with pytest.raises(intake_service.IntakeError) as exc_info:
         intake_service.finalize_submission(
             pdf_bytes=b"plain text",
+            original_filename="resume.pdf",
             normalized=_normalized(),
             linkedin_url=None,
             github_url=None,
