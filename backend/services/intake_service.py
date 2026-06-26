@@ -223,6 +223,7 @@ def _build_ui_data(
 def finalize_submission(
     *,
     pdf_bytes: Optional[bytes],
+    original_filename: Optional[str],
     normalized: Dict[str, Any],
     linkedin_url: Optional[str],
     github_url: Optional[str],
@@ -260,10 +261,13 @@ def finalize_submission(
     if not pre_text.strip():
         raise IntakeError("NO_TEXT_EXTRACTED", "PDF has no extractable text", status_code=400)
 
-    resume_filename = f"{submission_id}-resume.pdf"
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     try:
-        drive_file_id, drive_file_url = upload_pdf(pdf_bytes, submission_id)
+        drive_file_id, drive_file_url, resume_filename = upload_pdf(
+            pdf_bytes,
+            submission_id,
+            original_filename or "resume.pdf",
+        )
     except Exception as exc:
         traceback.print_exc()
         print(
