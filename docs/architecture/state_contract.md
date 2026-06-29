@@ -21,6 +21,16 @@ can be added later only if the frontend needs compile-time type sharing. The pre
 direction is backend-first: the snapshot API derives health state and the frontend treats it
 as opaque display data.
 
+## Design Rationale
+
+The intake pipeline is composed of several loosely coupled systems that operate
+independently. A resume may upload successfully while parsing fails, or parsing may succeed
+while resolver processing is still pending.
+
+For that reason, the contract models each subsystem independently rather than forcing every
+submission through a single linear status field. Reviewer-facing health is derived from the
+composed state rather than stored directly.
+
 ## State Model
 
 The contract keeps separate state domains instead of collapsing the pipeline into one linear
@@ -67,7 +77,8 @@ status field.
 - `pending_processing`
 - `broken_pipeline`
 
-`SubmissionHealthState` is a derived read-model category, not a source of truth.
+`SubmissionHealthState` is a deterministic, backend-owned read model. It is derived from the
+canonical state domains and should never be persisted as the primary source of truth.
 
 ## Transition Rules
 
@@ -85,6 +96,23 @@ The contract exposes pure functions that depend only on record state:
 
 These functions must not call Google Sheets, Google Drive, FastAPI, the parser, the resolver,
 or the network. Runtime services can call them later, but the contract itself stays pure.
+Transition validators answer whether an operation is allowed given the current record state.
+They do not perform the operation themselves and should not mutate records.
+
+## State Ownership
+
+Each state domain has a single authoritative owner.
+
+| State | Owner |
+| --- | --- |
+| `ResumeState` | Intake / upload pipeline |
+| `ParserState` | Parser worker |
+| `ResolverState` | Resolver pipeline |
+| `ReviewStatus` | Reviewer operations |
+| `SubmissionHealthState` | Backend read model |
+
+No subsystem should directly modify state owned by another subsystem. Cross-system
+interpretation occurs through the state contract rather than ad hoc application logic.
 
 ## Derived Health View
 
@@ -123,8 +151,10 @@ parser or resolver events.
 - Resolver failure must preserve valid parser output.
 - Fatal pipeline failures must create traceable error records.
 - Resume access must require authentication and audit logging.
-- State transitions and health derivations should be traceable to an origin step: intake,
-  file upload, parser, resolver, snapshot, ops, or audit/error logging.
+- State transitions should be idempotent whenever practical so retried pipeline steps do not
+  create inconsistent records.
+- Every state transition and derived health interpretation should be traceable to a single
+  origin event: intake, file upload, parser, resolver, snapshot, ops, or audit/error logging.
 
 ## Future Integration
 
