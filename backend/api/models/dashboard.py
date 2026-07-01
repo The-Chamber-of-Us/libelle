@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
+from core.state_contract import VALID_SUBMISSION_HEALTH_STATES
 from ops_schema import VALID_OPS_STATUSES
 
 
@@ -110,6 +111,7 @@ class SnapshotErrorsData(SnapshotModel):
 
 class ReviewerSubmissionSnapshot(SnapshotModel):
     submission_id: str
+    submission_health_state: Literal[VALID_SUBMISSION_HEALTH_STATES]
     raw: SnapshotRawData
     parsed: SnapshotParsedData
     resolved: SnapshotResolvedData
