@@ -34,9 +34,9 @@ def validate_sheet_schema() -> None:
     if not tab_result["is_match"]:
         errors.append(_format_tab_error(tab_result))
 
-    missing_tabs = set(tab_result["missing_expected"])
+    live_tabs = set(live["tabs"])
     for tab_name in SHEET_SCHEMA:
-        if tab_name in missing_tabs:
+        if tab_name not in live_tabs:
             continue
         actual_headers = live["headers"].get(tab_name, [])
         header_result = compare_headers(tab_name, actual_headers)
@@ -46,6 +46,12 @@ def validate_sheet_schema() -> None:
     if errors:
         raise SchemaValidationError(
             "Google Sheet schema validation failed:\n\n" + "\n\n".join(errors)
+        )
+
+    for tab_name in tab_result.get("missing_optional", []):
+        print(
+            f"[SCHEMA] Optional tab '{tab_name}' not found; "
+            "related writes will be skipped with a warning."
         )
 
     print("[SCHEMA] Schema Validated")

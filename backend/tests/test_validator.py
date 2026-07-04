@@ -65,3 +65,27 @@ def test_validate_empty_row_reports_all_headers_missing(monkeypatch):
     assert "[ops] Header mismatch." in message
     for expected_header in SHEET_SCHEMA["ops"]:
         assert f"'{expected_header}'" in message
+
+
+def test_validate_missing_optional_ops_events_tab_passes(monkeypatch, capsys):
+    snapshot = _matching_snapshot()
+    snapshot["tabs"].remove("ops_events")
+    snapshot["headers"].pop("ops_events", None)
+    _patch(monkeypatch, snapshot)
+
+    validator.validate_sheet_schema()
+
+    output = capsys.readouterr().out
+    assert "[SCHEMA] Optional tab 'ops_events' not found" in output
+    assert "[SCHEMA] Schema Validated" in output
+
+
+def test_validate_present_ops_events_tab_headers_are_checked(monkeypatch):
+    snapshot = _matching_snapshot()
+    snapshot["headers"]["ops_events"] = ["event_id", "wrong_column"]
+    _patch(monkeypatch, snapshot)
+
+    with pytest.raises(validator.SchemaValidationError) as exc:
+        validator.validate_sheet_schema()
+
+    assert "[ops_events] Header mismatch." in str(exc.value)
