@@ -17,6 +17,7 @@ SUBMISSIONS_SHEET_NAME = "submissions"
 PARSER_RESULTS_SHEET_NAME = "parser_results"
 OPS_SHEET_NAME = "ops"
 ERRORS_SHEET_NAME = "errors"
+OPS_EVENTS_SHEET_NAME = "ops_events"
 
 _sheet_build_lock = threading.Lock()
 _ops_write_lock = threading.Lock()
@@ -134,6 +135,68 @@ def load_ops_rows() -> List[Dict[str, str]]:
     return _load_sheet_rows(OPS_SHEET_NAME)
 
 
+def load_ops_event_rows() -> List[Dict[str, str]]:
+    """Load schema-aligned ops_events rows (append-only reviewer action history)."""
+    return _load_sheet_rows(OPS_EVENTS_SHEET_NAME)
+
+
+def append_ops_event_rows(
+    *,
+    submission_id: str,
+    actor_email: str,
+    action: str,
+    changes: List[tuple[str, str, str]],
+    source: str = "dashboard",
+) -> None:
+    """
+    Append one ops_events row per changed field. Best-effort: the event history
+    is a governance record, so a missing ops_events tab or a failed append must
+    never block the ops write it describes.
+
+    Args:
+        changes: (field_changed, old_value, new_value) per reviewer field that
+            actually changed.
+    """
+    if not changes:
+        return
+
+    event_rows = [
+        build_row(
+            OPS_EVENTS_SHEET_NAME,
+            {
+                "event_id": str(uuid.uuid4()),
+                "submission_id": submission_id,
+                "actor_email": actor_email,
+                "action": action,
+                "field_changed": field_changed,
+                "old_value": old_value,
+                "new_value": new_value,
+                "created_at": _local_timestamp(),
+                "source": source,
+            },
+        )
+        for field_changed, old_value, new_value in changes
+    ]
+
+    try:
+        _get_sheet().values().append(
+            spreadsheetId=GOOGLE_SHEET_ID,
+            range=f"{OPS_EVENTS_SHEET_NAME}!A2",
+            valueInputOption="RAW",
+            insertDataOption="INSERT_ROWS",
+            body={"values": event_rows},
+        ).execute()
+        print(
+            f"[SHEETS] Ops events appended → submission_id={submission_id}, "
+            f"action={action}, fields={[c[0] for c in changes]}"
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(
+            f"[SHEETS] WARNING: ops_events append failed for "
+            f"submission_id={submission_id}: {exc}"
+        )
+
+
 def create_ops_row_if_missing(
     *,
     submission_id: str,
@@ -178,6 +241,17 @@ def create_ops_row_if_missing(
             insertDataOption="INSERT_ROWS",
             body={"values": [ops_row]},
         ).execute()
+
+        append_ops_event_rows(
+            submission_id=normalized_submission_id,
+            actor_email=row_data["updated_by"],
+            action="create",
+            changes=[
+                (field, "", row_data[field])
+                for field in ("status", "notes", "tags", "contact_tracking")
+                if row_data[field]
+            ],
+        )
 
     print(f"[SHEETS] Ops row created → submission_id={normalized_submission_id}, status={status}")
     return row_data
@@ -231,6 +305,17 @@ def update_ops_row_if_exists(
             valueInputOption="RAW",
             body={"values": [ops_row]},
         ).execute()
+
+        append_ops_event_rows(
+            submission_id=normalized_submission_id,
+            actor_email=row_data["updated_by"],
+            action="update",
+            changes=[
+                (field, matching_row.get(field, ""), row_data[field])
+                for field in ("status", "notes")
+                if row_data[field] != matching_row.get(field, "")
+            ],
+        )
 
     print(
         f"[SHEETS] Ops row updated → submission_id={normalized_submission_id}, "

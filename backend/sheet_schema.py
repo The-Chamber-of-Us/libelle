@@ -51,12 +51,30 @@ ERRORS_HEADERS = [
     "error_details",
 ]
 
+OPS_EVENTS_HEADERS = [
+    "event_id",
+    "submission_id",
+    "actor_email",
+    "action",
+    "field_changed",
+    "old_value",
+    "new_value",
+    "created_at",
+    "source",
+]
+
 SHEET_SCHEMA = {
     "submissions": SUBMISSIONS_HEADERS,
     "parser_results": PARSER_RESULTS_HEADERS,
     "ops": OPS_HEADERS,
     "errors": ERRORS_HEADERS,
+    "ops_events": OPS_EVENTS_HEADERS,
 }
+
+# Tabs that existing v0.3 sheets may not have yet. Startup validation checks
+# their headers when present but does not require the tab to exist, and event
+# writes degrade to a warning when the tab is missing.
+OPTIONAL_TABS = ("ops_events",)
 
 
 def get_headers(tab_name: str) -> list[str]:
@@ -141,7 +159,16 @@ def compare_tab_names(actual_tabs: list[str]) -> dict[str, object]:
     """
     expected_tabs = list(SHEET_SCHEMA.keys())
 
-    missing_expected = [tab_name for tab_name in expected_tabs if tab_name not in actual_tabs]
+    missing_expected = [
+        tab_name
+        for tab_name in expected_tabs
+        if tab_name not in actual_tabs and tab_name not in OPTIONAL_TABS
+    ]
+    missing_optional = [
+        tab_name
+        for tab_name in OPTIONAL_TABS
+        if tab_name in expected_tabs and tab_name not in actual_tabs
+    ]
     extra_found = [tab_name for tab_name in actual_tabs if tab_name not in expected_tabs]
 
     return {
@@ -149,5 +176,6 @@ def compare_tab_names(actual_tabs: list[str]) -> dict[str, object]:
         "expected_tabs": expected_tabs,
         "actual_tabs": actual_tabs,
         "missing_expected": missing_expected,
+        "missing_optional": missing_optional,
         "extra_found": extra_found,
     }
