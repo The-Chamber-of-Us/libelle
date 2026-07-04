@@ -63,21 +63,86 @@ TRACEABLE_ORIGINS = (
     "audit_error_logging",
 )
 
+# Field groups below use the canonical v0.3 tab schema names from
+# backend/sheet_schema.py. docs/architecture/field_ownership_contract.md is the
+# human-readable companion; keep the two in sync.
+
+# submissions tab: volunteer-entered at public intake. Immutable after append.
 USER_ENTERED_FIELDS = (
-    "submission_id",
-    "name",
+    "full_name",
     "email",
-    "phone",
-    "location",
-    "availability",
+    "location_raw",
+    "timezone",
+    "skills_raw",
     "interests",
+    "experience_level",
+    "availability",
+    "motivation",
+    "linkedin_url",
+    "github_url",
+    "consent_given",
 )
+# submissions tab: assigned by the intake/upload pipeline rather than the
+# volunteer. resume_filename/resume_status are finalized before the row is
+# appended, so the whole row is immutable after append.
+INTAKE_SYSTEM_FIELDS = (
+    "submission_id",
+    "created_at",
+    "resume_filename",
+    "resume_status",
+)
+# parser_results tab: raw parser extraction. Append-only per run; resolver
+# output must not rewrite these within a row.
 RAW_PARSER_FIELDS = (
-    "parser_output",
-    "raw_parser_output",
-    "parsed_resume",
-    "parser_result",
+    "parser_run_id",
+    "parser_version",
+    "parsed_skills_raw",
+    "parsed_location_raw",
+    "parser_confidence",
 )
+# parser_results tab: resolver normalization over parser output. May be empty
+# when the resolver has not run; must not hide or erase raw parser fields.
+RESOLVER_OWNED_FIELDS = (
+    "resolver_version",
+    "aliases_version",
+    "resolved_skill_ids",
+    "unknown_skills",
+    "resolver_coverage",
+)
+# ops tab: reviewer-owned workflow state, mutable through the dashboard only.
+REVIEWER_OWNED_FIELDS = (
+    "status",
+    "notes",
+    "tags",
+    "contact_tracking",
+)
+# ops tab: backend-derived attribution for the latest reviewer write.
+OPS_ATTRIBUTION_FIELDS = (
+    "updated_at",
+    "updated_by",
+)
+# errors tab: append-only failure evidence tied to submission_id.
+AUDIT_ERROR_FIELDS = (
+    "submission_id",
+    "created_at",
+    "stage",
+    "error_code",
+    "error_summary",
+    "error_details",
+)
+# Derived read-model fields assembled for /snapshot. Never canonical storage.
+SNAPSHOT_DERIVED_FIELDS = (
+    "submission_health_state",
+)
+
+FIELD_OWNERSHIP = {
+    "intake": USER_ENTERED_FIELDS + INTAKE_SYSTEM_FIELDS,
+    "parser": RAW_PARSER_FIELDS,
+    "resolver": RESOLVER_OWNED_FIELDS,
+    "ops": REVIEWER_OWNED_FIELDS + OPS_ATTRIBUTION_FIELDS,
+    "audit_error_logging": AUDIT_ERROR_FIELDS,
+    "snapshot": SNAPSHOT_DERIVED_FIELDS,
+}
 FAILURE_STATES = {
     ParserState.FAILED.value,
     ResolverState.FAILED.value,
@@ -203,7 +268,7 @@ def assert_no_raw_data_overwrite(
 ) -> None:
     overwritten_fields = [
         field
-        for field in (*USER_ENTERED_FIELDS, *RAW_PARSER_FIELDS)
+        for field in (*USER_ENTERED_FIELDS, *INTAKE_SYSTEM_FIELDS, *RAW_PARSER_FIELDS)
         if field in previous
         and field in next_record
         and next_record[field] != previous[field]
