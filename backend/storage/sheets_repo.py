@@ -191,10 +191,16 @@ def append_ops_event_rows(
             f"action={action}, fields={[c[0] for c in changes]}"
         )
     except Exception as exc:  # noqa: BLE001
-        print(
-            f"[SHEETS] WARNING: ops_events append failed for "
-            f"submission_id={submission_id}: {exc}"
-        )
+        if _is_missing_ops_events_tab_error(exc):
+            print(
+                f"[SHEETS] WARNING: optional ops_events tab not found for "
+                f"submission_id={submission_id}; ops write was preserved."
+            )
+        else:
+            print(
+                f"[SHEETS] WARNING: ops_events append failed for "
+                f"submission_id={submission_id}: {exc}"
+            )
 
 
 def create_ops_row_if_missing(
@@ -425,6 +431,11 @@ def _drive_link(file_id: str) -> str:
 
 def _local_timestamp() -> str:
     return datetime.now(timezone.utc).strftime("%m-%d-%Y %H:%M:%S %Z")
+
+
+def _is_missing_ops_events_tab_error(exc: Exception) -> bool:
+    message = str(exc)
+    return OPS_EVENTS_SHEET_NAME in message and "Unable to parse range" in message
 
 
 def _json_string(value: Any) -> str:
