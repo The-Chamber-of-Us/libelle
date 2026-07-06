@@ -563,6 +563,48 @@ def test_ops_event_append_failure_does_not_block_ops_write(monkeypatch, capsys) 
     assert "WARNING: ops_events append failed" in capsys.readouterr().out
 
 
+def test_missing_optional_ops_events_tab_does_not_block_ops_write(monkeypatch, capsys) -> None:
+    fake_sheet = _FakeSheet(
+        rows=[
+            [
+                "sub_001",
+                "new",
+                "",
+                "",
+                "",
+                "05-25-2026 09:00:00 UTC",
+                "old@example.org",
+            ]
+        ]
+    )
+
+    real_append = fake_sheet.values_api.append
+
+    def missing_tab_event_append(**kwargs):
+        if kwargs["range"] == "ops_events!A2":
+            raise RuntimeError("Unable to parse range: ops_events!A2")
+        return real_append(**kwargs)
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+    monkeypatch.setattr(fake_sheet.values_api, "append", missing_tab_event_append)
+
+    updated = update_existing_ops_workflow_state(
+        "sub_001",
+        {
+            "status": "reviewed",
+            "updated_by": "reviewer@example.org",
+        },
+    )
+
+    assert updated is not None
+    assert updated["status"] == "reviewed"
+    assert len(fake_sheet.values_api.update_calls) == 1
+    output = capsys.readouterr().out
+    assert "WARNING: optional ops_events tab not found" in output
+    assert "ops write was preserved" in output
+
+
 def test_append_ops_event_rows_skips_when_no_changes(monkeypatch) -> None:
     fake_sheet = _FakeSheet()
     monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)

@@ -1,9 +1,12 @@
 # Ops Event History (`ops_events`)
 
-Issue #290. The `ops` tab stores only the latest workflow state per
-`submission_id`, so later edits overwrite the previous visible actor and
-timestamp. The `ops_events` tab adds an append-only history of reviewer
-actions so responsibility for each individual change stays attributable.
+Issues #290 and #305. The `ops` tab is the current-state source of truth for
+reviewer workflow status, notes, tags, contact tracking, and latest
+attribution. It stores one latest workflow row per `submission_id`, so later
+edits overwrite the previous visible actor and timestamp. The `ops_events`
+tab adds append-only, best-effort governance history of reviewer actions so
+responsibility for individual changes can be reconstructed when event writes
+are available.
 
 ## Tab schema
 
@@ -29,11 +32,15 @@ One row per changed field per write:
   actually changed. Saving an identical status or note emits nothing.
 - The current `ops` row remains the fast current-state table for dashboard
   loading; nothing reads `ops_events` on the snapshot path.
+- `ops_events` does not replace `ops` for current reviewer workflow state.
 - Event history is append-only and not editable through the dashboard —
   no endpoint writes to or updates this tab besides the append.
 - Event appends are best-effort governance records: if the tab is missing
   or the append fails, the ops write still succeeds and a
   `[SHEETS] WARNING` is logged.
+- Event history is not a transactional audit guarantee. Sheets writes are not
+  committed atomically across `ops` and `ops_events`, and event append failure
+  must not block the reviewer writeback path.
 
 ## The tab is optional
 

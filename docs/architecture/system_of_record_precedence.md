@@ -21,7 +21,7 @@ authoritative when assembling one record from many sources.
 | Parser output | `parser_results` tab (latest row per `submission_id`) | Derived enrichment. Displayed alongside — never instead of — raw submitted values. |
 | Resolver output | resolver-owned columns of the latest `parser_results` row | Derived normalization. Unresolved values stay visible in `unknown_skills`; resolver output never hides raw parser output. |
 | Reviewer workflow status | `ops` tab | Current reviewer-owned workflow state, one row per `submission_id`. |
-| Reviewer notes | `ops` tab (current text); future `ops_events` (authorship/history, #290) | The current row shows latest state; per-edit attribution belongs to append-only events once they exist. |
+| Reviewer notes | `ops` tab (current text); `ops_events` tab (best-effort authorship/history) | The current `ops` row shows latest state; append-only events provide non-transactional history when event writes succeed. |
 | Errors/failures | `errors` tab | Failure evidence tied to `submission_id`. Informs health state; never removes a submission from view. |
 | Snapshot | `/snapshot` response | Derived read model only. Never a source of truth, never written back to any tab. |
 
@@ -45,7 +45,9 @@ dedicated resolver output tab exists.
 **4. Who owns reviewer status and notes?** The `ops` tab, written only
 through the dashboard writeback path with backend-derived actor attribution
 (`updated_by`, `updated_at`). Status values are validated by the state
-contract.
+contract. `ops_events` records append-only best-effort history for reviewer
+changes when available, but it is not the current-state source of truth and
+is not a transactional audit guarantee.
 
 **5. What happens when parser/resolver output conflicts with raw submitted
 values?** The raw submitted value remains authoritative for what the
@@ -97,5 +99,5 @@ row is still a complete, displayable record.
 
 ## Out of scope
 
-Full `/snapshot` rewrite, frontend redesign, `ops_events` implementation
-(#290), parser/resolver quality work, and production promotion.
+Full `/snapshot` rewrite, frontend redesign, transactional audit guarantees,
+parser/resolver quality work, and production promotion.
