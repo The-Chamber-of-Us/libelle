@@ -186,29 +186,122 @@ def test_transition_validators_are_pure_and_idempotent() -> None:
 def test_raw_data_overwrite_is_rejected() -> None:
     previous = {
         "submission_id": "sub_123",
-        "name": "Asha",
-        "parser_output": {"skills": ["python"]},
+        "full_name": "Asha",
+        "parsed_skills_raw": "python",
     }
     next_record = {
         "submission_id": "sub_123",
-        "name": "Asha Renamed",
-        "parser_output": {"skills": ["python", "sql"]},
+        "full_name": "Asha Renamed",
+        "parsed_skills_raw": "python, sql",
     }
 
-    with pytest.raises(ValueError, match="name, parser_output"):
+    with pytest.raises(ValueError, match="full_name, parsed_skills_raw"):
         assert_no_raw_data_overwrite(previous, next_record)
 
 
 def test_raw_data_guard_allows_derived_and_ops_fields_to_change() -> None:
     assert_no_raw_data_overwrite(
-        {"submission_id": "sub_123", "name": "Asha", "review_status": "new"},
+        {"submission_id": "sub_123", "full_name": "Asha", "review_status": "new"},
         {
             "submission_id": "sub_123",
-            "name": "Asha",
+            "full_name": "Asha",
             "review_status": "contacted",
             "submission_health_state": "complete",
         },
     )
+
+
+def test_parser_write_cannot_overwrite_user_entered_fields() -> None:
+    previous = {
+        "submission_id": "sub_123",
+        "skills_raw": "python",
+        "location_raw": "Lisbon",
+    }
+    parser_writeback = {
+        "submission_id": "sub_123",
+        "skills_raw": "python, sql",
+        "location_raw": "Lisbon, Portugal",
+        "parsed_skills_raw": "python, sql",
+    }
+
+    with pytest.raises(ValueError, match="location_raw, skills_raw"):
+        assert_no_raw_data_overwrite(previous, parser_writeback)
+
+
+def test_resolver_write_cannot_overwrite_raw_parser_fields() -> None:
+    previous = {
+        "submission_id": "sub_123",
+        "parsed_skills_raw": "python, reactjs",
+        "parser_confidence": "0.82",
+        "resolved_skill_ids": "",
+    }
+    resolver_writeback = {
+        "submission_id": "sub_123",
+        "parsed_skills_raw": "python, react",
+        "parser_confidence": "0.82",
+        "resolved_skill_ids": "skill_python, skill_react",
+    }
+
+    with pytest.raises(ValueError, match="parsed_skills_raw"):
+        assert_no_raw_data_overwrite(previous, resolver_writeback)
+
+
+def test_resolver_may_fill_its_own_fields_without_touching_parser_output() -> None:
+    assert_no_raw_data_overwrite(
+        {
+            "submission_id": "sub_123",
+            "parsed_skills_raw": "python, reactjs",
+            "resolved_skill_ids": "",
+            "resolver_coverage": "",
+        },
+        {
+            "submission_id": "sub_123",
+            "parsed_skills_raw": "python, reactjs",
+            "resolved_skill_ids": "skill_python, skill_react",
+            "resolver_coverage": "1.0",
+        },
+    )
+
+
+def test_intake_system_fields_are_immutable_after_append() -> None:
+    previous = {
+        "submission_id": "sub_123",
+        "resume_filename": "sub_123-resume.pdf",
+        "created_at": "2026-06-26T10:00:00",
+    }
+    next_record = {
+        "submission_id": "sub_123",
+        "resume_filename": "renamed.pdf",
+        "created_at": "2026-06-26T10:00:00",
+    }
+
+    with pytest.raises(ValueError, match="resume_filename"):
+        assert_no_raw_data_overwrite(previous, next_record)
+
+
+def test_field_ownership_groups_match_sheet_schema() -> None:
+    from sheet_schema import SHEET_SCHEMA
+    from core.state_contract import (
+        AUDIT_ERROR_FIELDS,
+        INTAKE_SYSTEM_FIELDS,
+        RAW_PARSER_FIELDS,
+        RESOLVER_OWNED_FIELDS,
+        REVIEWER_OWNED_FIELDS,
+        OPS_ATTRIBUTION_FIELDS,
+        USER_ENTERED_FIELDS,
+    )
+
+    assert set(USER_ENTERED_FIELDS + INTAKE_SYSTEM_FIELDS) == set(
+        SHEET_SCHEMA["submissions"]
+    )
+    assert set(RAW_PARSER_FIELDS + RESOLVER_OWNED_FIELDS) | {
+        "submission_id",
+        "created_at",
+    } == set(SHEET_SCHEMA["parser_results"])
+    assert set(REVIEWER_OWNED_FIELDS + OPS_ATTRIBUTION_FIELDS) | {
+        "submission_id"
+    } == set(SHEET_SCHEMA["ops"])
+    assert set(AUDIT_ERROR_FIELDS) == set(SHEET_SCHEMA["errors"])
 
 
 def test_failure_events_require_traceable_error_log_fields() -> None:
