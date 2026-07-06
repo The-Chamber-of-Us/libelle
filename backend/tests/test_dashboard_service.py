@@ -274,7 +274,13 @@ def test_assemble_snapshot_records_uses_one_latest_parser_result_row() -> None:
 
 
 def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed() -> None:
-    submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "First Person",
+            "resume_status": "uploaded",
+        }
+    }
     parser_rows = [
         {
             "submission_id": "sub_001",

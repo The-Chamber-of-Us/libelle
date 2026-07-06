@@ -161,10 +161,10 @@ def _parser_state_from_snapshot(
 
     if _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
         return ParserState.SKIPPED_NO_RESUME.value
-    if _latest_error_stage(errors) == "parser":
-        return ParserState.FAILED.value
     if parser_row:
         return ParserState.SUCCEEDED.value
+    if _latest_error_code(errors) == "PARSER_FAILED":
+        return ParserState.FAILED.value
     return ParserState.NOT_STARTED.value
 
 
@@ -181,7 +181,7 @@ def _resolver_state_from_snapshot(
     parser_state = _parser_state_from_snapshot(submission, parser_row, errors)
     if resume_state == ResumeState.NONE_PROVIDED.value:
         return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
-    if _latest_error_stage(errors) == "resolver":
+    if _latest_error_code(errors) == "RESOLVER_FAILED":
         return ResolverState.FAILED.value
     if parser_state == ParserState.FAILED.value:
         return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
@@ -264,8 +264,8 @@ def _has_resolved_skill_matches(value: Any) -> bool:
     return bool(parsed)
 
 
-def _latest_error_stage(errors: Mapping[str, Any]) -> str:
-    return _normalized_text(errors.get("latest_error_stage"))
+def _latest_error_code(errors: Mapping[str, Any]) -> str:
+    return str(errors.get("latest_error_code") or "").strip().upper()
 
 
 def _normalized_text(value: Any) -> str:
