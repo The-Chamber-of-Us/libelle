@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from core.state_contract import SubmissionHealthState
 import services.dashboard_service as dashboard_service
 from services.dashboard_service import assemble_snapshot_records
 
@@ -127,7 +128,16 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
     assert len(records) == 2
 
     first = records[0]
-    assert set(first) == {"submission_id", "raw", "parsed", "resolved", "ops", "errors"}
+    assert set(first) == {
+        "submission_id",
+        "submission_health_state",
+        "raw",
+        "parsed",
+        "resolved",
+        "ops",
+        "errors",
+    }
+    assert first["submission_health_state"] == SubmissionHealthState.COMPLETE.value
     assert first["raw"]["full_name"] == "First Person"
     assert first["raw"]["skills_raw"] == "Python"
     assert "submission_id" not in first["raw"]
@@ -158,10 +168,25 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
     }
 
     second = records[1]
+    assert second["submission_health_state"] == SubmissionHealthState.PENDING_PROCESSING.value
     assert second["parsed"]["parser_state"] == "pending"
     assert second["resolved"]["resolver_state"] == "not_run"
     assert second["ops"]["status"] == "new"
     assert second["errors"]["has_error"] is False
+
+
+def test_assemble_snapshot_records_derives_no_resume_health_from_missing_resume() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "No Resume",
+            "resume_status": "missing",
+        }
+    }
+
+    records = assemble_snapshot_records(submissions, [], [], [])
+
+    assert records[0]["submission_health_state"] == SubmissionHealthState.NO_RESUME_OK.value
 
 
 def test_assemble_snapshot_records_distinguishes_resolver_not_run_from_zero_matches() -> None:
@@ -249,7 +274,13 @@ def test_assemble_snapshot_records_uses_one_latest_parser_result_row() -> None:
 
 
 def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed() -> None:
-    submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "First Person",
+            "resume_status": "uploaded",
+        }
+    }
     parser_rows = [
         {
             "submission_id": "sub_001",
@@ -279,6 +310,7 @@ def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed(
 
     records = assemble_snapshot_records(submissions, parser_rows, [], error_rows)
 
+    assert records[0]["submission_health_state"] == SubmissionHealthState.RESOLVER_FAILED.value
     assert records[0]["parsed"]["parser_state"] == "complete"
     assert records[0]["parsed"]["parsed_skills_raw"] == '["Python"]'
     assert records[0]["resolved"]["resolver_state"] == "not_run"
@@ -288,6 +320,30 @@ def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed(
         "latest_error_stage": "resolver",
         "latest_error_code": "RESOLVER_FAILED",
     }
+
+
+def test_assemble_snapshot_records_derives_parser_failed_health_from_parser_error() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "Parser Failed",
+            "resume_status": "uploaded",
+        }
+    }
+    error_rows = [
+        {
+            "submission_id": "sub_001",
+            "created_at": "2026-04-20T11:00:00",
+            "stage": "parser",
+            "error_code": "PARSER_FAILED",
+            "error_summary": "Parser failed",
+            "error_details": "do not expose",
+        }
+    ]
+
+    records = assemble_snapshot_records(submissions, [], [], error_rows)
+
+    assert records[0]["submission_health_state"] == SubmissionHealthState.PARSER_FAILED.value
 
 
 def test_assemble_snapshot_records_does_not_mutate_inputs() -> None:

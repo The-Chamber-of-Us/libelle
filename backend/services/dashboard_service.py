@@ -3,6 +3,12 @@
 import json
 from typing import Any, Dict, List, Mapping, Optional
 
+from core.state_contract import (
+    ParserState,
+    ResolverState,
+    ResumeState,
+    derive_submission_health_state,
+)
 from services.dashboard_errors import summarize_submission_errors
 from services.dashboard_ops_state import compose_current_ops_state
 from services.dashboard_parser_results import select_latest_parser_result
@@ -85,18 +91,24 @@ def assemble_snapshot_records(
             if str(row.get("submission_id", "")).strip() == submission_id
         ]
         latest_parser_row = select_latest_parser_result(matching_parser_rows)
+        errors = summarize_submission_errors(
+            submission_id,
+            [dict(row) for row in error_rows],
+        )
 
         records.append(
             {
                 "submission_id": submission_id,
+                "submission_health_state": _compose_submission_health_state(
+                    submission,
+                    latest_parser_row,
+                    errors,
+                ),
                 "raw": _compose_raw_layer(submission),
                 "parsed": _compose_parsed_layer(latest_parser_row),
                 "resolved": _compose_resolved_layer(latest_parser_row),
                 "ops": compose_current_ops_state(submission_id, [dict(row) for row in ops_rows]),
-                "errors": summarize_submission_errors(
-                    submission_id,
-                    [dict(row) for row in error_rows],
-                ),
+                "errors": errors,
             }
         )
 
@@ -105,6 +117,77 @@ def assemble_snapshot_records(
 
 def _compose_raw_layer(submission: SubmissionRecord) -> Dict[str, Any]:
     return {field: _value_or_blank(submission.get(field, "")) for field in RAW_FIELDS}
+
+
+def _compose_submission_health_state(
+    submission: SubmissionRecord,
+    parser_row: Optional[Dict[str, Any]],
+    errors: Mapping[str, Any],
+) -> str:
+    return derive_submission_health_state(
+        {
+            "resume_state": _resume_state_from_submission(submission),
+            "parser_state": _parser_state_from_snapshot(submission, parser_row, errors),
+            "resolver_state": _resolver_state_from_snapshot(submission, parser_row, errors),
+        }
+    )
+
+
+def _resume_state_from_submission(submission: SubmissionRecord) -> str:
+    explicit_state = _normalized_text(submission.get("resume_state"))
+    if explicit_state:
+        return explicit_state
+
+    status = _normalized_text(submission.get("resume_status"))
+    if status == "uploaded":
+        return ResumeState.UPLOADED.value
+    if status == "missing":
+        return ResumeState.NONE_PROVIDED.value
+    if status == "failed":
+        return ResumeState.UPLOAD_FAILED.value
+    if status == "pending":
+        return ResumeState.UPLOAD_PENDING.value
+    return status
+
+
+def _parser_state_from_snapshot(
+    submission: SubmissionRecord,
+    parser_row: Optional[Dict[str, Any]],
+    errors: Mapping[str, Any],
+) -> str:
+    explicit_state = _normalized_text(submission.get("parser_state"))
+    if explicit_state:
+        return explicit_state
+
+    if _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
+        return ParserState.SKIPPED_NO_RESUME.value
+    if parser_row:
+        return ParserState.SUCCEEDED.value
+    if _latest_error_code(errors) == "PARSER_FAILED":
+        return ParserState.FAILED.value
+    return ParserState.NOT_STARTED.value
+
+
+def _resolver_state_from_snapshot(
+    submission: SubmissionRecord,
+    parser_row: Optional[Dict[str, Any]],
+    errors: Mapping[str, Any],
+) -> str:
+    explicit_state = _normalized_text(submission.get("resolver_state"))
+    if explicit_state:
+        return explicit_state
+
+    resume_state = _resume_state_from_submission(submission)
+    parser_state = _parser_state_from_snapshot(submission, parser_row, errors)
+    if resume_state == ResumeState.NONE_PROVIDED.value:
+        return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
+    if _latest_error_code(errors) == "RESOLVER_FAILED":
+        return ResolverState.FAILED.value
+    if parser_state == ParserState.FAILED.value:
+        return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
+    if parser_row and _has_resolver_output(parser_row):
+        return ResolverState.SUCCEEDED.value
+    return ResolverState.NOT_STARTED.value
 
 
 def _compose_parsed_layer(parser_row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -179,6 +262,14 @@ def _has_resolved_skill_matches(value: Any) -> bool:
         return len(parsed) > 0
 
     return bool(parsed)
+
+
+def _latest_error_code(errors: Mapping[str, Any]) -> str:
+    return str(errors.get("latest_error_code") or "").strip().upper()
+
+
+def _normalized_text(value: Any) -> str:
+    return "" if value is None else str(value).strip().lower()
 
 
 def _value_or_blank(value: Any) -> Any:
