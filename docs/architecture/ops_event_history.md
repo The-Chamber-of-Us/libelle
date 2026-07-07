@@ -30,6 +30,9 @@ One row per changed field per write:
   `storage/sheets_repo.py`: the create path records every non-empty initial
   reviewer field, and the update path records only fields whose value
   actually changed. Saving an identical status or note emits nothing.
+- `actor_email` is copied from the same backend-derived actor used for
+  `ops.updated_by`; actor fields submitted in the request body are ignored by
+  reviewer write endpoints.
 - The current `ops` row remains the fast current-state table for dashboard
   loading; nothing reads `ops_events` on the snapshot path.
 - `ops_events` does not replace `ops` for current reviewer workflow state.

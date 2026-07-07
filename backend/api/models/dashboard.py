@@ -57,6 +57,8 @@ class SnapshotOpsData(SnapshotModel):
 
 
 class OpsWorkflowStateCreateRequest(SnapshotModel):
+    model_config = ConfigDict(extra="ignore")
+
     status: str
     notes: str = ""
     tags: str = ""
@@ -70,6 +72,8 @@ class OpsWorkflowStateCreateResponse(SnapshotModel):
 
 
 class OpsWorkflowStateUpdateRequest(SnapshotModel):
+    model_config = ConfigDict(extra="ignore")
+
     status: str | None = None
     notes: str | None = None
 
@@ -81,6 +85,8 @@ class OpsWorkflowStateUpdateResponse(SnapshotModel):
 
 
 class OpsDashboardUpdateRequest(SnapshotModel):
+    model_config = ConfigDict(extra="ignore")
+
     submission_id: str
     status: str | None = None
     notes: str | None = None
