@@ -25,7 +25,7 @@ The backend derives the internal actor from one of these Cloudflare Access reque
 - `cf-access-authenticated-user-email`
 - `cf-access-jwt-assertion`, using the JWT payload `email` claim
 
-If both are present, `cf-access-authenticated-user-email` wins. The backend normalizes the actor to a trimmed lowercase email and writes it into the ops `updated_by` field.
+If both are present, `cf-access-authenticated-user-email` wins. The backend normalizes the actor to a trimmed lowercase email and uses that value for both the current ops `updated_by` field and appended `ops_events.actor_email` rows. Client-submitted actor fields such as `updated_by` or `actor_email` are ignored on write endpoints.
 
 If neither header produces an actor, write endpoints return:
 

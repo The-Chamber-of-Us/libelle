@@ -4,8 +4,43 @@ from fastapi.testclient import TestClient
 from api.models.dashboard import ReviewerSubmissionSnapshot
 from api.routes import dashboard
 from ops_schema import VALID_OPS_STATUSES
+from storage import sheets_repo
 
 ACTOR_HEADERS = {"cf-access-authenticated-user-email": "Reviewer@Example.Org"}
+
+
+class _FakeSheetRequest:
+    def __init__(self, response=None):
+        self.response = response or {}
+
+    def execute(self):
+        return self.response
+
+
+class _FakeSheetValues:
+    def __init__(self, rows=None):
+        self.rows = rows or []
+        self.append_calls = []
+        self.update_calls = []
+
+    def get(self, **kwargs):
+        return _FakeSheetRequest({"values": self.rows})
+
+    def append(self, **kwargs):
+        self.append_calls.append(kwargs)
+        return _FakeSheetRequest()
+
+    def update(self, **kwargs):
+        self.update_calls.append(kwargs)
+        return _FakeSheetRequest()
+
+
+class _FakeSheet:
+    def __init__(self, rows=None):
+        self.values_api = _FakeSheetValues(rows)
+
+    def values(self):
+        return self.values_api
 
 
 def _snapshot_payload() -> list[dict]:
@@ -480,8 +515,23 @@ def test_update_ops_dashboard_state_rejects_missing_actor_identity(monkeypatch) 
 
 
 def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypatch) -> None:
-    calls = []
-    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", lambda *args: calls.append(args))
+    updated_row = {
+        "submission_id": "sub_001",
+        "status": "contacted",
+        "notes": "Updated note",
+        "tags": "",
+        "contact_tracking": "",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+        "updated_by": "reviewer@example.org",
+    }
+    captured = {}
+
+    def fake_update(submission_id, workflow_fields):
+        captured["submission_id"] = submission_id
+        captured["workflow_fields"] = workflow_fields
+        return updated_row
+
+    monkeypatch.setattr(dashboard, "update_or_create_ops_workflow_state", fake_update)
 
     app = FastAPI()
     app.include_router(dashboard.router)
@@ -493,12 +543,64 @@ def test_update_ops_dashboard_state_does_not_trust_client_actor_fields(monkeypat
         json={
             "submission_id": "sub_001",
             "notes": "Updated note",
-            "updated_by": "reviewer@example.org",
+            "updated_by": "spoofed-updater@example.org",
+            "actor_email": "spoofed-actor@example.org",
         },
     )
 
-    assert response.status_code == 422
-    assert calls == []
+    assert response.status_code == 200
+    assert response.json()["ops"]["updated_by"] == "reviewer@example.org"
+    assert captured == {
+        "submission_id": "sub_001",
+        "workflow_fields": {
+            "updated_by": "reviewer@example.org",
+            "notes": "Updated note",
+        },
+    }
+
+
+def test_update_ops_dashboard_state_uses_backend_actor_for_ops_and_events(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(rows=[])
+
+    monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(sheets_repo, "_local_timestamp", lambda: "05-26-2026 10:00:00 UTC")
+    monkeypatch.setattr(
+        sheets_repo,
+        "load_submission_records",
+        lambda: {"sub_001": {"submission_id": "sub_001"}},
+    )
+
+    app = FastAPI()
+    app.include_router(dashboard.router)
+    client = TestClient(app)
+
+    response = client.post(
+        "/ops/update",
+        headers=ACTOR_HEADERS,
+        json={
+            "submission_id": "sub_001",
+            "notes": "Updated note",
+            "updated_by": "spoofed-updater@example.org",
+            "actor_email": "spoofed-actor@example.org",
+        },
+    )
+
+    ops_append = next(
+        call
+        for call in fake_sheet.values_api.append_calls
+        if call["range"] == "ops!A2"
+    )
+    event_append = next(
+        call
+        for call in fake_sheet.values_api.append_calls
+        if call["range"] == "ops_events!A2"
+    )
+    event_actor_emails = [row[2] for row in event_append["body"]["values"]]
+
+    assert response.status_code == 200
+    assert response.json()["ops"]["updated_by"] == "reviewer@example.org"
+    assert ops_append["body"]["values"][0][6] == "reviewer@example.org"
+    assert event_actor_emails == ["reviewer@example.org", "reviewer@example.org"]
 
 
 def test_update_ops_dashboard_state_creates_missing_ops_row(monkeypatch) -> None:
