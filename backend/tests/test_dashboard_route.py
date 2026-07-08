@@ -67,20 +67,24 @@ def _snapshot_payload() -> list[dict]:
             },
             "parsed": {
                 "parser_state": "pending",
+                "parser_result_state": "not_yet_run",
                 "parser_run_id": "",
                 "created_at": "",
                 "parser_version": "",
                 "parsed_skills_raw": "",
                 "parsed_location_raw": "",
                 "parser_confidence": "",
+                "parser_confidence_score": None,
             },
             "resolved": {
                 "resolver_state": "not_run",
+                "resolver_result_state": "not_yet_run",
                 "resolver_version": "",
                 "aliases_version": "",
                 "resolved_skill_ids": "",
                 "unknown_skills": "",
                 "resolver_coverage": "",
+                "resolver_coverage_score": None,
             },
             "ops": {
                 "status": "new",
@@ -91,6 +95,7 @@ def _snapshot_payload() -> list[dict]:
                 "updated_by": "",
             },
             "errors": {
+                "error_state": "none",
                 "has_error": False,
                 "latest_error_summary": "",
                 "latest_error_stage": "",

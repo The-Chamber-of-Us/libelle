@@ -55,6 +55,40 @@ Response – 200 OK
 }
 ```
 
+### `GET /snapshot`
+
+Returns the reviewer-facing derived read model. `/snapshot` is never a source of truth and is assembled from the `submissions`, `parser_results`, `ops`, and `errors` tabs at read time.
+
+Each snapshot record always includes these top-level domains:
+
+| Field | Required | Nullable | Meaning |
+| ----- | -------- | -------- | ------- |
+| `submission_id` | Yes | No | Stable submission identifier. |
+| `submission_health_state` | Yes | No | Backend-derived health enum: `complete`, `partial_success`, `no_resume_ok`, `parser_failed`, `resolver_failed`, `pending_processing`, or `broken_pipeline`. |
+| `raw` | Yes | No | Intake/submission fields. Missing sheet values are represented as `""`. |
+| `parsed` | Yes | No | Parser read model. Always present, even when the parser has not run or failed. |
+| `resolved` | Yes | No | Resolver read model. Always present, even when resolver output is unavailable. |
+| `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists. |
+| `errors` | Yes | No | Latest error summary. Always present; raw error details are not exposed. |
+
+Missing top-level domains are invalid. Current nested domains are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
+
+Partial pipeline states are explicit:
+
+| Domain | Field | Values | Semantics |
+| ------ | ----- | ------ | --------- |
+| `parsed` | `parser_state` | `pending`, `complete` | Legacy dashboard state retained for compatibility. |
+| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available` | Distinguishes parser not run, parser failed, intentionally skipped, successful empty output, and successful non-empty output. |
+| `resolved` | `resolver_state` | `not_run`, `resolved`, `zero_matches` | Legacy dashboard state retained for compatibility. |
+| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available` | Distinguishes resolver not run, resolver failed, unavailable because parser output is missing/failed, successful empty output, and successful non-empty output. |
+| `errors` | `error_state` | `none`, `present`, `unavailable` | Distinguishes no matching error rows, one or more matching error rows, and an unavailable error source. |
+
+Legacy parser/resolver payload fields such as `parsed_skills_raw`, `resolved_skill_ids`, and `unknown_skills` are sheet-backed strings. A blank string means no stored value for that field. JSON array strings such as `"[]"` mean the stage ran and stored an empty list; consumers should use the explicit result-state fields rather than infer pipeline state from these strings.
+
+Date/time fields are strings. `raw.created_at` and `parsed.created_at` use the timestamp format stored by their source row, normally ISO-like `YYYY-MM-DDTHH:MM:SS`; `ops.updated_at` may use the existing UTC sheet format `MM-DD-YYYY HH:MM:SS UTC`. Blank string means no timestamp is available for that nested domain.
+
+Confidence fields retain backward-compatible string values in `parsed.parser_confidence` and `resolved.resolver_coverage`. Numeric siblings `parsed.parser_confidence_score` and `resolved.resolver_coverage_score` are `number | null` and, when present, are bounded from `0.0` to `1.0`.
+
 ### `POST /api/upload`
 Uploads a resume and submits a volunteer application.
 

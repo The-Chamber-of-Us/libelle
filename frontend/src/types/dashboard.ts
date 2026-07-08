@@ -1,5 +1,18 @@
 export type ParserState = 'pending' | 'complete'
 export type ResolverState = 'not_run' | 'resolved' | 'zero_matches'
+export type ParserResultState =
+  | 'not_yet_run'
+  | 'failed'
+  | 'skipped'
+  | 'empty_success'
+  | 'available'
+export type ResolverResultState =
+  | 'not_yet_run'
+  | 'failed'
+  | 'unavailable_upstream'
+  | 'empty_success'
+  | 'available'
+export type SnapshotErrorState = 'none' | 'present' | 'unavailable'
 export type OpsStatus =
   | 'new'
   | 'reviewed'
@@ -28,21 +41,25 @@ export interface SnapshotRawData {
 
 export interface SnapshotParsedData {
   parser_state: ParserState
+  parser_result_state: ParserResultState
   parser_run_id: string
   created_at: string
   parser_version: string
   parsed_skills_raw: string
   parsed_location_raw: string
   parser_confidence: string
+  parser_confidence_score: number | null
 }
 
 export interface SnapshotResolvedData {
   resolver_state: ResolverState
+  resolver_result_state: ResolverResultState
   resolver_version: string
   aliases_version: string
   resolved_skill_ids: string
   unknown_skills: string
   resolver_coverage: string
+  resolver_coverage_score: number | null
 }
 
 export interface SnapshotOpsData {
@@ -55,6 +72,7 @@ export interface SnapshotOpsData {
 }
 
 export interface SnapshotErrorsData {
+  error_state: SnapshotErrorState
   has_error: boolean
   latest_error_summary: string
   latest_error_stage: string
