@@ -1,7 +1,7 @@
 """Dashboard snapshot composition service."""
 
 import json
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from core.state_contract import (
     ParserState,
@@ -29,6 +29,10 @@ PARSED_FIELDS = (
     "parsed_skills_raw",
     "parsed_location_raw",
     "parser_confidence",
+)
+PARSED_OUTPUT_FIELDS = (
+    "parsed_skills_raw",
+    "parsed_location_raw",
 )
 RESOLVED_FIELDS = (
     "resolver_version",
@@ -65,7 +69,7 @@ def assemble_snapshot_records(
     submissions_by_id: Mapping[str, SubmissionRecord],
     parser_rows: List[ParserResultRow],
     ops_rows: List[OpsRow],
-    error_rows: List[ErrorRow],
+    error_rows: Optional[List[ErrorRow]],
 ) -> List[SnapshotRecord]:
     """
     Compose reviewer-facing dashboard snapshot records from preloaded data layers.
@@ -91,10 +95,7 @@ def assemble_snapshot_records(
             if str(row.get("submission_id", "")).strip() == submission_id
         ]
         latest_parser_row = select_latest_parser_result(matching_parser_rows)
-        errors = summarize_submission_errors(
-            submission_id,
-            [dict(row) for row in error_rows],
-        )
+        errors = _compose_errors_layer(submission_id, error_rows)
 
         records.append(
             {
@@ -105,8 +106,8 @@ def assemble_snapshot_records(
                     errors,
                 ),
                 "raw": _compose_raw_layer(submission),
-                "parsed": _compose_parsed_layer(latest_parser_row),
-                "resolved": _compose_resolved_layer(latest_parser_row),
+                "parsed": _compose_parsed_layer(submission, latest_parser_row, errors),
+                "resolved": _compose_resolved_layer(submission, latest_parser_row, errors),
                 "ops": compose_current_ops_state(submission_id, [dict(row) for row in ops_rows]),
                 "errors": errors,
             }
@@ -190,42 +191,72 @@ def _resolver_state_from_snapshot(
     return ResolverState.NOT_STARTED.value
 
 
-def _compose_parsed_layer(parser_row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _compose_parsed_layer(
+    submission: SubmissionRecord,
+    parser_row: Optional[Dict[str, Any]],
+    errors: Mapping[str, Any],
+) -> Dict[str, Any]:
     state: Dict[str, Any] = {
         "parser_state": "pending",
+        "parser_result_state": "not_yet_run",
         "parser_run_id": "",
         "created_at": "",
         "parser_version": "",
         "parsed_skills_raw": "",
         "parsed_location_raw": "",
         "parser_confidence": "",
+        "parser_confidence_score": None,
     }
 
     if not parser_row:
+        if _latest_error_code(errors) == "PARSER_FAILED":
+            state["parser_result_state"] = "failed"
+        elif _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
+            state["parser_result_state"] = "skipped"
         return state
 
     state["parser_state"] = "complete"
+    state["parser_result_state"] = (
+        "available" if _has_any_output(parser_row, PARSED_OUTPUT_FIELDS) else "empty_success"
+    )
     for field in PARSED_FIELDS:
         state[field] = _value_or_blank(parser_row.get(field, ""))
+    state["parser_confidence_score"] = _bounded_float_or_none(parser_row.get("parser_confidence"))
 
     return state
 
 
-def _compose_resolved_layer(parser_row: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _compose_resolved_layer(
+    submission: SubmissionRecord,
+    parser_row: Optional[Dict[str, Any]],
+    errors: Optional[Mapping[str, Any]] = None,
+) -> Dict[str, Any]:
     state: Dict[str, Any] = {
         "resolver_state": "not_run",
+        "resolver_result_state": "not_yet_run",
         "resolver_version": "",
         "aliases_version": "",
         "resolved_skill_ids": "",
         "unknown_skills": "",
         "resolver_coverage": "",
+        "resolver_coverage_score": None,
     }
 
+    if _latest_error_code(errors or {}) == "RESOLVER_FAILED":
+        state["resolver_result_state"] = "failed"
+        return state
+
     if not parser_row:
+        if (
+            _latest_error_code(errors or {}) == "PARSER_FAILED"
+            or _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value
+        ):
+            state["resolver_result_state"] = "unavailable_upstream"
         return state
 
     for field in RESOLVED_FIELDS:
         state[field] = _value_or_blank(parser_row.get(field, ""))
+    state["resolver_coverage_score"] = _bounded_float_or_none(parser_row.get("resolver_coverage"))
 
     if not _has_resolver_output(parser_row):
         return state
@@ -235,11 +266,39 @@ def _compose_resolved_layer(parser_row: Optional[Dict[str, Any]]) -> Dict[str, A
         if _has_resolved_skill_matches(parser_row.get("resolved_skill_ids", ""))
         else "zero_matches"
     )
+    state["resolver_result_state"] = (
+        "available" if state["resolver_state"] == "resolved" else "empty_success"
+    )
     return state
+
+
+def _compose_errors_layer(
+    submission_id: str,
+    error_rows: Optional[Sequence[ErrorRow]],
+) -> Dict[str, Any]:
+    if error_rows is None:
+        return {
+            "error_state": "unavailable",
+            "has_error": False,
+            "latest_error_summary": "",
+            "latest_error_stage": "",
+            "latest_error_code": "",
+        }
+
+    errors = summarize_submission_errors(
+        submission_id,
+        [dict(row) for row in error_rows],
+    )
+    errors["error_state"] = "present" if errors["has_error"] else "none"
+    return errors
 
 
 def _has_resolver_output(parser_row: Mapping[str, Any]) -> bool:
     return any(_value_or_blank(parser_row.get(field, "")) != "" for field in RESOLVED_FIELDS)
+
+
+def _has_any_output(parser_row: Mapping[str, Any], fields: Sequence[str]) -> bool:
+    return any(_value_or_blank(parser_row.get(field, "")) != "" for field in fields)
 
 
 def _has_resolved_skill_matches(value: Any) -> bool:
@@ -276,3 +335,21 @@ def _value_or_blank(value: Any) -> Any:
     if value is None:
         return ""
     return value
+
+
+def _bounded_float_or_none(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return None
+
+    if number < 0.0 or number > 1.0:
+        return None
+    return number

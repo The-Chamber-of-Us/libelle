@@ -79,6 +79,24 @@ data is shown as missing (empty resolver fields mean "not run" or "could not
 resolve", never fabricated defaults). A submission with only a `submissions`
 row is still a complete, displayable record.
 
+The top-level snapshot domains (`raw`, `parsed`, `resolved`, `ops`, and
+`errors`) are always present and are never `null`. Stage availability is
+represented with explicit nested state fields rather than by omitting domains:
+
+| Domain | Explicit state field | States |
+| ------ | -------------------- | ------ |
+| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available` |
+| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available` |
+| `errors` | `error_state` | `none`, `present`, `unavailable` |
+
+Within these domains, `""` means the source row has no stored scalar value for
+that field, JSON strings like `"[]"` mean the source row stored an empty list,
+and `null` is reserved for typed optional numeric projections such as
+`parser_confidence_score` and `resolver_coverage_score` when no bounded numeric
+value is available. Consumers should not infer pipeline state from blank
+payload fields; they should read the explicit state fields and
+`submission_health_state`.
+
 ## Assembly rules for `/snapshot`
 
 1. Start from `submissions` — it defines which records exist. Every

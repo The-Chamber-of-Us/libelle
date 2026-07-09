@@ -144,23 +144,28 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
 
     assert first["parsed"] == {
         "parser_state": "complete",
+        "parser_result_state": "available",
         "parser_run_id": "2",
         "created_at": "2026-04-19T12:00:00",
         "parser_version": "v1",
         "parsed_skills_raw": '["Python"]',
         "parsed_location_raw": "Raleigh, NC",
         "parser_confidence": "0.90",
+        "parser_confidence_score": 0.9,
     }
     assert first["resolved"] == {
         "resolver_state": "resolved",
+        "resolver_result_state": "available",
         "resolver_version": "resolver-v1",
         "aliases_version": "aliases-v1",
         "resolved_skill_ids": '["python"]',
         "unknown_skills": "[]",
         "resolver_coverage": "1.0",
+        "resolver_coverage_score": 1.0,
     }
     assert first["ops"]["status"] == "contacted"
     assert first["errors"] == {
+        "error_state": "present",
         "has_error": True,
         "latest_error_summary": "Parser warning",
         "latest_error_stage": "parser",
@@ -187,6 +192,8 @@ def test_assemble_snapshot_records_derives_no_resume_health_from_missing_resume(
     records = assemble_snapshot_records(submissions, [], [], [])
 
     assert records[0]["submission_health_state"] == SubmissionHealthState.NO_RESUME_OK.value
+    assert records[0]["parsed"]["parser_result_state"] == "skipped"
+    assert records[0]["resolved"]["resolver_result_state"] == "unavailable_upstream"
 
 
 def test_assemble_snapshot_records_distinguishes_resolver_not_run_from_zero_matches() -> None:
@@ -216,7 +223,80 @@ def test_assemble_snapshot_records_distinguishes_resolver_not_run_from_zero_matc
     records = assemble_snapshot_records(submissions, parser_rows, [], [])
 
     assert records[0]["resolved"]["resolver_state"] == "not_run"
+    assert records[0]["resolved"]["resolver_result_state"] == "not_yet_run"
     assert records[1]["resolved"]["resolver_state"] == "zero_matches"
+    assert records[1]["resolved"]["resolver_result_state"] == "empty_success"
+    assert records[1]["resolved"]["resolver_coverage_score"] == 0.0
+
+
+def test_assemble_snapshot_records_marks_parser_not_yet_run() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "Pending Parser",
+            "resume_status": "uploaded",
+        }
+    }
+
+    records = assemble_snapshot_records(submissions, [], [], [])
+
+    assert records[0]["parsed"]["parser_state"] == "pending"
+    assert records[0]["parsed"]["parser_result_state"] == "not_yet_run"
+    assert records[0]["parsed"]["parser_confidence_score"] is None
+
+
+def test_assemble_snapshot_records_marks_parser_empty_success() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "Empty Parser",
+            "resume_status": "uploaded",
+        }
+    }
+    parser_rows = [
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "run-empty",
+            "created_at": "2026-04-20T11:00:00",
+            "parser_version": "parser-v1",
+            "parsed_skills_raw": "",
+            "parsed_location_raw": "",
+            "parser_confidence": "0.0",
+        }
+    ]
+
+    records = assemble_snapshot_records(submissions, parser_rows, [], [])
+
+    assert records[0]["parsed"]["parser_state"] == "complete"
+    assert records[0]["parsed"]["parser_result_state"] == "empty_success"
+    assert records[0]["parsed"]["parser_confidence_score"] == 0.0
+
+
+def test_assemble_snapshot_records_marks_errors_none_present_and_unavailable() -> None:
+    submissions = {
+        "sub_001": {"submission_id": "sub_001", "full_name": "No Error"},
+        "sub_002": {"submission_id": "sub_002", "full_name": "Has Error"},
+    }
+    error_rows = [
+        {
+            "submission_id": "sub_002",
+            "created_at": "2026-04-20T11:00:00",
+            "stage": "parser",
+            "error_code": "PARSER_FAILED",
+            "error_summary": "Parser failed",
+            "error_details": "do not expose",
+        }
+    ]
+
+    records = assemble_snapshot_records(submissions, [], [], error_rows)
+    unavailable_records = assemble_snapshot_records(submissions, [], [], None)
+
+    assert records[0]["errors"]["error_state"] == "none"
+    assert records[0]["errors"]["has_error"] is False
+    assert records[1]["errors"]["error_state"] == "present"
+    assert records[1]["errors"]["has_error"] is True
+    assert unavailable_records[0]["errors"]["error_state"] == "unavailable"
+    assert unavailable_records[0]["errors"]["has_error"] is False
 
 
 def test_assemble_snapshot_records_uses_one_latest_parser_result_row() -> None:
@@ -256,20 +336,24 @@ def test_assemble_snapshot_records_uses_one_latest_parser_result_row() -> None:
 
     assert records[0]["parsed"] == {
         "parser_state": "complete",
+        "parser_result_state": "available",
         "parser_run_id": "aaaaaaaa",
         "created_at": "2026-04-20T11:00:00",
         "parser_version": "parser-new",
         "parsed_skills_raw": '["new parsed skill"]',
         "parsed_location_raw": "New City",
         "parser_confidence": "0.95",
+        "parser_confidence_score": 0.95,
     }
     assert records[0]["resolved"] == {
         "resolver_state": "resolved",
+        "resolver_result_state": "available",
         "resolver_version": "resolver-new",
         "aliases_version": "aliases-new",
         "resolved_skill_ids": '["new-resolved-skill"]',
         "unknown_skills": "[]",
         "resolver_coverage": "1.0",
+        "resolver_coverage_score": 1.0,
     }
 
 
@@ -314,7 +398,9 @@ def test_assemble_snapshot_records_preserves_parser_output_when_resolver_failed(
     assert records[0]["parsed"]["parser_state"] == "complete"
     assert records[0]["parsed"]["parsed_skills_raw"] == '["Python"]'
     assert records[0]["resolved"]["resolver_state"] == "not_run"
+    assert records[0]["resolved"]["resolver_result_state"] == "failed"
     assert records[0]["errors"] == {
+        "error_state": "present",
         "has_error": True,
         "latest_error_summary": "Resolver failed",
         "latest_error_stage": "resolver",
@@ -344,6 +430,8 @@ def test_assemble_snapshot_records_derives_parser_failed_health_from_parser_erro
     records = assemble_snapshot_records(submissions, [], [], error_rows)
 
     assert records[0]["submission_health_state"] == SubmissionHealthState.PARSER_FAILED.value
+    assert records[0]["parsed"]["parser_result_state"] == "failed"
+    assert records[0]["resolved"]["resolver_result_state"] == "unavailable_upstream"
 
 
 def test_assemble_snapshot_records_does_not_mutate_inputs() -> None:
