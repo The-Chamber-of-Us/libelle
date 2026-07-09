@@ -13,6 +13,14 @@ export type ResolverResultState =
   | 'empty_success'
   | 'available'
 export type SnapshotErrorState = 'none' | 'present' | 'unavailable'
+export type SubmissionHealthState =
+  | 'complete'
+  | 'partial_success'
+  | 'no_resume_ok'
+  | 'parser_failed'
+  | 'resolver_failed'
+  | 'pending_processing'
+  | 'broken_pipeline'
 export type OpsStatus =
   | 'new'
   | 'reviewed'
@@ -81,6 +89,7 @@ export interface SnapshotErrorsData {
 
 export interface ReviewerSubmissionSnapshot {
   submission_id: string
+  submission_health_state: SubmissionHealthState
   raw: SnapshotRawData
   parsed: SnapshotParsedData
   resolved: SnapshotResolvedData
