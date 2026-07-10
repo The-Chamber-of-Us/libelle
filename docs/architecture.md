@@ -16,6 +16,19 @@ Audience:
 
 ---
 
+## Engineering Principles
+
+Contributors should start with
+[Libelle Engineering Principles](architecture/engineering_principles.md) before
+changing intake, parser, resolver, snapshot, reviewer workflow, or audit
+behavior.
+
+The engineering principles define durable project standards across v0.4 and
+future releases. The state transition contract and related architecture
+contracts define the implementation rules.
+
+---
+
 ## What is Libelle?
 
 Libelle is a volunteer-intake and skill-mapping platform built by The Chamber of Us (TCUS).
