@@ -1,0 +1,91 @@
+{
+  "resume_id": "sparse_skill_01",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Sparse Skills / Single-Column",
+  "name": "Jordan Mitchell",
+  "email": "jordan@example.com",
+  "phone": "(212) 555-0155",
+  "location": {
+    "city": "Houston",
+    "country": "United States",
+    "raw": "Houston, TX"
+  },
+  "links": [
+    "www.interestingsite.com"
+  ],
+  "skills": [
+    "Dietary Assessment",
+    "Meal Planning",
+    "Nutrition Counseling",
+    "Motivational Interviewing",
+    "Patient Education"
+  ],
+  "notes": "Sparse skills section with only 5 items. CERTIFICATIONS heading contains project content rather than certifications. Personal statement appears as unlabeled inline text with no section heading.",
+  "sections": [
+    {
+      "heading": "OBJECTIVE",
+      "items": [
+        "Registered nutritionist with a background in clinical and community health settings, seeking a client-facing role where I can apply evidence-based dietary counseling to support individuals in achieving sustainable, long-term health outcomes. Passionate about meeting patients where they are and committed to delivering culturally sensitive, personalized nutrition guidance that is both scientifically grounded and practically achievable."
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Houston",
+          "meta": "20XX",
+          "subtitle": "B.S. Nutrition & Dietetics",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Dietary Assessment",
+        "Meal Planning",
+        "Nutrition Counseling",
+        "Motivational Interviewing",
+        "Patient Education"
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Clinical Nutritionist, Lakewood Center",
+          "meta": "Jan 2021 - Present",
+          "subtitle": "TX",
+          "bullets": [
+            "Provides individualized nutrition counseling to a caseload of 40+ patients weekly, with a focus on chronic disease management including diabetes, hypertension, and obesity.",
+            "Develops personalized meal plans aligned with medical guidelines and patient lifestyle, regularly collaborating with physicians and care coordinators to ensure integrated treatment.",
+            "Tracks patient progress through quarterly assessments and adjusts dietary recommendations based on lab results and self-reported outcomes."
+          ]
+        },
+        {
+          "title": "Nutrition Assistant, St. Raphael Hospital",
+          "meta": "Jun 2018 – Dec 2020",
+          "subtitle": "TX",
+          "bullets": [
+            "Supported registered dietitians in conducting nutritional screenings and developing care plans for inpatient populations across oncology and cardiac wards.",
+            "Assisted in delivering group nutrition education sessions for patients and caregivers, covering topics including heart-healthy eating and post-surgical dietary transitions."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "CERTIFICATIONS",
+      "items": [
+        {
+          "title": "Community Nutrition Outreach Program",
+          "meta": "",
+          "subtitle": "",
+          "bullets": [
+            "Designed a 6-week group nutrition education series targeting low-income households in Houston neighborhoods, reaching 80+ participants across four community centers.",
+            "Post-program surveys showed a 45% increase in participant confidence."
+          ]
+        }
+      ]
+    }
+  ]
+}

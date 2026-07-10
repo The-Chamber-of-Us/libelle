@@ -1,0 +1,132 @@
+{
+  "resume_id": "dense_skills_02",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Dense Skills / Content Writer",
+  "name": "Leila Fontaine",
+  "email": "leila.fontaine@example.com",
+  "phone": "+123-456-7890",
+  "location": {
+    "city": "Austin",
+    "country": "United States",
+    "raw": "Austin, TX"
+  },
+  "links": [],
+  "skills": [
+    "Content Strategy",
+    "Brand Voice Development",
+    "SEO Writing",
+    "Keyword Research",
+    "Long-Form Editorial",
+    "Blog Writing",
+    "White Papers",
+    "Case Studies",
+    "Email Marketing Copy",
+    "Newsletter Writing",
+    "Social Media Copy",
+    "Ad Copy",
+    "Google",
+    "Meta",
+    "LinkedIn",
+    "Landing Page Copy",
+    "UX Writing",
+    "Microcopy",
+    "Product Descriptions",
+    "Press Releases",
+    "Notion",
+    "HubSpot"
+  ],
+  "notes": "Skills presented as a vertical bulleted list in a left sidebar column alongside the work experience. The two-column layout means skills and experience text are interleaved in raw extraction order.",
+  "sections": [
+    {
+      "heading": "SUMMARY",
+      "items": [
+        "Versatile content writer and copywriter with 6+ years producing high-performing content across brand, digital, and editorial channels. Equally comfortable crafting long-form thought leadership and punchy ad copy. Known for fast turnaround, strong editorial instincts, and an ability to adapt tone and voice across wildly different industries and audiences."
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Content Strategy",
+        "Brand Voice Development",
+        "SEO Writing",
+        "Keyword Research",
+        "Long-Form Editorial",
+        "Blog Writing",
+        "White Papers",
+        "Case Studies",
+        "Email Marketing Copy",
+        "Newsletter Writing",
+        "Social Media Copy",
+        "Ad Copy (Google, Meta, LinkedIn)",
+        "Landing Page Copy",
+        "UX Writing",
+        "Microcopy",
+        "Product Descriptions",
+        "Press Releases",
+        "Notion",
+        "HubSpot"
+      ]
+    },
+    {
+      "heading": "WORK EXPERIENCE",
+      "items": [
+        {
+          "title": "Senior Copywriter",
+          "meta": "May 2021 to Present",
+          "subtitle": "Ember Creative Agency, Austin, TX",
+          "bullets": [
+            "Leads copy across a portfolio of 8 active client accounts spanning SaaS, fintech, and consumer lifestyle brands, owning everything from brand messaging frameworks to individual campaign assets.",
+            "Developed a full content strategy and editorial calendar for a B2B SaaS client that grew organic blog traffic by 140% over 12 months.",
+            "Mentors two junior copywriters and conducts weekly copy reviews to maintain consistent quality and brand voice standards across the team."
+          ]
+        },
+        {
+          "title": "Content Writer",
+          "meta": "March 2018 to April 2021",
+          "subtitle": "Driftwood Media Group, Dallas, TX",
+          "bullets": [
+            "Produced 10+ pieces of content per week across SEO blogs, email sequences, and paid social copy for clients in healthcare, real estate, and education sectors.",
+            "Consistently ranked among the top three performers for client satisfaction scores across the agency's writer pool.",
+            "Rewrote the onboarding email sequence for a real estate tech client, increasing open rates by 28% and click-through rates by 19%."
+          ]
+        },
+        {
+          "title": "Freelance Copywriter",
+          "meta": "2016 to 2018",
+          "subtitle": "Self-Employed",
+          "bullets": [
+            "Served a roster of 12 small business and startup clients, delivering brand naming, taglines, website copy, and launch campaign content.",
+            "Developed brand voice guides for 4 clients from scratch, establishing tone, vocabulary, and messaging pillars still in use today."
+          ]
+        },
+        {
+          "title": "Content Strategist (Contract)",
+          "meta": "January 2016 – February 2018",
+          "subtitle": "Verve Publishing Group, Austin, TX",
+          "bullets": [
+            "Embedded with the editorial team to support a digital content overhaul across three online publications covering technology, culture, and lifestyle.",
+            "Audited 500+ existing articles for SEO performance and rewrote underperforming pieces, contributing to a 35% increase in organic search visibility over six months.",
+            "Collaborated with editors and designers to develop a refreshed content style guide adopted site-wide across all three publications."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Texas at Austin",
+          "meta": "2016",
+          "subtitle": "B.A. English Literature",
+          "bullets": []
+        },
+        {
+          "title": "Texas University",
+          "meta": "2015",
+          "subtitle": "Creative Writing Diploma",
+          "bullets": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "resume_id": "single_col_layout_trap_01",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Single-Column Layout Trap / Dense Skills Paragraph",
+  "name": "Kwame Asante",
+  "email": "kasante@example.com",
+  "phone": "123-456-7890",
+  "location": {
+    "city": "Atlanta",
+    "country": "United States",
+    "raw": "Atlanta,GA"
+  },
+  "links": [
+    "linked.com/on/kwame",
+    "GitHub.com/kwamea"
+  ],
+  "skills": [
+    "Python",
+    "pandas",
+    "NumPy",
+    "matplotlib",
+    "seaborn",
+    "SQL",
+    "R",
+    "Tableau",
+    "Power BI",
+    "Excel",
+    "advanced",
+    "pivot tables",
+    "VBA",
+    "Google BigQuery",
+    "Snowflake",
+    "dbt",
+    "Apache Spark",
+    "Git",
+    "Jupyter",
+    "Statistical Modeling",
+    "A/B Testing",
+    "Data Cleaning & Transformation",
+    "Dashboard Design",
+    "ETL Pipelines",
+    "Data Governance"
+  ],
+  "notes": "Skills listed as a dense comma-separated paragraph rather than a bulleted list. Experience written as prose paragraphs with no bullet points. Multiple locations across experience and education sections (Atlanta, Athens).",
+  "sections": [
+    {
+      "heading": "PROFILE",
+      "items": [
+        "Data analyst with 5+ years turning complex datasets into clear business insights across retail, finance, and operations sectors. Proficient in end-to-end analysis workflows from data wrangling and modeling through to stakeholder-ready visualization and reporting."
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Data Analyst — Meridian Financial Group",
+          "meta": "Feb 2021 – Present",
+          "subtitle": "Atlanta, GA",
+          "bullets": [
+            "Built and maintained an automated reporting pipeline that replaced 15 hours of manual weekly work, significantly improving team efficiency.",
+            "Developed a customer segmentation model that identified 4 high-value cohorts, informing a targeted campaign that drove a 12% revenue uplift.",
+            "Works closely with product and finance teams to define KPIs and build self-serve dashboards in Tableau used across the organization."
+          ]
+        },
+        {
+          "title": "Junior Data Analyst — Crestline Retail Co.",
+          "meta": "Aug 2018 – Jan 2021",
+          "subtitle": "Athens, GA",
+          "bullets": [
+            "Analyzed sales and inventory data across 30+ store locations to identify stock optimization opportunities, contributing to a measurable reduction in overstock costs.",
+            "Designed and maintained SQL views relied upon daily by the operations team for real-time decision making.",
+            "Produced weekly executive summary reports from raw ERP data, consistently delivered to leadership ahead of schedule."
+          ]
+        },
+        {
+          "title": "Research Assistant — Georgia Tech",
+          "meta": "Jan 2017 – May 2018",
+          "subtitle": "Atlanta, GA",
+          "bullets": [
+            "Supported faculty research in the School of Computational Science and Engineering, assisting in the collection, cleaning, and analysis of large structured datasets.",
+            "Wrote Python scripts to automate data preprocessing tasks, reducing preparation time for analysis by roughly 40%."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "Georgia Institute of Technology",
+          "meta": "2018",
+          "subtitle": "B.S. Statistics",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Python (pandas, NumPy, matplotlib, seaborn), SQL, R, Tableau, Power BI, Excel (advanced, pivot tables, VBA), Google BigQuery, Snowflake, dbt, Apache Spark, Git, Jupyter, Statistical Modeling, A/B Testing, Data Cleaning & Transformation, Dashboard Design, ETL Pipelines, Data Governance"
+      ]
+    },
+    {
+      "heading": "CERTIFICATIONS",
+      "items": [
+        "Google Data Analytics Professional Certificate (2021)"
+      ]
+    }
+  ]
+}

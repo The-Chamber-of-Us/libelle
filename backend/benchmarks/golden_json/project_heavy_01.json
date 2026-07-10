@@ -1,0 +1,132 @@
+{
+  "resume_id": "project_heavy_01",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Project-Heavy / Early Academic Career",
+  "name": "Tobias Wren",
+  "email": "tobywren@example.com",
+  "phone": "000-000-0000",
+  "location": {
+    "city": "Philadelphia",
+    "country": "United States",
+    "raw": "Philadelphia, PA"
+  },
+  "links": [],
+  "skills": [
+    "R",
+    "Python",
+    "PLINK",
+    "GCTA",
+    "SPSS",
+    "STATA",
+    "bash scripting",
+    "SNP array analysis",
+    "genome-wide association studies",
+    "GWAS",
+    "twin modeling",
+    "ACE/ADE",
+    "heritability estimation",
+    "behavioral phenotyping",
+    "statistical genetics",
+    "literature review",
+    "manuscript preparation",
+    "IRB protocols",
+    "REDCap",
+    "Zotero"
+  ],
+  "notes": "Experience section lists San Francisco, CA as location for University of Pennsylvania role; header location Philadelphia, PA preferred. Skills and Awards appear as sidebar columns alongside Education and Experience.",
+  "sections": [
+    {
+      "heading": "Objective",
+      "items": [
+        "Early-career behavioral geneticist with a strong foundation in quantitative genetics, twin study methodology, and neuropsychiatric trait analysis. Seeking a research or doctoral position where I can apply my experience in genomic data analysis and behavioral phenotyping to advance understanding of gene-environment interactions in complex traits."
+      ]
+    },
+    {
+      "heading": "Education",
+      "items": [
+        {
+          "title": "Temple University",
+          "meta": "2023",
+          "subtitle": "M.S. Behavioral Genetics",
+          "bullets": []
+        },
+        {
+          "title": "Villanova University",
+          "meta": "2021",
+          "subtitle": "B.S. Psychology",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "Experience",
+      "items": [
+        {
+          "title": "Junior Research Associate, University of Pennsylvania",
+          "meta": "Sep 2023 - Present",
+          "subtitle": "San Francisco, CA",
+          "bullets": [
+            "Contributes to an ongoing longitudinal twin study examining heritability of anxiety and executive function traits across adolescence, managing data collection, cleaning, and preliminary analysis for a cohort of 300+ twin pairs.",
+            "Runs GWAS pipelines using PLINK and GCTA on institutional HPC cluster, handling quality control, population stratification correction, and results visualization."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Skills",
+      "items": [
+        "R, Python, PLINK, GCTA, SPSS, STATA, bash scripting, SNP array analysis, genome-wide association studies (GWAS), twin modeling (ACE/ADE), heritability estimation, behavioral phenotyping, statistical genetics, literature review, manuscript preparation, IRB protocols, REDCap, Zotero"
+      ]
+    },
+    {
+      "heading": "Awards",
+      "items": [
+        "Dean's List for Academic Excellence, Temple University (2022, 2023)",
+        "Departmental Distinction — Master's Thesis, Temple University (2023)",
+        "Psi Chi Honor Society Induction, Villanova University (2021)",
+        "Travel Award — Behavior Genetics Association Annual Meeting (2023)"
+      ]
+    },
+    {
+      "heading": "Projects",
+      "items": [
+        {
+          "title": "Master's Thesis — Heritability of Risk-Taking Behavior in Young Adults",
+          "meta": "2023",
+          "subtitle": "",
+          "bullets": [
+            "Classical twin study using 180 MZ/DZ twin pairs estimating genetic contributions to risk-taking behavior via BART.",
+            "Fitted univariate ACE models in R (OpenMx); found h² = 0.41. Awarded departmental distinction."
+          ]
+        },
+        {
+          "title": "Gene-Environment Interaction in Childhood Anxiety",
+          "meta": "2022",
+          "subtitle": "",
+          "bullets": [
+            "Used ABCD study data (n=4,500+) to test whether polygenic risk scores for anxiety moderated the effect of adverse childhood experiences on internalizing symptoms.",
+            "Linear mixed-effects modeling in R."
+          ]
+        },
+        {
+          "title": "Polygenic Score Analysis — Educational Attainment and Cognitive Performance",
+          "meta": "2022",
+          "subtitle": "",
+          "bullets": [
+            "Constructed and validated polygenic scores from Lee et al. (2018) GWAS summary statistics.",
+            "Tested predictive validity in an independent sample, replicating published effect sizes and extending findings to an understudied subgroup."
+          ]
+        },
+        {
+          "title": "Behavioral Phenotyping Protocol Development",
+          "meta": "2021",
+          "subtitle": "",
+          "bullets": [
+            "Designed an impulse control assessment battery (BIS-11, Stop Signal Task, delay discounting) administered via REDCap.",
+            "Piloted with 30 participants and authored IRB amendment for expanded recruitment."
+          ]
+        }
+      ]
+    }
+  ]
+}

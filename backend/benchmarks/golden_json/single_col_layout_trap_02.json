@@ -1,0 +1,109 @@
+{
+  "resume_id": "single_col_layout_trap_02",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Single-Column Layout Trap / Mid-Career",
+  "name": "Simone Adeyemi",
+  "email": "sadeyemi@example.com",
+  "phone": "123-456-7890",
+  "location": {
+    "city": "Chicago",
+    "country": "United States",
+    "raw": "Chicago, IL"
+  },
+  "links": [
+    "Linked/in/sadeyemi"
+  ],
+  "skills": [
+    "SQL",
+    "Excel",
+    "advanced",
+    "pivot tables",
+    "VBA",
+    "Tableau",
+    "Power BI",
+    "Python",
+    "pandas",
+    "NumPy",
+    "JIRA",
+    "Confluence",
+    "Salesforce",
+    "Google Analytics",
+    "SAP",
+    "Business Process Modeling",
+    "BPMN",
+    "Requirements Gathering",
+    "User Story Writing",
+    "A/B Testing",
+    "Stakeholder Management",
+    "Financial Modeling",
+    "KPI Development",
+    "Agile/Scrum"
+  ],
+  "notes": "Name appears at bottom of extracted text due to layout rendering artifact. Experience written as dense prose paragraphs with no bullet points.",
+  "sections": [
+    {
+      "heading": "Profile",
+      "items": [
+        "Business analyst with 6+ years bridging the gap between data and strategic decision-making across financial services, e-commerce, and operations. Experienced in requirements gathering, process mapping, and delivering insight-driven recommendations that directly influence product and business direction."
+      ]
+    },
+    {
+      "heading": "Experience",
+      "items": [
+        {
+          "title": "Sr. Business Analyst, Vantara Financial Services",
+          "meta": "Apr 2021 – Present",
+          "subtitle": "",
+          "bullets": [
+            "Leads requirements definition and solution design for a portfolio of digital banking products, working directly with product owners, engineers, and compliance teams to deliver initiatives on time.",
+            "Identified a process inefficiency in the loan approval workflow that, once addressed, reduced average processing time by 3 days and saved an estimated $600K annually."
+          ]
+        },
+        {
+          "title": "Business Analyst, Broadfield E-Commerce Group",
+          "meta": "Jun 2018 – Mar 2021",
+          "subtitle": "",
+          "bullets": [
+            "Partnered with marketing and logistics teams to analyze customer journey data and surface friction points in the checkout experience, contributing to a 22% reduction in cart abandonment.",
+            "Maintained and improved a suite of operational Power BI reports used across four regional offices to track fulfillment and returns performance.",
+            "Facilitated workshops with business stakeholders to translate high-level objectives into detailed functional requirements for two major platform releases."
+          ]
+        },
+        {
+          "title": "Jr. Business Analyst, Harcastle Consulting",
+          "meta": "Aug 2016 – May 2018",
+          "subtitle": "",
+          "bullets": [
+            "Supported senior analysts on client engagements spanning retail, healthcare, and logistics, contributing to process mapping, data gathering, and presentation of findings.",
+            "Built Excel-based financial models used to evaluate cost-reduction scenarios for a mid-size manufacturing client.",
+            "Assisted in the delivery of a business case that secured $1.2M in internal investment for a supply chain modernization project."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Education",
+      "items": [
+        {
+          "title": "University of Illinois at Chicago",
+          "meta": "2016",
+          "subtitle": "B.S. Business Administration, Minor: Information Systems",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "Skills",
+      "items": [
+        "SQL, Excel (advanced, pivot tables, VBA), Tableau, Power BI, Python (pandas, NumPy), JIRA, Confluence, Salesforce, Google Analytics, SAP, Business Process Modeling (BPMN), Requirements Gathering, User Story Writing, A/B Testing, Stakeholder Management, Financial Modeling, KPI Development, Agile/Scrum"
+      ]
+    },
+    {
+      "heading": "Certifications",
+      "items": [
+        "Certified Business Analysis Professional — IIBA (2020)",
+        "Microsoft Power BI Data Analyst Associate (2022)"
+      ]
+    }
+  ]
+}
