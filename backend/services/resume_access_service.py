@@ -72,13 +72,21 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
                 message="Resume metadata exists, but the file is unavailable.",
             )
 
-        content = download_file(str(drive_file["id"]).strip())
+        drive_file_id = str(drive_file["id"]).strip()
+        try:
+            content = download_file(drive_file_id)
+        except Exception as exc:
+            raise ResumeAccessError(
+                status_code=502,
+                code="RESUME_FETCH_FAILED",
+                message="Resume file exists, but could not be retrieved from storage.",
+            ) from exc
         _log_resume_access(
             submission_id=normalized_submission_id,
             actor=normalized_actor,
             outcome="served",
             filename=filename,
-            drive_file_id=str(drive_file["id"]).strip(),
+            drive_file_id=drive_file_id,
         )
         return MediatedResume(
             submission_id=normalized_submission_id,

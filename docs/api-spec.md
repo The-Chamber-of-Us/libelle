@@ -163,6 +163,56 @@ fetch(`/api/upload`, {
   body: formData
 });
 ```
+## Reviewer Endpoints
+
+### `GET /resumes/{submission_id}`
+
+Secure resume proxy for reviewer dashboard users. The backend mediates all
+resume access: it resolves the file by `submission_id`, fetches it from Google
+Drive server-side, and streams the bytes back. Clients never receive Drive
+paths, file ids, or share links, and cannot supply their own.
+
+**Contract**
+
+* Lookup is by `submission_id` **only**. The backend reads `resume_filename`
+  and `resume_status` from that submission's own row; email, name, or
+  client-provided filenames are never used to locate a file.
+* Requires an authenticated internal actor (same Cloudflare Access header
+  derivation as the ops write endpoints above). Without one: `401` with
+  `INTERNAL_ACTOR_REQUIRED`.
+* Every access attempt — served or denied — is logged with `submission_id`,
+  actor, outcome, and reason for audit.
+* Read-only: access failures never modify any tab and never affect the
+  submission's presence in `/snapshot`; degraded resume state is reported by
+  this endpoint, not hidden.
+
+**Request**
+```http
+GET /resumes/{submission_id}
+cf-access-authenticated-user-email: reviewer@example.org
+```
+
+**Response – 200 OK**
+
+Binary PDF body with:
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/pdf` |
+| `Content-Disposition` | `inline; filename*=UTF-8''{resume_filename}` |
+| `X-Submission-Id` | The requested `submission_id` |
+
+**Error responses** (JSON `detail` with `status`, `code`, `message`):
+
+| Status | Code | Meaning |
+|--------|------|---------|
+| `401` | `INTERNAL_ACTOR_REQUIRED` | No reviewer identity could be derived. |
+| `400` | `VALIDATION_ERROR` | Blank/missing `submission_id`. |
+| `404` | `SUBMISSION_NOT_FOUND` | No submission row for this `submission_id`. |
+| `404` | `RESUME_NOT_AVAILABLE` | Honest no-resume response: the submission exists but has no uploaded resume (`resume_status` is `missing` or `failed`). |
+| `404` | `RESUME_FILE_NOT_FOUND` | Broken reference: the row says `uploaded` but no matching file exists in the Drive folder. |
+| `502` | `RESUME_FETCH_FAILED` | The file exists but Drive retrieval failed; degraded storage state, safe to retry. |
+
 ## Admin & Setup Endpoints
 These endpoints are used to bootstrap the backend's connection to Google Drive. **They are not for frontend user authentication.**
 

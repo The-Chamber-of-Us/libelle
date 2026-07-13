@@ -85,3 +85,55 @@ def test_get_mediated_resume_rejects_missing_drive_file(monkeypatch) -> None:
 
     assert exc_info.value.status_code == 404
     assert exc_info.value.code == "RESUME_FILE_NOT_FOUND"
+
+
+def test_get_mediated_resume_surfaces_download_failure_as_fetch_error(
+    monkeypatch, caplog
+) -> None:
+    monkeypatch.setattr(
+        "storage.sheets_repo.load_submission_records",
+        lambda: {
+            "sub_001": {
+                "submission_id": "sub_001",
+                "resume_filename": "sub_001-resume.pdf",
+                "resume_status": "uploaded",
+            }
+        },
+    )
+    monkeypatch.setattr(
+        "storage.drive_repo.find_pdf_by_name",
+        lambda filename: {"id": "drive-file-1", "name": filename},
+    )
+
+    def failing_download(file_id):
+        raise RuntimeError("drive api unavailable")
+
+    monkeypatch.setattr("storage.drive_repo.download_file", failing_download)
+
+    with caplog.at_level(logging.INFO, logger=resume_access_service.__name__):
+        with pytest.raises(ResumeAccessError) as exc_info:
+            get_mediated_resume("sub_001", "reviewer@example.org")
+
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.code == "RESUME_FETCH_FAILED"
+    assert '"outcome": "denied"' in caplog.text
+    assert '"reason": "RESUME_FETCH_FAILED"' in caplog.text
+
+
+def test_get_mediated_resume_treats_failed_upload_as_no_resume(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "storage.sheets_repo.load_submission_records",
+        lambda: {
+            "sub_001": {
+                "submission_id": "sub_001",
+                "resume_filename": "sub_001-resume.pdf",
+                "resume_status": "failed",
+            }
+        },
+    )
+
+    with pytest.raises(ResumeAccessError) as exc_info:
+        get_mediated_resume("sub_001", "reviewer@example.org")
+
+    assert exc_info.value.status_code == 404
+    assert exc_info.value.code == "RESUME_NOT_AVAILABLE"
