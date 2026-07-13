@@ -8,7 +8,10 @@ This folder will contain:
 - API design references
 - Data model notes
 
-If you’re new here, start with the root README.
+If you’re new here, start with the root README, then read the
+[Contributor Architecture Map](architecture/contributor_architecture_map.md)
+for the system model: how data flows, which components own which state, and
+what contributors must not accidentally violate.
 
 ## Architecture
 
