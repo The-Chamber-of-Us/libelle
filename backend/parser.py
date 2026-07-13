@@ -156,6 +156,9 @@ def _split_skill_line(line: str) -> List[str]:
             return parts
     return re.split(r'[•,·;|]', line)
 
+def _clean_skill_fragment(fragment: str) -> str:
+    return re.sub(r'^[\s•·\-\—*]+|[\s•·\-\—*]+$', '', fragment)
+
 def extract_skills(text: str) -> Tuple[List[str], float]:
     skills_patterns = [
         r'^skills:?$',
@@ -189,7 +192,13 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
         l = re.sub(r'\s*\(.*?\)', '', l) # strips parentheses
         cleaned.append(l)
 
-    skills = [normalize_text(p.strip(), lowercase=True) for l in cleaned for p in _split_skill_line(l) if p.strip()]
+    skills = [
+        normalize_text(skill, lowercase=True)
+        for l in cleaned
+        for p in _split_skill_line(l)
+        for skill in [_clean_skill_fragment(p)]
+        if skill
+    ]
     confidence = 1.0 if skills else 0.0
     return skills, confidence
 

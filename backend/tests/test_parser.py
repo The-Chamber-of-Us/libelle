@@ -71,6 +71,34 @@ def test_no_slash_falls_back_to_standard_delimiters():
     assert _split_skill_line("Python • Java • Go") == ["Python ", " Java ", " Go"]
 
 
+def test_extract_skills_from_bullet_list():
+    text = "SKILLS\n• Python\n• React\n• PostgreSQL"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "react", "postgresql"]
+
+
+def test_extract_skills_ignores_standalone_bullet():
+    text = "SKILLS\n•"
+    skills, confidence = extract_skills(text)
+    assert skills == []
+    assert confidence == 0.0
+
+
+def test_extract_skills_from_inline_bullet_separators():
+    text = "SKILLS\nPython • Java • Go"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "java", "go"]
+
+
+def test_extract_skills_strips_bullets_around_slash_delimited_skills():
+    text = "SKILLS\n• Python / Java / Go •"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "java", "go"]
+
+
 def test_location_contact_line_email_and_location():
     text = "Maya Chen\nmaya.chen@example.com | Ithaca, NY"
     locs, conf = extract_location(text)
