@@ -15,6 +15,7 @@ what contributors must not accidentally violate.
 
 ## Architecture
 
+- [Contributor Architecture Map](architecture/contributor_architecture_map.md)
 - [Libelle Engineering Principles](architecture/engineering_principles.md)
 - [State Transition Contract](architecture/state_contract.md)
 - [System-of-Record Precedence Rules](architecture/system_of_record_precedence.md)
