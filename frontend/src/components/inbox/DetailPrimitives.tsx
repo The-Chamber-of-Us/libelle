@@ -1,3 +1,5 @@
+import type { SnapshotTone } from './detailUtils'
+
 export function SectionHeader({
   title,
   description,
@@ -7,7 +9,7 @@ export function SectionHeader({
   title: string
   description: string
   status: string
-  statusTone: 'neutral' | 'success' | 'warning'
+  statusTone: SnapshotTone
 }) {
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -24,6 +26,8 @@ export function SectionHeader({
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
             : statusTone === 'warning'
               ? 'border-amber-200 bg-amber-50 text-amber-700'
+              : statusTone === 'danger'
+                ? 'border-rose-200 bg-rose-50 text-rose-700'
               : 'border-slate-200 bg-slate-50 text-slate-600'
         ].join(' ')}
       >
@@ -37,7 +41,7 @@ export function StateCallout({
   tone,
   children
 }: {
-  tone: 'neutral' | 'warning'
+  tone: 'neutral' | 'warning' | 'danger'
   children: string
 }) {
   return (
@@ -46,6 +50,8 @@ export function StateCallout({
         'rounded-md border px-3 py-2 text-sm leading-5',
         tone === 'warning'
           ? 'border-amber-200 bg-amber-50 text-amber-800'
+          : tone === 'danger'
+            ? 'border-rose-200 bg-rose-50 text-rose-700'
           : 'border-slate-200 bg-slate-50 text-slate-600'
       ].join(' ')}
     >

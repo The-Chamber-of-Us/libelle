@@ -3,7 +3,14 @@ import { RefreshCw, Search, X } from 'lucide-react'
 import DashboardTabs from '../components/dashboard/DashboardTabs'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
-import { formatStatus, parseSnapshotList } from '../components/inbox/detailUtils'
+import {
+  formatErrorState,
+  formatParserResultState,
+  formatResolverResultState,
+  formatStatus,
+  formatSubmissionHealthState,
+  parseSnapshotList
+} from '../components/inbox/detailUtils'
 import type { StatusSaveState } from '../components/inbox/WorkflowSection'
 import type {
   OpsDashboardUpdateResponse,
@@ -547,16 +554,24 @@ function getInboxSearchText(submission: ReviewerSubmissionSnapshot) {
       submission.raw?.motivation,
       submission.raw?.resume_filename,
       submission.raw?.resume_status,
+      submission.submission_health_state,
+      formatSubmissionHealthState(submission.submission_health_state),
       submission.parsed?.parser_state,
+      submission.parsed?.parser_result_state,
+      formatParserResultState(submission.parsed.parser_result_state),
       submission.parsed?.parsed_skills_raw,
       submission.parsed?.parsed_location_raw,
       submission.resolved?.resolver_state,
+      submission.resolved?.resolver_result_state,
+      formatResolverResultState(submission.resolved.resolver_result_state),
       submission.resolved?.resolved_skill_ids,
       submission.resolved?.unknown_skills,
       submission.ops?.status,
       submission.ops?.notes,
       submission.ops?.tags,
       submission.ops?.contact_tracking,
+      submission.errors?.error_state,
+      formatErrorState(submission.errors.error_state),
       submission.errors?.latest_error_summary,
       submission.errors?.latest_error_stage,
       submission.errors?.latest_error_code
