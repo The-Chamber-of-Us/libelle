@@ -1,5 +1,10 @@
 import { AlertTriangle, CalendarDays, MapPin } from 'lucide-react'
 import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
+import {
+  formatSubmissionHealthState,
+  getSubmissionHealthTone,
+  type SnapshotTone
+} from './detailUtils'
 
 const statusStyles: Record<string, string> = {
   new: 'border-sky-200 bg-sky-50 text-sky-700',
@@ -8,6 +13,13 @@ const statusStyles: Record<string, string> = {
   in_progress: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   paused: 'border-orange-200 bg-orange-50 text-orange-700',
   closed: 'border-slate-200 bg-slate-50 text-slate-600'
+}
+
+const healthToneStyles: Record<SnapshotTone, string> = {
+  success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  warning: 'border-amber-200 bg-amber-50 text-amber-700',
+  danger: 'border-rose-200 bg-rose-50 text-rose-700',
+  neutral: 'border-slate-200 bg-slate-50 text-slate-600'
 }
 
 export default function InboxSubmissionRow({
@@ -23,6 +35,7 @@ export default function InboxSubmissionRow({
   const submittedDate = formatSubmittedDate(submission.raw.created_at)
   const location =
     submission.parsed.parsed_location_raw.trim() || submission.raw.location_raw.trim()
+  const healthTone = getSubmissionHealthTone(submission.submission_health_state)
 
   return (
     <button
@@ -82,7 +95,15 @@ export default function InboxSubmissionRow({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 sm:justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-end">
+        <span
+          className={[
+            'inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em]',
+            healthToneStyles[healthTone]
+          ].join(' ')}
+        >
+          {formatSubmissionHealthState(submission.submission_health_state)}
+        </span>
         <span
           className={[
             'inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em]',
