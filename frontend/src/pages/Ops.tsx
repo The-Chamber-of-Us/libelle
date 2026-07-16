@@ -11,7 +11,8 @@ import type {
   OpsStatus,
   OpsStatusListResponse,
   ReviewerSubmissionSnapshot,
-  SnapshotOpsData
+  SnapshotOpsData,
+  SubmissionHealthState
 } from '../types/dashboard'
 
 type OpsState =
@@ -28,11 +29,24 @@ type RefreshState =
   | { status: 'refreshing' }
   | { status: 'error'; message: string }
 
+const SUBMISSION_HEALTH_OPTIONS: SubmissionHealthState[] = [
+  'complete',
+  'partial_success',
+  'no_resume_ok',
+  'parser_failed',
+  'resolver_failed',
+  'pending_processing',
+  'broken_pipeline'
+]
+
 export default function Ops() {
   const [state, setState] = useState<OpsState>({ status: 'loading' })
   const [refreshState, setRefreshState] = useState<RefreshState>({ status: 'idle' })
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<OpsStatus | 'all'>('all')
+  const [healthFilter, setHealthFilter] = useState<SubmissionHealthState | 'all'>(
+    'all'
+  )
 
   const filteredSubmissions = useMemo(() => {
     if (state.status !== 'ready') return []
@@ -41,13 +55,15 @@ export default function Ops() {
       .filter((submission) =>
         matchesOpsFilters(submission, {
           searchQuery,
-          statusFilter
+          statusFilter,
+          healthFilter
         })
       )
       .sort(compareOpsSubmissions)
-  }, [searchQuery, state, statusFilter])
+  }, [healthFilter, searchQuery, state, statusFilter])
 
-  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all'
+  const hasActiveFilters =
+    searchQuery.trim() !== '' || statusFilter !== 'all' || healthFilter !== 'all'
   const statusOptions = state.status === 'ready' ? state.statusOptions : []
   const isRefreshing = refreshState.status === 'refreshing'
 
@@ -90,6 +106,7 @@ export default function Ops() {
   function clearFilters() {
     setSearchQuery('')
     setStatusFilter('all')
+    setHealthFilter('all')
   }
 
   return (
@@ -165,6 +182,24 @@ export default function Ops() {
                 </select>
               </label>
 
+              <label className="grid gap-1 text-sm font-medium text-slate-700 lg:w-52">
+                Health
+                <select
+                  className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20"
+                  value={healthFilter}
+                  onChange={(event) =>
+                    setHealthFilter(event.target.value as SubmissionHealthState | 'all')
+                  }
+                >
+                  <option value="all">All health states</option>
+                  {SUBMISSION_HEALTH_OPTIONS.map((healthState) => (
+                    <option key={healthState} value={healthState}>
+                      {formatStatus(healthState)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <button
                 type="button"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -228,6 +263,9 @@ export default function Ops() {
                       Status
                     </th>
                     <th scope="col" className="px-4 py-3">
+                      Health
+                    </th>
+                    <th scope="col" className="px-4 py-3">
                       Notes
                     </th>
                     <th scope="col" className="px-4 py-3">
@@ -288,6 +326,12 @@ function OpsRow({ submission }: { submission: ReviewerSubmissionSnapshot }) {
           </div>
         )}
       </td>
+      <td className="px-4 py-4 align-top">
+        <StatusBadge
+          label={formatStatus(submission.submission_health_state)}
+          tone={getSubmissionHealthTone(submission.submission_health_state)}
+        />
+      </td>
       <td className="max-w-[18rem] px-4 py-4 align-top text-slate-700">
         <PreviewText value={ops.notes} emptyLabel="No notes" />
       </td>
@@ -320,7 +364,7 @@ function StatusBadge({
   tone
 }: {
   label: string
-  tone: 'neutral' | 'success' | 'warning'
+  tone: 'neutral' | 'success' | 'warning' | 'danger'
 }) {
   return (
     <span
@@ -330,6 +374,8 @@ function StatusBadge({
           ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
           : tone === 'warning'
             ? 'border-amber-200 bg-amber-50 text-amber-700'
+            : tone === 'danger'
+              ? 'border-rose-200 bg-rose-50 text-rose-700'
             : 'border-slate-200 bg-slate-50 text-slate-600'
       ].join(' ')}
     >
@@ -454,11 +500,19 @@ function matchesOpsFilters(
   filters: {
     searchQuery: string
     statusFilter: OpsStatus | 'all'
+    healthFilter: SubmissionHealthState | 'all'
   }
 ) {
   if (
     filters.statusFilter !== 'all' &&
     submission.ops.status !== filters.statusFilter
+  ) {
+    return false
+  }
+
+  if (
+    filters.healthFilter !== 'all' &&
+    submission.submission_health_state !== filters.healthFilter
   ) {
     return false
   }
@@ -477,6 +531,7 @@ function getOpsSearchText(submission: ReviewerSubmissionSnapshot) {
       submission.submission_id,
       submission.raw.full_name,
       submission.raw.email,
+      submission.submission_health_state,
       submission.ops.status,
       submission.ops.notes,
       submission.ops.tags,
@@ -494,4 +549,18 @@ function getSortableDateValue(value: string) {
 
 function normalizeFilterText(value: string) {
   return value.trim().toLowerCase()
+}
+
+function getSubmissionHealthTone(status: SubmissionHealthState) {
+  if (status === 'complete' || status === 'no_resume_ok') return 'success'
+  if (status === 'partial_success' || status === 'pending_processing') return 'warning'
+  if (
+    status === 'parser_failed' ||
+    status === 'resolver_failed' ||
+    status === 'broken_pipeline'
+  ) {
+    return 'danger'
+  }
+
+  return 'neutral'
 }
