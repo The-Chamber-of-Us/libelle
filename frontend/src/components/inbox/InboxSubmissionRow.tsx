@@ -1,6 +1,8 @@
 import { AlertTriangle, CalendarDays, MapPin } from 'lucide-react'
 import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import {
+  formatStatus,
+  formatSubmittedDate,
   formatSubmissionHealthState,
   getSubmissionHealthTone,
   type SnapshotTone
@@ -126,21 +128,4 @@ function getListSignals(submission: ReviewerSubmissionSnapshot) {
     .map((skill) => skill.trim())
     .filter(Boolean)
     .slice(0, 3)
-}
-
-function formatSubmittedDate(value: string) {
-  if (!value.trim()) return 'No date'
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(date)
-}
-
-function formatStatus(status: string) {
-  return status.replace(/_/g, ' ')
 }
