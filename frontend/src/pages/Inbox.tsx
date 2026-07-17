@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Search, X } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { AlertTriangle, Inbox as InboxIcon, RefreshCw, Search, X } from 'lucide-react'
 import DashboardTabs from '../components/dashboard/DashboardTabs'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
@@ -357,23 +358,48 @@ export default function Inbox() {
             </div>
 
             {state.status === 'loading' && (
-              <div className="px-5 py-10 text-sm text-slate-600">Loading submissions...</div>
+              <InboxListState
+                icon={<RefreshCw className="h-5 w-5 animate-spin" aria-hidden="true" />}
+                title="Loading submissions"
+                message="Checking the current reviewer snapshot."
+              />
             )}
 
             {state.status === 'error' && (
-              <div className="px-5 py-10 text-sm text-rose-700">{state.message}</div>
+              <InboxListState
+                icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
+                title="Snapshot could not load"
+                message={`${state.message}. No local filters were applied.`}
+                tone="error"
+              />
             )}
 
             {state.status === 'ready' && state.submissions.length === 0 && (
-              <div className="px-5 py-10 text-sm text-slate-600">No submissions yet.</div>
+              <InboxListState
+                icon={<InboxIcon className="h-5 w-5" aria-hidden="true" />}
+                title="No submissions yet"
+                message="The reviewer inbox is empty because no submissions are in the snapshot."
+              />
             )}
 
             {state.status === 'ready' &&
               state.submissions.length > 0 &&
               filteredSubmissions.length === 0 && (
-                <div className="px-5 py-10 text-sm text-slate-600">
-                  No submissions match the current filters.
-                </div>
+                <InboxListState
+                  icon={<Search className="h-5 w-5" aria-hidden="true" />}
+                  title="No submissions match these filters"
+                  message="Submissions still exist in the snapshot. Clear the local filters to show every record again."
+                  action={
+                    <button
+                      type="button"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-libelle-indigo bg-libelle-indigo px-3 text-sm font-semibold text-white transition hover:bg-libelle-indigo/90"
+                      onClick={clearFilters}
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                      Clear filters
+                    </button>
+                  }
+                />
               )}
 
             {state.status === 'ready' &&
@@ -399,6 +425,45 @@ export default function Inbox() {
         </div>
       </div>
     </main>
+  )
+}
+
+function InboxListState({
+  icon,
+  title,
+  message,
+  action,
+  tone = 'neutral'
+}: {
+  icon: ReactNode
+  title: string
+  message: string
+  action?: ReactNode
+  tone?: 'neutral' | 'error'
+}) {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center px-5 py-10 text-center">
+      <div
+        className={[
+          'mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full border',
+          tone === 'error'
+            ? 'border-rose-200 bg-rose-50 text-rose-700'
+            : 'border-slate-200 bg-slate-50 text-slate-600'
+        ].join(' ')}
+      >
+        {icon}
+      </div>
+      <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+      <p
+        className={[
+          'mt-1 max-w-md text-sm leading-6',
+          tone === 'error' ? 'text-rose-700' : 'text-slate-600'
+        ].join(' ')}
+      >
+        {message}
+      </p>
+      {action && <div className="mt-4">{action}</div>}
+    </div>
   )
 }
 
