@@ -1,6 +1,11 @@
 import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField, SectionHeader, StateCallout } from './DetailPrimitives'
-import { formatStatus, formatSubmittedDate, hasSnapshotValue } from './detailUtils'
+import {
+  formatParserResultState,
+  formatSubmittedDate,
+  getParserResultTone,
+  hasSnapshotValue
+} from './detailUtils'
 
 export default function ParsedOutputSection({
   submission
@@ -8,7 +13,7 @@ export default function ParsedOutputSection({
   submission: ReviewerSubmissionSnapshot
 }) {
   const parsed = submission.parsed
-  const isParserComplete = parsed.parser_state === 'complete'
+  const hasAvailableParserOutput = parsed.parser_result_state === 'available'
   const hasParserOutput = hasSnapshotValue([
     parsed.parser_run_id,
     parsed.created_at,
@@ -23,14 +28,12 @@ export default function ParsedOutputSection({
       <SectionHeader
         title="Raw Parsed Output"
         description="Parser-emitted values, kept separate from user-entered and resolved data."
-        status={formatStatus(parsed.parser_state)}
-        statusTone={isParserComplete ? 'success' : 'neutral'}
+        status={formatParserResultState(parsed.parser_result_state)}
+        statusTone={getParserResultTone(parsed.parser_result_state)}
       />
 
-      {!isParserComplete && !hasParserOutput ? (
-        <StateCallout tone="neutral">
-          No parser results yet. The parser has not produced a row for this submission.
-        </StateCallout>
+      {!hasAvailableParserOutput && !hasParserOutput ? (
+        <ParserResultCallout resultState={parsed.parser_result_state} />
       ) : (
         <dl className="grid gap-4 text-sm">
           <DetailField label="Parser Run ID" value={parsed.parser_run_id} />
@@ -53,5 +56,41 @@ export default function ParsedOutputSection({
         </dl>
       )}
     </section>
+  )
+}
+
+function ParserResultCallout({
+  resultState
+}: {
+  resultState: ReviewerSubmissionSnapshot['parsed']['parser_result_state']
+}) {
+  if (resultState === 'failed') {
+    return (
+      <StateCallout tone="danger">
+        Parser failed. The submission remains visible for reviewer follow-up.
+      </StateCallout>
+    )
+  }
+
+  if (resultState === 'skipped') {
+    return (
+      <StateCallout tone="neutral">
+        Parser was skipped for this submission.
+      </StateCallout>
+    )
+  }
+
+  if (resultState === 'empty_success') {
+    return (
+      <StateCallout tone="neutral">
+        Parser ran successfully but produced no extracted fields.
+      </StateCallout>
+    )
+  }
+
+  return (
+    <StateCallout tone="neutral">
+      No parser results yet. The parser has not produced a row for this submission.
+    </StateCallout>
   )
 }
