@@ -3,8 +3,10 @@ import { RefreshCw, Search, X } from 'lucide-react'
 import DashboardTabs from '../components/dashboard/DashboardTabs'
 import {
   formatStatus,
+  formatSubmissionHealthState,
   formatSubmittedDate,
   getOpsStatusTone,
+  getSubmissionHealthTone,
   parseSnapshotList
 } from '../components/inbox/detailUtils'
 import type {
@@ -194,7 +196,7 @@ export default function Ops() {
                   <option value="all">All health states</option>
                   {SUBMISSION_HEALTH_OPTIONS.map((healthState) => (
                     <option key={healthState} value={healthState}>
-                      {formatStatus(healthState)}
+                      {formatSubmissionHealthState(healthState)}
                     </option>
                   ))}
                 </select>
@@ -328,7 +330,7 @@ function OpsRow({ submission }: { submission: ReviewerSubmissionSnapshot }) {
       </td>
       <td className="px-4 py-4 align-top">
         <StatusBadge
-          label={formatStatus(submission.submission_health_state)}
+          label={formatSubmissionHealthState(submission.submission_health_state)}
           tone={getSubmissionHealthTone(submission.submission_health_state)}
         />
       </td>
@@ -549,18 +551,4 @@ function getSortableDateValue(value: string) {
 
 function normalizeFilterText(value: string) {
   return value.trim().toLowerCase()
-}
-
-function getSubmissionHealthTone(status: SubmissionHealthState) {
-  if (status === 'complete' || status === 'no_resume_ok') return 'success'
-  if (status === 'partial_success' || status === 'pending_processing') return 'warning'
-  if (
-    status === 'parser_failed' ||
-    status === 'resolver_failed' ||
-    status === 'broken_pipeline'
-  ) {
-    return 'danger'
-  }
-
-  return 'neutral'
 }
