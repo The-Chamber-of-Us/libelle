@@ -4,13 +4,21 @@ import { AlertTriangle, Inbox as InboxIcon, RefreshCw, Search, X } from 'lucide-
 import DashboardTabs from '../components/dashboard/DashboardTabs'
 import InboxDetailPanel from '../components/inbox/InboxDetailPanel'
 import InboxSubmissionRow from '../components/inbox/InboxSubmissionRow'
-import { formatStatus, parseSnapshotList } from '../components/inbox/detailUtils'
+import {
+  formatErrorState,
+  formatParserResultState,
+  formatResolverResultState,
+  formatStatus,
+  formatSubmissionHealthState,
+  parseSnapshotList
+} from '../components/inbox/detailUtils'
 import type { StatusSaveState } from '../components/inbox/WorkflowSection'
 import type {
   OpsDashboardUpdateResponse,
   OpsStatus,
   OpsStatusListResponse,
-  ReviewerSubmissionSnapshot
+  ReviewerSubmissionSnapshot,
+  SubmissionHealthState
 } from '../types/dashboard'
 
 type InboxState =
@@ -38,6 +46,9 @@ export default function Inbox() {
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<OpsStatus | 'all'>('all')
+  const [healthFilter, setHealthFilter] = useState<SubmissionHealthState | 'all'>(
+    'all'
+  )
   const [locationFilter, setLocationFilter] = useState('')
   const [statusSaveState, setStatusSaveState] = useState<StatusSaveState>({
     status: 'idle'
@@ -62,11 +73,26 @@ export default function Inbox() {
         matchesInboxFilters(submission, {
           searchQuery,
           statusFilter,
+          healthFilter,
           locationFilter
         })
       )
       .sort(compareInboxSubmissions)
-  }, [locationFilter, searchQuery, state, statusFilter])
+  }, [healthFilter, locationFilter, searchQuery, state, statusFilter])
+
+  const healthOptions = useMemo(() => {
+    if (state.status !== 'ready') return []
+
+    return Array.from(
+      new Set(
+        state.submissions
+          .map((submission) => submission.submission_health_state)
+          .filter(Boolean)
+      )
+    ).sort((first, second) =>
+      formatSubmissionHealthState(first).localeCompare(formatSubmissionHealthState(second))
+    )
+  }, [state])
 
   const selectedSubmission = useMemo(() => {
     if (state.status !== 'ready' || selectedSubmissionId === null) return null
@@ -79,7 +105,10 @@ export default function Inbox() {
   }, [filteredSubmissions, selectedSubmissionId, state.status])
 
   const hasActiveFilters =
-    searchQuery.trim() !== '' || statusFilter !== 'all' || locationFilter.trim() !== ''
+    searchQuery.trim() !== '' ||
+    statusFilter !== 'all' ||
+    healthFilter !== 'all' ||
+    locationFilter.trim() !== ''
 
   const statusOptions = state.status === 'ready' ? state.statusOptions : []
   const selectedStatusSaveState =
@@ -99,6 +128,7 @@ export default function Inbox() {
   const clearFilters = () => {
     setSearchQuery('')
     setStatusFilter('all')
+    setHealthFilter('all')
     setLocationFilter('')
   }
 
@@ -314,6 +344,26 @@ export default function Inbox() {
                   </select>
                 </label>
 
+                <label className="grid gap-1 text-sm font-medium text-slate-700 lg:w-48">
+                  Health
+                  <select
+                    className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-libelle-indigo focus:ring-2 focus:ring-libelle-indigo/20"
+                    value={healthFilter}
+                    onChange={(event) =>
+                      setHealthFilter(
+                        event.target.value as SubmissionHealthState | 'all'
+                      )
+                    }
+                  >
+                    <option value="all">All health states</option>
+                    {healthOptions.map((healthState) => (
+                      <option key={healthState} value={healthState}>
+                        {formatSubmissionHealthState(healthState)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 <label className="grid gap-1 text-sm font-medium text-slate-700 lg:w-52">
                   Location
                   <input
@@ -369,7 +419,7 @@ export default function Inbox() {
               <InboxListState
                 icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
                 title="Snapshot could not load"
-                message={`${state.message}. No local filters were applied.`}
+                message={`The reviewer snapshot could not be loaded. ${state.message}`}
                 tone="error"
               />
             )}
@@ -567,12 +617,20 @@ function matchesInboxFilters(
   filters: {
     searchQuery: string
     statusFilter: OpsStatus | 'all'
+    healthFilter: SubmissionHealthState | 'all'
     locationFilter: string
   }
 ) {
   const submissionStatus = safeText(submission.ops?.status)
 
   if (filters.statusFilter !== 'all' && submissionStatus !== filters.statusFilter) {
+    return false
+  }
+
+  if (
+    filters.healthFilter !== 'all' &&
+    submission.submission_health_state !== filters.healthFilter
+  ) {
     return false
   }
 
@@ -612,16 +670,28 @@ function getInboxSearchText(submission: ReviewerSubmissionSnapshot) {
       submission.raw?.motivation,
       submission.raw?.resume_filename,
       submission.raw?.resume_status,
+      submission.submission_health_state,
+      formatSubmissionHealthState(submission.submission_health_state),
       submission.parsed?.parser_state,
+      submission.parsed?.parser_result_state,
+      submission.parsed
+        ? formatParserResultState(submission.parsed.parser_result_state)
+        : '',
       submission.parsed?.parsed_skills_raw,
       submission.parsed?.parsed_location_raw,
       submission.resolved?.resolver_state,
+      submission.resolved?.resolver_result_state,
+      submission.resolved
+        ? formatResolverResultState(submission.resolved.resolver_result_state)
+        : '',
       submission.resolved?.resolved_skill_ids,
       submission.resolved?.unknown_skills,
       submission.ops?.status,
       submission.ops?.notes,
       submission.ops?.tags,
       submission.ops?.contact_tracking,
+      submission.errors?.error_state,
+      submission.errors ? formatErrorState(submission.errors.error_state) : '',
       submission.errors?.latest_error_summary,
       submission.errors?.latest_error_stage,
       submission.errors?.latest_error_code
