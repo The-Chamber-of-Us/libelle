@@ -5,7 +5,11 @@ import {
   SectionHeader,
   StateCallout
 } from './DetailPrimitives'
-import { formatStatus, getResolverStatusTone, parseSnapshotList } from './detailUtils'
+import {
+  formatResolverResultState,
+  getResolverResultTone,
+  parseSnapshotList
+} from './detailUtils'
 
 export default function ResolvedOutputSection({
   submission
@@ -16,21 +20,21 @@ export default function ResolvedOutputSection({
   const resolvedSkillIds = parseSnapshotList(resolved.resolved_skill_ids)
   const unknownSkills = parseSnapshotList(resolved.unknown_skills)
   const hasUnknowns = unknownSkills.length > 0
-  const hasResolverRun = resolved.resolver_state !== 'not_run'
+  const hasAvailableResolverOutput =
+    resolved.resolver_result_state === 'available' ||
+    resolved.resolver_result_state === 'empty_success'
 
   return (
     <section className="border-t border-slate-200 px-5 py-5">
       <SectionHeader
         title="Resolved Canonical Output"
         description="Resolver/canonical values derived from parser output. Raw parsed values are not replaced here."
-        status={formatStatus(resolved.resolver_state)}
-        statusTone={getResolverStatusTone(resolved.resolver_state)}
+        status={formatResolverResultState(resolved.resolver_result_state)}
+        statusTone={getResolverResultTone(resolved.resolver_result_state)}
       />
 
-      {!hasResolverRun ? (
-        <StateCallout tone="neutral">
-          Resolver has not run for this parser result yet.
-        </StateCallout>
+      {!hasAvailableResolverOutput ? (
+        <ResolverResultCallout resultState={resolved.resolver_result_state} />
       ) : (
         <div className="grid gap-4">
           {resolved.resolver_state === 'zero_matches' && (
@@ -67,5 +71,33 @@ export default function ResolvedOutputSection({
         </div>
       )}
     </section>
+  )
+}
+
+function ResolverResultCallout({
+  resultState
+}: {
+  resultState: ReviewerSubmissionSnapshot['resolved']['resolver_result_state']
+}) {
+  if (resultState === 'failed') {
+    return (
+      <StateCallout tone="danger">
+        Resolver failed. Parser output, if present, remains visible.
+      </StateCallout>
+    )
+  }
+
+  if (resultState === 'unavailable_upstream') {
+    return (
+      <StateCallout tone="danger">
+        Resolver could not run because upstream parser output is unavailable.
+      </StateCallout>
+    )
+  }
+
+  return (
+    <StateCallout tone="neutral">
+      Resolver has not run for this parser result yet.
+    </StateCallout>
   )
 }
