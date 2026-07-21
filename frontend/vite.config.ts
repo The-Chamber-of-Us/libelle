@@ -39,7 +39,8 @@ export default defineConfig(({ mode }) => {
         },
         '/resumes': {
           target: backendTarget,
-          changeOrigin: true
+          changeOrigin: true,
+          headers: devInternalActorHeaders
         }
       }
     }
