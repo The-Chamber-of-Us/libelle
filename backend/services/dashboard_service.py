@@ -21,7 +21,10 @@ OpsRow = Mapping[str, Any]
 ErrorRow = Mapping[str, Any]
 SnapshotRecord = Dict[str, Any]
 
-RAW_FIELDS = tuple(field for field in SUBMISSIONS_HEADERS if field != "submission_id")
+SNAPSHOT_STORAGE_ONLY_FIELDS = {"submission_id", "drive_file_id", "drive_file_url"}
+RAW_FIELDS = tuple(
+    field for field in SUBMISSIONS_HEADERS if field not in SNAPSHOT_STORAGE_ONLY_FIELDS
+)
 PARSED_FIELDS = (
     "parser_run_id",
     "created_at",

@@ -25,7 +25,8 @@ Keep this document and those constants in sync.
 
 The entire row is written once by the intake path and is **append-only and
 immutable after append**. Resume upload resolves before the row is written,
-so `resume_filename` and `resume_status` are final at append time.
+so `drive_file_id`, `drive_file_url`, `resume_filename`, and `resume_status`
+are final at append time.
 
 | Field | Ownership | Notes |
 | --- | --- | --- |
@@ -43,6 +44,8 @@ so `resume_filename` and `resume_status` are final at append time.
 | `consent_given` | Volunteer-entered | |
 | `submission_id` | Intake system | Canonical correlation key across all tabs, Drive, and logs. |
 | `created_at` | Intake system | |
+| `drive_file_id` | Intake/upload system | Storage-only Drive file identifier used by the secure resume proxy; not exposed by `/snapshot`. |
+| `drive_file_url` | Intake/upload system | Storage-only Drive URL retained for backend operations; not exposed by `/snapshot`. |
 | `resume_filename` | Intake/upload system | Deterministic `{submission_id}` naming; matches the actual Drive filename. |
 | `resume_status` | Intake/upload system | Final upload outcome (`uploaded` / `failed` / `missing`). |
 
@@ -107,7 +110,8 @@ and must never be written back into any tab.
 3. **Reviewer status/notes must not alter raw, parsed, or resolved values.**
    Ops writes touch only the `ops` tab.
 4. **Nothing overwrites the `submissions` row after append.** This includes
-   `resume_filename` and `resume_status`, which are final at append time.
+   `drive_file_id`, `drive_file_url`, `resume_filename`, and `resume_status`,
+   which are final at append time.
 5. **Unknown, unresolved, and low-confidence values are represented
    honestly.** Empty resolver fields mean "resolver has not run" or "could
    not resolve", not "no data existed". Low `parser_confidence` values stay

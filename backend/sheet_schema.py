@@ -13,6 +13,8 @@ SUBMISSIONS_HEADERS = [
     "linkedin_url",
     "github_url",
     "consent_given",
+    "drive_file_id",
+    "drive_file_url",
     "resume_filename",
     "resume_status",
 ]

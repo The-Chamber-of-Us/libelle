@@ -514,6 +514,8 @@ def write_base_row(
         "linkedin_url": ui_data.get("linkedin", ""),
         "github_url": ui_data.get("github", ""),
         "consent_given": True,
+        "drive_file_id": drive_file_id,
+        "drive_file_url": drive_file_url or "",
         "resume_filename": resume_filename,
         "resume_status": resume_status,
     }

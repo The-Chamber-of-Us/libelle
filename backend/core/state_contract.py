@@ -88,6 +88,8 @@ USER_ENTERED_FIELDS = (
 INTAKE_SYSTEM_FIELDS = (
     "submission_id",
     "created_at",
+    "drive_file_id",
+    "drive_file_url",
     "resume_filename",
     "resume_status",
 )

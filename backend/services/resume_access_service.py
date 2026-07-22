@@ -37,15 +37,15 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
     """
     Resolve and proxy one uploaded resume for an authenticated internal actor.
 
-    The v0.3 submissions sheet stores resume presence and filename, but not a
-    durable Drive file id. This service keeps the mediation narrow by resolving
-    the expected uploaded PDF by filename inside the configured Drive folder.
+    Submission rows are the source of truth for whether a resume exists and
+    which Drive file id belongs to that submission. The client supplies only the
+    submission_id; filenames and Drive URLs are never trusted as lookup inputs.
     """
     normalized_submission_id = _normalize_required(submission_id, "submission_id")
     normalized_actor = _normalize_required(actor, "actor")
 
     try:
-        from storage.drive_repo import download_file, find_pdf_by_name
+        from storage.drive_repo import download_file
         from storage.sheets_repo import load_submission_records
 
         submission = load_submission_records().get(normalized_submission_id)
@@ -56,29 +56,37 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
                 message="No submission found for submission_id.",
             )
 
-        filename = _resume_filename_from_submission(submission)
-        if filename is None:
+        resume_reference = _resume_reference_from_submission(submission)
+        if resume_reference is None:
             raise ResumeAccessError(
                 status_code=404,
                 code="RESUME_NOT_AVAILABLE",
                 message="No uploaded resume is available for this submission.",
             )
 
-        drive_file = find_pdf_by_name(filename)
-        if drive_file is None or not str(drive_file.get("id", "")).strip():
+        drive_file_id, filename = resume_reference
+        if not drive_file_id:
             raise ResumeAccessError(
-                status_code=404,
-                code="RESUME_FILE_NOT_FOUND",
-                message="Resume metadata exists, but the file is unavailable.",
+                status_code=502,
+                code="RESUME_REFERENCE_BROKEN",
+                message="Resume metadata exists, but its Drive file reference is missing.",
             )
 
-        content = download_file(str(drive_file["id"]).strip())
+        try:
+            content = download_file(drive_file_id)
+        except Exception as exc:  # noqa: BLE001
+            raise ResumeAccessError(
+                status_code=502,
+                code="RESUME_REFERENCE_BROKEN",
+                message="Resume metadata exists, but the Drive file could not be retrieved.",
+            ) from exc
+
         _log_resume_access(
             submission_id=normalized_submission_id,
             actor=normalized_actor,
             outcome="served",
             filename=filename,
-            drive_file_id=str(drive_file["id"]).strip(),
+            drive_file_id=drive_file_id,
         )
         return MediatedResume(
             submission_id=normalized_submission_id,
@@ -95,12 +103,16 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
         raise
 
 
-def _resume_filename_from_submission(submission: Mapping[str, Any]) -> str | None:
+def _resume_reference_from_submission(submission: Mapping[str, Any]) -> tuple[str, str] | None:
     resume_status = str(submission.get("resume_status", "")).strip().lower()
-    filename = str(submission.get("resume_filename", "")).strip()
-    if resume_status != "uploaded" or not filename:
+    if resume_status != "uploaded":
         return None
-    return filename
+
+    drive_file_id = str(submission.get("drive_file_id", "")).strip()
+    filename = str(submission.get("resume_filename", "")).strip()
+    if not filename:
+        filename = f"{str(submission.get('submission_id', '')).strip() or 'resume'}-resume.pdf"
+    return drive_file_id, filename
 
 
 def _normalize_required(value: str, field_name: str) -> str:
