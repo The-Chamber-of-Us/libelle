@@ -243,6 +243,8 @@ def finalize_submission(
         write_base_row(
             submission_id=submission_id,
             ui_data=ui_data,
+            drive_file_id="",
+            drive_file_url="",
             resume_filename="",
             resume_status="missing",
         )
@@ -277,6 +279,8 @@ def finalize_submission(
         write_base_row(
             submission_id=submission_id,
             ui_data=ui_data,
+            drive_file_id="",
+            drive_file_url="",
             resume_filename="",
             resume_status="failed",
         )
