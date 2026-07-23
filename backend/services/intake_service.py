@@ -244,14 +244,12 @@ def finalize_submission(
             submission_id=submission_id,
             ui_data=ui_data,
             drive_file_id="",
-            drive_file_url="",
             resume_filename="",
             resume_status="missing",
         )
         return {
             "submission_id": submission_id,
             "drive_file_id": "",
-            "drive_file_url": "",
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "missing",
@@ -265,7 +263,7 @@ def finalize_submission(
 
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     try:
-        drive_file_id, drive_file_url, resume_filename = upload_pdf(
+        drive_file_id, _, resume_filename = upload_pdf(
             pdf_bytes,
             submission_id,
             original_filename or "resume.pdf",
@@ -280,7 +278,6 @@ def finalize_submission(
             submission_id=submission_id,
             ui_data=ui_data,
             drive_file_id="",
-            drive_file_url="",
             resume_filename="",
             resume_status="failed",
         )
@@ -298,7 +295,6 @@ def finalize_submission(
         return {
             "submission_id": submission_id,
             "drive_file_id": "",
-            "drive_file_url": "",
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "failed",
@@ -308,7 +304,6 @@ def finalize_submission(
     print(f"[SHEETS] Writing base row for submission_id={submission_id} ...")
     write_base_row(
         drive_file_id=drive_file_id,
-        drive_file_url=drive_file_url,
         submission_id=submission_id,
         ui_data=ui_data,
         resume_filename=resume_filename,
@@ -319,7 +314,6 @@ def finalize_submission(
     return {
         "submission_id": submission_id,
         "drive_file_id": drive_file_id,
-        "drive_file_url": drive_file_url,
         "pre_text": pre_text,
         "resume_filename": resume_filename,
         "resume_status": "uploaded",

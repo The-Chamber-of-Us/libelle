@@ -72,6 +72,26 @@ def test_get_mediated_resume_rejects_submission_without_uploaded_resume(monkeypa
     assert exc_info.value.code == "RESUME_NOT_AVAILABLE"
 
 
+def test_get_mediated_resume_distinguishes_failed_resume_upload(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "storage.sheets_repo.load_submission_records",
+        lambda: {
+            "sub_001": {
+                "submission_id": "sub_001",
+                "drive_file_id": "",
+                "resume_filename": "",
+                "resume_status": "failed",
+            }
+        },
+    )
+
+    with pytest.raises(ResumeAccessError) as exc_info:
+        get_mediated_resume("sub_001", "reviewer@example.org")
+
+    assert exc_info.value.status_code == 502
+    assert exc_info.value.code == "RESUME_UPLOAD_FAILED"
+
+
 def test_get_mediated_resume_rejects_missing_drive_reference(monkeypatch) -> None:
     monkeypatch.setattr(
         "storage.sheets_repo.load_submission_records",
@@ -92,7 +112,7 @@ def test_get_mediated_resume_rejects_missing_drive_reference(monkeypatch) -> Non
     assert exc_info.value.code == "RESUME_REFERENCE_BROKEN"
 
 
-def test_get_mediated_resume_surfaces_broken_drive_download(monkeypatch) -> None:
+def test_get_mediated_resume_surfaces_generic_drive_retrieval_failure(monkeypatch) -> None:
     monkeypatch.setattr(
         "storage.sheets_repo.load_submission_records",
         lambda: {
@@ -107,6 +127,33 @@ def test_get_mediated_resume_surfaces_broken_drive_download(monkeypatch) -> None
     monkeypatch.setattr(
         "storage.drive_repo.download_file",
         lambda file_id: (_ for _ in ()).throw(RuntimeError("Drive 404")),
+    )
+
+    with pytest.raises(ResumeAccessError) as exc_info:
+        get_mediated_resume("sub_001", "reviewer@example.org")
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.code == "RESUME_RETRIEVAL_FAILED"
+
+
+def test_get_mediated_resume_surfaces_confirmed_missing_drive_file(monkeypatch) -> None:
+    class FakeHttpError(Exception):
+        resp = type("Resp", (), {"status": 404})()
+
+    monkeypatch.setattr(
+        "storage.sheets_repo.load_submission_records",
+        lambda: {
+            "sub_001": {
+                "submission_id": "sub_001",
+                "drive_file_id": "missing-drive-file",
+                "resume_filename": "sub_001-resume.pdf",
+                "resume_status": "uploaded",
+            }
+        },
+    )
+    monkeypatch.setattr(
+        "storage.drive_repo.download_file",
+        lambda file_id: (_ for _ in ()).throw(FakeHttpError("Drive 404")),
     )
 
     with pytest.raises(ResumeAccessError) as exc_info:

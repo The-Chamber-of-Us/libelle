@@ -29,8 +29,8 @@ authoritative when assembling one record from many sources.
 
 **1. Who owns raw submitted fields?** The `submissions` tab. It is
 append-only; the row (including intake-assigned `submission_id`,
-`created_at`, `drive_file_id`, `drive_file_url`, `resume_filename`,
-`resume_status`) is immutable after append.
+`created_at`, `drive_file_id`, `resume_filename`, `resume_status`) is
+immutable after append.
 
 **2. Who owns parser-derived fields?** The `parser_results` tab, parser-owned
 columns (`parser_run_id`, `parser_version`, `parsed_skills_raw`,

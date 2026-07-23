@@ -14,7 +14,6 @@ SUBMISSIONS_HEADERS = [
     "github_url",
     "consent_given",
     "drive_file_id",
-    "drive_file_url",
     "resume_filename",
     "resume_status",
 ]

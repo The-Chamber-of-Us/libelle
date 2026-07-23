@@ -21,7 +21,7 @@ OpsRow = Mapping[str, Any]
 ErrorRow = Mapping[str, Any]
 SnapshotRecord = Dict[str, Any]
 
-SNAPSHOT_STORAGE_ONLY_FIELDS = {"submission_id", "drive_file_id", "drive_file_url"}
+SNAPSHOT_STORAGE_ONLY_FIELDS = {"submission_id", "drive_file_id"}
 RAW_FIELDS = tuple(
     field for field in SUBMISSIONS_HEADERS if field not in SNAPSHOT_STORAGE_ONLY_FIELDS
 )

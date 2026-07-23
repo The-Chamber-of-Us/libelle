@@ -13,7 +13,12 @@ def _client() -> TestClient:
     return TestClient(app)
 
 
-def test_get_resume_requires_internal_actor() -> None:
+def test_get_resume_requires_internal_actor_before_service_lookup(monkeypatch) -> None:
+    def fail_if_called(submission_id, actor):
+        raise AssertionError("resume service must not run without internal actor identity")
+
+    monkeypatch.setattr(resumes, "get_mediated_resume", fail_if_called)
+
     response = _client().get("/resumes/sub_001")
 
     assert response.status_code == 401

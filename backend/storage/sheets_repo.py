@@ -484,7 +484,6 @@ def _compute_parser_confidence(parsed: Dict[str, Any]) -> float:
 # ---------- Write Base Row ----------
 def write_base_row(
     drive_file_id: str = "",
-    drive_file_url: Optional[str] = None,
     submission_id: Optional[str] = None,
     ui_data: Optional[Dict[str, Union[str, List[str], bool]]] = None,
     resume_filename: str = "",
@@ -515,7 +514,6 @@ def write_base_row(
         "github_url": ui_data.get("github", ""),
         "consent_given": True,
         "drive_file_id": drive_file_id,
-        "drive_file_url": drive_file_url or "",
         "resume_filename": resume_filename,
         "resume_status": resume_status,
     }

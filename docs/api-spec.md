@@ -80,7 +80,31 @@ The response body is the PDF bytes. It does not expose a raw Drive path, Drive U
   "detail": {
     "status": "error",
     "code": "RESUME_REFERENCE_BROKEN",
-    "message": "Resume metadata exists, but the Drive file could not be retrieved."
+    "message": "Resume metadata exists, but the Drive file is missing or inaccessible."
+  }
+}
+```
+
+**Resume Upload Failed - 502**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_UPLOAD_FAILED",
+    "message": "A resume was provided, but Libelle failed to store it."
+  }
+}
+```
+
+**Resume Storage Unavailable - 503**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_RETRIEVAL_FAILED",
+    "message": "Resume metadata exists, but resume storage could not be reached."
   }
 }
 ```
@@ -149,7 +173,7 @@ Each snapshot record always includes these top-level domains:
 
 Missing top-level domains are invalid. Current nested domains are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
 
-Storage-only resume references such as `drive_file_id` and `drive_file_url` are not included in `/snapshot`. Reviewers access uploaded resumes through `GET /resumes/{submission_id}`.
+Storage-only resume references such as `drive_file_id` are not included in `/snapshot`. Reviewers access uploaded resumes through `GET /resumes/{submission_id}`.
 
 Partial pipeline states are explicit:
 
@@ -174,7 +198,7 @@ Uploads a resume and submits a volunteer application.
 1. Validates the submitted form.
 2. Uploads the PDF resume to Google Drive.
 3. Creates a base row in the master Google Sheet.
-4. Returns submission confirmation and the Drive URL to the frontend.
+4. Returns submission confirmation to the frontend.
 
 **Request**
 * **Method:** `POST`
@@ -200,7 +224,8 @@ Response – Success (200)
 {
   "status": "success",
   "submission_id": "abc123",
-  "drive_file_url": "https://drive.google.com/file/d/FILE_ID/view?usp=drive_link"
+  "resume_filename": "abc123_resume.pdf",
+  "resume_status": "uploaded",
   "message": "Your application has been received"
 }
 ```

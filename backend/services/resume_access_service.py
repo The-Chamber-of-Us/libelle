@@ -75,10 +75,11 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
         try:
             content = download_file(drive_file_id)
         except Exception as exc:  # noqa: BLE001
+            status_code, code, message = _download_error_response(exc)
             raise ResumeAccessError(
-                status_code=502,
-                code="RESUME_REFERENCE_BROKEN",
-                message="Resume metadata exists, but the Drive file could not be retrieved.",
+                status_code=status_code,
+                code=code,
+                message=message,
             ) from exc
 
         _log_resume_access(
@@ -105,14 +106,45 @@ def get_mediated_resume(submission_id: str, actor: str) -> MediatedResume:
 
 def _resume_reference_from_submission(submission: Mapping[str, Any]) -> tuple[str, str] | None:
     resume_status = str(submission.get("resume_status", "")).strip().lower()
-    if resume_status != "uploaded":
+    if resume_status in {"", "missing"}:
         return None
+    if resume_status == "failed":
+        raise ResumeAccessError(
+            status_code=502,
+            code="RESUME_UPLOAD_FAILED",
+            message="A resume was provided, but Libelle failed to store it.",
+        )
+    if resume_status != "uploaded":
+        raise ResumeAccessError(
+            status_code=502,
+            code="RESUME_STATE_UNAVAILABLE",
+            message="Resume state is not available for this submission.",
+        )
 
     drive_file_id = str(submission.get("drive_file_id", "")).strip()
     filename = str(submission.get("resume_filename", "")).strip()
     if not filename:
         filename = f"{str(submission.get('submission_id', '')).strip() or 'resume'}-resume.pdf"
     return drive_file_id, filename
+
+
+def _download_error_response(exc: Exception) -> tuple[int, str, str]:
+    status = getattr(getattr(exc, "resp", None), "status", None)
+    if status is None:
+        status = getattr(exc, "status_code", None)
+
+    if str(status) in {"403", "404"}:
+        return (
+            502,
+            "RESUME_REFERENCE_BROKEN",
+            "Resume metadata exists, but the Drive file is missing or inaccessible.",
+        )
+
+    return (
+        503,
+        "RESUME_RETRIEVAL_FAILED",
+        "Resume metadata exists, but resume storage could not be reached.",
+    )
 
 
 def _normalize_required(value: str, field_name: str) -> str:
