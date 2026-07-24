@@ -78,6 +78,7 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
     assert captured["sheets_submission_id"] == result["submission_id"]
     expected_filename = f"{result['submission_id']}_Test Resume.PDF"
     assert captured["row"]["resume_filename"] == expected_filename
+    assert captured["row"]["drive_file_id"] == "drive-file-id"
     assert result["resume_filename"] == expected_filename
     assert captured["row"]["resume_status"] == "uploaded"
     assert result["resume_status"] == "uploaded"
@@ -115,6 +116,7 @@ def test_finalize_submission_without_resume_records_missing(monkeypatch):
     assert result["drive_file_id"] == ""
     assert captured["resume_status"] == "missing"
     assert captured["resume_filename"] == ""
+    assert captured["drive_file_id"] == ""
 
 
 def test_finalize_submission_records_failed_drive_upload(monkeypatch):
@@ -142,6 +144,7 @@ def test_finalize_submission_records_failed_drive_upload(monkeypatch):
     assert result["resume_filename"] == ""
     assert captured["row"]["resume_status"] == "failed"
     assert captured["row"]["resume_filename"] == ""
+    assert captured["row"]["drive_file_id"] == ""
     assert captured["error"]["submission_id"] == result["submission_id"]
     assert captured["error"]["stage"] == "upload"
     assert captured["error"]["error_code"] == "DRIVE_UPLOAD_FAILED"

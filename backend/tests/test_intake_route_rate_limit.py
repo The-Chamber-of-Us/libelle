@@ -38,7 +38,6 @@ def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
         return {
             "submission_id": "sub_001",
             "drive_file_id": "drive-file-id",
-            "drive_file_url": "https://drive.example/resume",
             "pre_text": "resume text",
             "resume_filename": "sub_001-resume.pdf",
             "resume_status": "uploaded",
@@ -78,7 +77,6 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
         return {
             "submission_id": "sub_missing",
             "drive_file_id": "",
-            "drive_file_url": "",
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "missing",
@@ -130,7 +128,6 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
         lambda **_: {
             "submission_id": "sub_failed",
             "drive_file_id": "",
-            "drive_file_url": "",
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "failed",

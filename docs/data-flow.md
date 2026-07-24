@@ -71,7 +71,6 @@ drive_sync.upload_pdf()
 
 Returns:
 	•	drive_file_id
-	•	drive_file_url
 
 This happens before any parsing.
 
@@ -343,4 +342,3 @@ Data flow is designed to support:
 	•	Fully local deployments
 
 These are architectural options, not current practice.
-

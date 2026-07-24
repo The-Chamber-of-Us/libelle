@@ -33,7 +33,7 @@ Public intake form            (frontend/src/components/intake/IntakeForm.tsx)
   ↓
 Submission record             (submissions tab — append-only, immutable)
   ↓
-Resume upload → Google Drive  (deterministic {submission_id} filename)
+Resume upload → Google Drive  (`submission_id`-prefixed filename)
   ↓
 Parser pipeline               (backend/parser.py, async background task)
   ↓
@@ -87,7 +87,7 @@ do not assume they exist when reading issues that mention them.
 internal key** — everything attaches to it:
 
 - the raw `submissions` row
-- the Drive resume file (deterministic `{submission_id}` filename)
+- the Drive resume file (`submission_id`-prefixed filename plus stored `drive_file_id`)
 - every `parser_results` row
 - resolver output
 - the current `ops` row
@@ -108,7 +108,8 @@ succeed, fail, or run at different times. Through time:
 2. The backend generates a `submission_id` and returns it in the API
    response.
 3. If a resume is included, the file is uploaded to Drive under the
-   deterministic filename, and the outcome (`uploaded`/`failed`/`missing`)
+   `submission_id`-prefixed filename, stored `drive_file_id`, and the outcome
+   (`uploaded`/`failed`/`missing`)
    is finalized.
 4. The raw submission row is **appended** to `submissions` — and is now
    immutable.

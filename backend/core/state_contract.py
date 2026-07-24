@@ -83,11 +83,12 @@ USER_ENTERED_FIELDS = (
     "consent_given",
 )
 # submissions tab: assigned by the intake/upload pipeline rather than the
-# volunteer. resume_filename/resume_status are finalized before the row is
-# appended, so the whole row is immutable after append.
+# volunteer. drive_file_id/resume_filename/resume_status are finalized before
+# the row is appended, so the whole row is immutable after append.
 INTAKE_SYSTEM_FIELDS = (
     "submission_id",
     "created_at",
+    "drive_file_id",
     "resume_filename",
     "resume_status",
 )

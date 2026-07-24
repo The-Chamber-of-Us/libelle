@@ -11,7 +11,7 @@ This document defines how the Libelle frontend and backend communicate. It is th
 
 ## General Rules & Auth
 
-* **Format:** All responses are in JSON.
+* **Format:** Responses are JSON unless an endpoint explicitly documents a binary response.
 * **Client Auth:** Public volunteer intake endpoints are currently **open** (no user login required).
 * **Backend Auth:** The backend internally uses two Google authentication methods for infrastructure access:
   * **Google Drive:** Uses OAuth user consent (bootstrapped via `/authorize` to create `token.json`).
@@ -21,17 +21,117 @@ This document defines how the Libelle frontend and backend communicate. It is th
 
 ---
 
-## Dashboard Ops Write Auth
+## Dashboard Reviewer Auth
 
-Dashboard read endpoints may be available locally without reviewer identity, but ops write endpoints require an authenticated internal actor:
+Dashboard read endpoints may be available locally without reviewer identity, but protected reviewer actions require an authenticated internal actor:
 
 * `POST /ops/update`
 * `POST /submissions/{submission_id}/ops`
 * `PATCH /submissions/{submission_id}/ops`
+* `GET /resumes/{submission_id}`
 
 In deployed environments, the actor is derived from Cloudflare Access headers supplied by the protected access layer, preferably `cf-access-authenticated-user-email`, or from the `email` claim in `cf-access-jwt-assertion`. If no actor can be derived, these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
 
 For local UI testing, see [Local Dashboard Write Testing](local-dev-dashboard-writes.md).
+
+---
+
+## Reviewer Resume Access
+
+### `GET /resumes/{submission_id}`
+
+Returns a mediated PDF response for a reviewer dashboard user. The dashboard passes only the canonical `submission_id`; clients must not provide Drive IDs, Drive URLs, file paths, email addresses, names, or filenames for resume lookup.
+
+The backend resolves the submission row by `submission_id`, verifies reviewer access through the internal actor headers, reads the stored Drive file ID for that submission, and proxies the PDF bytes. `resume_filename` may be used only as the download/display filename, not as the lookup key.
+
+This endpoint is intentionally separate from `/snapshot`: broken or missing resume access returns an explicit response from `/resumes/{submission_id}` and must not remove the submission from the reviewer-facing snapshot.
+
+**Request**
+```http
+GET /resumes/abc123
+```
+
+**Response - 200 OK**
+
+```http
+Content-Type: application/pdf
+Content-Disposition: inline; filename*=UTF-8''abc123_resume.pdf
+X-Submission-Id: abc123
+```
+
+The response body is the PDF bytes. It does not expose a raw Drive path, Drive URL, or Drive file ID.
+
+**No Resume - 404**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_NOT_AVAILABLE",
+    "message": "No uploaded resume is available for this submission."
+  }
+}
+```
+
+**Broken Drive Reference - 502**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_REFERENCE_BROKEN",
+    "message": "Resume metadata exists, but the Drive file is missing or inaccessible."
+  }
+}
+```
+
+**Resume Upload Failed - 502**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_UPLOAD_FAILED",
+    "message": "A resume was provided, but Libelle failed to store it."
+  }
+}
+```
+
+**Resume Storage Unavailable - 503**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "RESUME_RETRIEVAL_FAILED",
+    "message": "Resume metadata exists, but resume storage could not be reached."
+  }
+}
+```
+
+**Unauthorized - 401**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "INTERNAL_ACTOR_REQUIRED",
+    "message": "Authenticated internal actor identity is required."
+  }
+}
+```
+
+**Not Found - 404**
+
+```json
+{
+  "detail": {
+    "status": "error",
+    "code": "SUBMISSION_NOT_FOUND",
+    "message": "No submission found for submission_id."
+  }
+}
+```
 
 ---
 
@@ -73,6 +173,8 @@ Each snapshot record always includes these top-level domains:
 
 Missing top-level domains are invalid. Current nested domains are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
 
+Storage-only resume references such as `drive_file_id` are not included in `/snapshot`. Reviewers access uploaded resumes through `GET /resumes/{submission_id}`.
+
 Partial pipeline states are explicit:
 
 | Domain | Field | Values | Semantics |
@@ -96,7 +198,7 @@ Uploads a resume and submits a volunteer application.
 1. Validates the submitted form.
 2. Uploads the PDF resume to Google Drive.
 3. Creates a base row in the master Google Sheet.
-4. Returns submission confirmation and the Drive URL to the frontend.
+4. Returns submission confirmation to the frontend.
 
 **Request**
 * **Method:** `POST`
@@ -122,7 +224,8 @@ Response – Success (200)
 {
   "status": "success",
   "submission_id": "abc123",
-  "drive_file_url": "https://drive.google.com/file/d/FILE_ID/view?usp=drive_link"
+  "resume_filename": "abc123_resume.pdf",
+  "resume_status": "uploaded",
   "message": "Your application has been received"
 }
 ```

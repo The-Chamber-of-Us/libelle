@@ -17,7 +17,7 @@ authoritative when assembling one record from many sources.
 | Data area | System of record | Rule |
 | --- | --- | --- |
 | Raw volunteer-submitted data | `submissions` tab | Canonical evidence of volunteer intent. Never overwritten or replaced by parser, resolver, or ops values. |
-| Resume file reference | `submissions.resume_filename` / `resume_status` + Drive | The file is tied to `submission_id` via deterministic naming; never inferred from email or other fields. |
+| Resume file reference | `submissions.drive_file_id` / `resume_status` | The file is tied to `submission_id` through the immutable intake row; never inferred from email, name, filename, or client-provided Drive paths. `resume_filename` is display-only. |
 | Parser output | `parser_results` tab (latest row per `submission_id`) | Derived enrichment. Displayed alongside — never instead of — raw submitted values. |
 | Resolver output | resolver-owned columns of the latest `parser_results` row | Derived normalization. Unresolved values stay visible in `unknown_skills`; resolver output never hides raw parser output. |
 | Reviewer workflow status | `ops` tab | Current reviewer-owned workflow state, one row per `submission_id`. |
@@ -29,7 +29,8 @@ authoritative when assembling one record from many sources.
 
 **1. Who owns raw submitted fields?** The `submissions` tab. It is
 append-only; the row (including intake-assigned `submission_id`,
-`created_at`, `resume_filename`, `resume_status`) is immutable after append.
+`created_at`, `drive_file_id`, `resume_filename`, `resume_status`) is
+immutable after append.
 
 **2. Who owns parser-derived fields?** The `parser_results` tab, parser-owned
 columns (`parser_run_id`, `parser_version`, `parsed_skills_raw`,

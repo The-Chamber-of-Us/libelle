@@ -48,6 +48,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
             "linkedin_url": "",
             "github_url": "",
             "consent_given": "TRUE",
+            "drive_file_id": "drive-file-2",
             "resume_filename": "sub_002-resume.pdf",
             "resume_status": "uploaded",
         },
@@ -66,6 +67,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
             "linkedin_url": "https://linkedin.example/first",
             "github_url": "https://github.example/first",
             "consent_given": "TRUE",
+            "drive_file_id": "drive-file-1",
             "resume_filename": "sub_001-resume.pdf",
             "resume_status": "uploaded",
         },
@@ -141,6 +143,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
     assert first["raw"]["full_name"] == "First Person"
     assert first["raw"]["skills_raw"] == "Python"
     assert "submission_id" not in first["raw"]
+    assert "drive_file_id" not in first["raw"]
 
     assert first["parsed"] == {
         "parser_state": "complete",

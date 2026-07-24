@@ -125,7 +125,6 @@ async def upload_volunteer_application(
         content={
             "status": "success",
             "submission_id": result["submission_id"],
-            "drive_file_url": result["drive_file_url"],
             "resume_filename": result["resume_filename"],
             "resume_status": result["resume_status"],
             "message": (
