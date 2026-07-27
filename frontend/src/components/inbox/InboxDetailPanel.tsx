@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, ExternalLink, FileText, Loader2 } from 'lucide-react'
 import type { OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField, StateCallout } from './DetailPrimitives'
@@ -77,32 +77,55 @@ type ResumeAccessState =
   | { status: 'opened'; message: string }
   | { status: 'error'; message: string }
 
+type ResumeAvailability =
+  | { state: 'uploaded' }
+  | { state: 'missing'; message: string }
+  | { state: 'failed'; message: string }
+  | { state: 'unknown'; message: string }
+
 function ResumeAccessSection({
   submission
 }: {
   submission: ReviewerSubmissionSnapshot
 }) {
   const [accessState, setAccessState] = useState<ResumeAccessState>({ status: 'idle' })
+  const activeRequestRef = useRef(0)
+  const activeAbortControllerRef = useRef<AbortController | null>(null)
+  const activeResumeWindowRef = useRef<Window | null>(null)
   const resumeStatus = submission.raw.resume_status.trim().toLowerCase()
   const resumeFilename = submission.raw.resume_filename.trim()
-  const hasUploadedResume = resumeStatus === 'uploaded' && resumeFilename !== ''
-  const hasBrokenResumeMetadata = resumeStatus === 'uploaded' && resumeFilename === ''
+  const resumeAvailability = getResumeAvailability(resumeStatus)
+  const hasUploadedResume = resumeAvailability.state === 'uploaded'
+  const displayFilename = resumeFilename || 'Filename unavailable'
+  const downloadFilename = resumeFilename || `${submission.submission_id}-resume.pdf`
   const isOpening = accessState.status === 'loading'
 
   useEffect(() => {
+    cancelActiveResumeRequest()
     setAccessState({ status: 'idle' })
+
+    return cancelActiveResumeRequest
   }, [submission.submission_id])
 
   async function handleResumeOpen() {
+    cancelActiveResumeRequest()
+
+    const requestId = activeRequestRef.current + 1
+    activeRequestRef.current = requestId
+    const abortController = new AbortController()
+    activeAbortControllerRef.current = abortController
+
     setAccessState({ status: 'loading' })
     const resumeWindow = window.open('', '_blank')
+    activeResumeWindowRef.current = resumeWindow
     if (resumeWindow !== null) {
       resumeWindow.opener = null
     }
 
     try {
       const response = await fetch(
-        `/resumes/${encodeURIComponent(submission.submission_id)}`
+        `/resumes/${encodeURIComponent(submission.submission_id)}`,
+        { signal: abortController.signal }
       )
 
       if (!response.ok) {
@@ -112,10 +135,16 @@ function ResumeAccessSection({
       const resumeBlob = await response.blob()
       const resumeUrl = URL.createObjectURL(resumeBlob)
 
+      if (!isActiveResumeRequest(requestId, abortController.signal)) {
+        URL.revokeObjectURL(resumeUrl)
+        resumeWindow?.close()
+        return
+      }
+
       if (resumeWindow === null) {
         const downloadLink = document.createElement('a')
         downloadLink.href = resumeUrl
-        downloadLink.download = resumeFilename || `${submission.submission_id}-resume.pdf`
+        downloadLink.download = downloadFilename
         downloadLink.rel = 'noreferrer'
         downloadLink.click()
         setAccessState({
@@ -130,8 +159,17 @@ function ResumeAccessSection({
         })
       }
 
+      activeAbortControllerRef.current = null
+      activeResumeWindowRef.current = null
       window.setTimeout(() => URL.revokeObjectURL(resumeUrl), 60_000)
     } catch (error) {
+      if (!isActiveResumeRequest(requestId, abortController.signal)) {
+        resumeWindow?.close()
+        return
+      }
+
+      activeAbortControllerRef.current = null
+      activeResumeWindowRef.current = null
       setAccessState({
         status: 'error',
         message:
@@ -177,22 +215,59 @@ function ResumeAccessSection({
           <div className="flex items-start gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
             <FileText className="mt-0.5 h-4 w-4 flex-none text-libelle-indigo" aria-hidden="true" />
             <span className="break-words">
-              Uploaded resume: <span className="font-medium">{resumeFilename}</span>
+              Uploaded resume: <span className="font-medium">{displayFilename}</span>
             </span>
           </div>
           <ResumeAccessStatus accessState={accessState} />
         </div>
-      ) : hasBrokenResumeMetadata ? (
+      ) : resumeAvailability.state === 'failed' ? (
         <StateCallout tone="danger">
-          Resume is marked uploaded, but the stored resume reference is incomplete.
+          {resumeAvailability.message}
         </StateCallout>
+      ) : resumeAvailability.state === 'unknown' ? (
+        <StateCallout tone="warning">{resumeAvailability.message}</StateCallout>
       ) : (
-        <StateCallout tone="neutral">
-          No uploaded resume is available for this submission.
-        </StateCallout>
+        <StateCallout tone="neutral">{resumeAvailability.message}</StateCallout>
       )}
     </section>
   )
+
+  function isActiveResumeRequest(requestId: number, signal: AbortSignal) {
+    return activeRequestRef.current === requestId && !signal.aborted
+  }
+
+  function cancelActiveResumeRequest() {
+    activeRequestRef.current += 1
+    activeAbortControllerRef.current?.abort()
+    activeAbortControllerRef.current = null
+    activeResumeWindowRef.current?.close()
+    activeResumeWindowRef.current = null
+  }
+}
+
+function getResumeAvailability(resumeStatus: string): ResumeAvailability {
+  if (resumeStatus === 'uploaded') {
+    return { state: 'uploaded' }
+  }
+
+  if (resumeStatus === '' || resumeStatus === 'missing') {
+    return {
+      state: 'missing',
+      message: 'No resume was provided.'
+    }
+  }
+
+  if (resumeStatus === 'failed') {
+    return {
+      state: 'failed',
+      message: 'A resume was provided, but Libelle failed to store it.'
+    }
+  }
+
+  return {
+    state: 'unknown',
+    message: 'Resume availability is unknown for this submission.'
+  }
 }
 
 function ResumeAccessStatus({
