@@ -1,5 +1,8 @@
 # Labeling Rules v1
 
+Historical reference only. For new V2 golden JSON annotations, use
+`v2_annotation_spec.md` as the canonical contract.
+
 This document defines the labeling and normalization rules used to generate Golden JSON files for the resume parsing benchmark.
 
 ## Skill Normalization

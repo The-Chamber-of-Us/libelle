@@ -1,5 +1,8 @@
 # Labeling Rules v2
 
+Superseded by `v2_annotation_spec.md` for new V2 golden JSON annotations. The
+notes below remain useful historical context for the original V2 slice.
+
 These notes document the synthetic v2 resume slice created from the Phase 1 persona proposal. The resumes use fake identities and intentionally realistic parser edge cases rather than unusual visual layouts.
 
 ## Contact and Links
