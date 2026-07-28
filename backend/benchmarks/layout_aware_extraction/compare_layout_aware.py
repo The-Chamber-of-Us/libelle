@@ -86,19 +86,29 @@ def _score_one(adapted: Dict[str, Any], golden: Dict[str, Any]) -> Dict[str, flo
     }
 
 
-def run() -> Path:
+def run(allow_missing_goldens: bool = False) -> Path:
     pdfs = sorted(PDF_DIR.glob("*.pdf"))
     if not pdfs:
         print(f"[ERROR] No PDFs found in {PDF_DIR}")
         sys.exit(1)
 
     rows: List[Dict[str, Any]] = []
+    diagnostics: List[Dict[str, Any]] = []
+    skipped: List[str] = []
 
     for pdf_path in pdfs:
         submission_id = pdf_path.stem
         golden_path = GOLDEN_DIR / f"{submission_id}.json"
+
         if not golden_path.exists():
-            print(f"[WARN] No golden JSON for {submission_id}, skipping.")
+            skipped.append(submission_id)
+            if not allow_missing_goldens:
+                print(
+                    f"[ERROR] Missing golden JSON for {submission_id}. "
+                    f"Pass --allow-missing-goldens to skip instead of failing."
+                )
+                sys.exit(1)
+            print(f"[WARN] Skipping {submission_id} — no golden JSON found.")
             continue
 
         with open(golden_path) as f:
@@ -113,13 +123,7 @@ def run() -> Path:
         # --- Layout-aware path (experimental, enabled=True here only) ---
         la_result = extract_text_from_pdf_layout_aware(pdf_path, enabled=True)
 
-        # CRITICAL: when safeguards reject the split, la_result["text"] is
-        # reconstructed via get_text('dict'), which is NOT byte-identical
-        # to production's extract_text_from_pdf_path() (different PyMuPDF
-        # API, different whitespace/line-joining). To guarantee a true
-        # apples-to-apples comparison, fall back to the exact same text
-        # already extracted by the production path rather than trusting
-        # the module's own reconstruction.
+        # Fallback guarantees exact production text for true apples-to-apples scoring
         if la_result["layout_aware_used"]:
             la_text = la_result["text"]
         else:
@@ -128,6 +132,25 @@ def run() -> Path:
         la_parsed = parse_resume(la_text)
         la_adapted = _adapt(la_parsed)
         la_scores = _score_one(la_adapted, golden)
+
+        # --- Diagnostics: only recorded for resumes where layout-aware
+        # extraction actually triggered, to investigate regressions ---
+        if la_result["layout_aware_used"]:
+            prod_skill_set = set(s.lower().strip() for s in prod_adapted["skills"])
+            la_skill_set = set(s.lower().strip() for s in la_adapted["skills"])
+            gold_skill_set = set(s.lower().strip() for s in golden.get("skills", []))
+
+            diagnostics.append({
+                "resume": submission_id,
+                "reason": "; ".join(la_result["reasons"]),
+                "prod_text": prod_text,
+                "la_text": la_result["text"],
+                "prod_skills": sorted(prod_skill_set),
+                "la_skills": sorted(la_skill_set),
+                "gold_skills": sorted(gold_skill_set),
+                "lost_in_la": sorted(prod_skill_set & gold_skill_set - la_skill_set),
+                "gained_in_la": sorted(la_skill_set & gold_skill_set - prod_skill_set),
+            })
 
         row = {
             "resume": submission_id,
@@ -153,6 +176,10 @@ def run() -> Path:
             f"delta={row['skills_f1_delta']:+.3f} ({flag})"
         )
 
+    if not rows:
+        print("[ERROR] No results generated — nothing to compare. Check corpus and golden paths.")
+        sys.exit(1)
+
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_dir = OUT_BASE / ts
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -163,7 +190,16 @@ def run() -> Path:
         writer.writeheader()
         writer.writerows(rows)
 
+    if diagnostics:
+        diag_path = out_dir / "diagnostics.json"
+        with open(diag_path, "w") as f:
+            json.dump(diagnostics, f, indent=2)
+        print(f"   diagnostics.json: {diag_path}")
+
     _write_summary(rows, out_dir)
+
+    if skipped:
+        print(f"\n⚠️  {len(skipped)} resume(s) skipped (missing golden): {', '.join(skipped)}")
 
     print(f"\n✅ Comparison complete → {out_dir}")
     return out_dir
@@ -207,4 +243,10 @@ def _write_summary(rows: List[Dict[str, Any]], out_dir: Path) -> None:
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("--allow-missing-goldens", action="store_true")
+    args = arg_parser.parse_args()
+
+    run(allow_missing_goldens=args.allow_missing_goldens)

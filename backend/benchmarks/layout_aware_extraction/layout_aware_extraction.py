@@ -25,13 +25,14 @@ import fitz  # PyMuPDF
 # ---------------------------------------------------------------------------
 
 HEADER_KEYWORDS = {
-    "summary", "objective", "about", "about me",
+    "summary", "objective", "about", "about me", "profile", "career summary",
     "experience", "work experience", "professional experience",
     "education", "academic background",
-    "skills", "technical skills", "core skills", "soft skills",
+    "skills", "technical skills", "core skills", "soft skills", "key skills",
+    "areas of expertise", "technical toolkit", "core competencies", "specialised skills",
     "tools", "languages",
     "projects", "personal projects", "projects & personal experience",
-    "certifications", "certificates", "awards",
+    "certifications", "certificates", "awards", "short courses",
     "references", "contact",
 }
 
@@ -49,8 +50,13 @@ GAP_BOUNDARY_RATIO = 0.10
 # ---------------------------------------------------------------------------
 
 def _is_header(text: str) -> bool:
-    cleaned = text.strip().rstrip(":").lower()
-    if cleaned.replace(" ", "").replace("&", "").isupper() and len(cleaned) > 2:
+    stripped = text.strip().rstrip(":")
+    is_all_caps = (
+        stripped.replace(" ", "").replace("&", "").isupper()
+        and len(stripped) > 2
+    )
+    cleaned = stripped.lower()
+    if is_all_caps:
         return True
     return cleaned in HEADER_KEYWORDS
 
@@ -60,16 +66,33 @@ def _is_header(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 def _get_flat_blocks(page: fitz.Page) -> list[tuple[float, float, float, float, str]]:
-    """Flatten get_text('dict') into (x0, y0, x1, y1, text) tuples."""
+    """
+    Flatten get_text('dict') into (x0, y0, x1, y1, text) tuples.
+
+    IMPORTANT: PyMuPDF can group multiple visually distinct lines into a
+    single block (e.g. a trailing date line immediately followed by a
+    section header, or a full bulleted skill list). Joining every line
+    in a block with a single space — as production's get_text('blocks')
+    effectively preserves via internal newlines — erases those line
+    breaks, which breaks two things downstream: (1) header detection,
+    since a header line glued to preceding content is no longer
+    recognizable as a standalone header string, and (2) multi-item lists
+    (skills, tools), which collapse into one unreadable string instead
+    of staying on separate lines. Preserving newlines between lines
+    within a block fixes both failure modes.
+    """
     data = page.get_text("dict")
     flat = []
     for block in data["blocks"]:
         if block["type"] != 0:
             continue
         bbox = block["bbox"]
-        text = " ".join(
-            span["text"] for line in block["lines"] for span in line["spans"]
-        ).strip()
+        line_texts = []
+        for line in block["lines"]:
+            line_text = "".join(span["text"] for span in line["spans"]).strip()
+            if line_text:
+                line_texts.append(line_text)
+        text = "\n".join(line_texts)
         if text:
             flat.append((bbox[0], bbox[1], bbox[2], bbox[3], text))
     return flat
@@ -214,22 +237,34 @@ def _sort_single_column(blocks: list[tuple]) -> list[tuple]:
 def _header_scoped_text(blocks: list[tuple], boundary: float) -> str:
     """
     Split into lanes by boundary, sort each lane by y0, then group
-    content under the nearest header above it within the same lane.
-    Left lane emitted before right lane.
+    content blocks under the nearest header above them within the
+    same lane. Left lane emitted before right lane. Each block's
+    original text is preserved as a single line (commas/delimiters
+    within a block are not altered) — only the ordering/grouping
+    changes relative to production extraction.
     """
     left = sorted([b for b in blocks if b[0] < boundary], key=lambda b: b[1])
     right = sorted([b for b in blocks if b[0] >= boundary], key=lambda b: b[1])
 
     output = []
     for lane in (left, right):
-        current_header = None
+        current_header = "[no header]"
+        sections: dict[str, list[str]] = {}
         for item in lane:
             text = item[4]
+            if not text:
+                continue
             if _is_header(text):
                 current_header = text.strip()
-                output.append(current_header)
+                sections.setdefault(current_header, [])
             else:
-                output.append(text)
+                sections.setdefault(current_header, []).append(text)
+
+        for header, contents in sections.items():
+            if header != "[no header]":
+                output.append(header)
+            output.extend(contents)
+
     return "\n".join(output)
 
 

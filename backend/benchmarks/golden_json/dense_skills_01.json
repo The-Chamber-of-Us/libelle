@@ -29,7 +29,6 @@
     "HTML",
     "CSS",
     "JavaScript",
-    "basic",
     "Storybook",
     "Design Systems",
     "Component Libraries",
@@ -43,7 +42,7 @@
     "A/B Testing",
     "Journey Mapping",
     "Persona Development",
-    "Information",
+    "Information Architecture",
     "Interaction Design",
     "Visual Design",
     "Motion Design",
@@ -63,7 +62,7 @@
     "Maze",
     "Lookback"
   ],
-  "notes": "Skills section labeled 'Key Skills' rather than 'Skills' — treated as equivalent. Location field includes a street address alongside city and state. 'Information' appears truncated in skills list, likely 'Information Architecture'. Experience dates appear as section headers rather than inline with entry titles due to layout.",
+  "notes": "Skills section labeled 'Key Skills' rather than 'Skills' — treated as equivalent. Location field includes a street address alongside city and state. Experience dates appear as section headers rather than inline with entry titles due to layout. Education section lists 'Santa Barbara, CA' as a secondary institution location; per v1 labeling rules, header/contact location ('San Francisco, CA') is preferred and is what appears in the location field, so the education subtitle omits it.",
   "sections": [
     {
       "heading": "Summary",
@@ -87,7 +86,7 @@
     {
       "heading": "Key Skills",
       "items": [
-        "Figma, Sketch, Adobe XD, InVision, Zeplin, Framer, Principle, Marvel, Axure RP, Balsamiq, Adobe Illustrator, Adobe Photoshop, After Effects, Lottie, HTML, CSS, JavaScript (basic), Storybook, Design Systems, Component Libraries, Wireframing, Prototyping, User Research, Usability Testing, Heuristic Evaluation, Card Sorting, Tree Testing, A/B Testing, Journey Mapping, Persona Development, Information, Interaction Design, Visual Design, Motion Design, Responsive Design, Accessibility (WCAG 2.1), iOS Human Interface Guidelines, Material Design, Agile/Scrum, JIRA, Confluence, Notion, Miro, FigJam, UserTesting, Hotjar, Maze, Lookback"
+        "Figma, Sketch, Adobe XD, InVision, Zeplin, Framer, Principle, Marvel, Axure RP, Balsamiq, Adobe Illustrator, Adobe Photoshop, After Effects, Lottie, HTML, CSS, JavaScript (basic), Storybook, Design Systems, Component Libraries, Wireframing, Prototyping, User Research, Usability Testing, Heuristic Evaluation, Card Sorting, Tree Testing, A/B Testing, Journey Mapping, Persona Development, Information Architecture, Interaction Design, Visual Design, Motion Design, Responsive Design, Accessibility (WCAG 2.1), iOS Human Interface Guidelines, Material Design, Agile/Scrum, JIRA, Confluence, Notion, Miro, FigJam, UserTesting, Hotjar, Maze, Lookback"
       ]
     },
     {
@@ -104,7 +103,7 @@
         },
         {
           "title": "UI/UX Designer | Clayburn Apps",
-          "meta": "Jul 2018 – Feb 2021",
+          "meta": "Jul 2018 - Feb 2021",
           "subtitle": "Oakland, CA",
           "bullets": [
             "Designed end-to-end experiences for three consumer mobile apps across iOS and Android, each achieving above 4.5 star ratings in their respective app stores.",

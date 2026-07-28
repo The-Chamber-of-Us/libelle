@@ -1,5 +1,5 @@
 {
-  "resume_id": "multi_col_05",
+  "resume_id": "multi_col_04",
   "source_persona": "Libelle benchmark corpus",
   "persona": "True Multi-Column / Non-Standard Skills Section",
   "name": "Jordan Castellano",
@@ -17,6 +17,12 @@
   "skills": [],
   "notes": "Skills-equivalent content appears under 'AREAS OF EXPERTISE' section header — not an explicit Skills or Tools section per labeling rules, so skills array is empty. True multi-column layout with sidebar containing education, short courses, awards, and references.",
   "sections": [
+    {
+      "heading": "Summary",
+      "items": [
+        "Results-driven marketing manager with 7+ years of experience building brand presence and driving growth across digital and traditional channels. Skilled in managing six-figure ad budgets, leading influencer partnerships, and executing rebrand initiatives that improve conversion and engagement. Proven track record of translating data-driven insights into campaigns that grow audience and revenue."
+      ]
+    },
     {
       "heading": "AREAS OF EXPERTISE",
       "items": [

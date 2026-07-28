@@ -3,6 +3,8 @@
 > `backend/benchmarks/layout_spike/LAYOUT_AWARE_EXTRACTION_RECOMMENDATION.md` · Libelle v0.3 benchmark corpus
 >
 > Based on findings from [PR #274 — PyMuPDF x/y multi-column layout spike](https://github.com/The-Chamber-of-Us/libelle/pull/274).
+>
+> **Scope note:** this comparison measures skills and location extraction only, reusing `scripts/benchmark.py`'s existing scoring functions. The V2 `sections` annotations are not scored in this comparison and are retained for future benchmark expansion.
 
 ---
 
@@ -16,10 +18,10 @@
 | `multi_col_03` | multi-col · new | Dara Okonkwo | True two-column: career summary + experience left, skills/education/certs/awards right |
 | `multi_col_04` | multi-col · new | Jordan Castellano | True two-column; skills under non-standard "Areas of Expertise" heading |
 | `multi_col_05` | multi-col · new | Elizabeth Cline | Two-column with grouped skill sub-headers (Software, Design, Soft Skills) |
-| `dense_skills_01` | multi-col · new | Aaliya Nasser | Two-column; 50-item dense skills sidebar labeled "Key Skills" |
+| `dense_skills_01` | multi-col · new | Aaliya Nasser | Two-column; 49-item dense skills sidebar labeled "Key Skills" |
 | `dense_skills_02` | multi-col · new | Leila Fontaine | Two-column; skills bullet list in left sidebar alongside right work-experience column |
 | `header_contact_01` | multi-col · new | Denise Okafor | Two-column; 20+ skill items in left sidebar, prose experience in right column |
-| `sparse_skill_01` | multi-col · new | Jordan Mitchell | Two-column; sparse 5-item skills list, mislabeled CERTIFICATIONS section |
+| `sparse_skill_01` | multi-col · new | Jordan Mitchell | Two-column; sparse 5-item skills list, personal-statement callout box |
 | `project_heavy_01` | multi-col · new | Tobias Wren | Two-column sidebar (skills/awards) alongside main experience+projects column |
 | `single_col_layout_trap_01` | single-col · new | Kwame Asante | Single-column; dense skills paragraph, may visually resemble a sidebar |
 | `single_col_layout_trap_02` | single-col · new | Simone Adeyemi | Single-column; right-aligned contact block in header |
@@ -72,32 +74,34 @@ These resumes are genuinely single-column and should never trigger a column spli
 
 ## 4. Benchmark evidence — production vs. layout-aware, measured comparison
 
-A standalone comparison script (`backend/benchmarks/layout_aware_extraction/compare_layout_aware.py`) ran the full 20-resume corpus through both current production extraction and the hardened layout-aware prototype, scoring both against the same golden JSONs via the same scoring functions as `scripts/benchmark.py` (imported, not duplicated). `scripts/benchmark.py` itself was not modified.
+A standalone comparison script (`backend/benchmarks/layout_aware_extraction/compare_layout_aware.py`) ran the full 20-resume corpus through both current production extraction and the hardened layout-aware prototype, scoring both against the same golden JSONs via the same scoring functions as `scripts/benchmark.py` (imported, not duplicated — see scope note above). `scripts/benchmark.py` itself was not modified. The comparison run fails loudly if any PDF/golden JSON pair is missing, so this reflects the full claimed 20-resume corpus.
 
-**Safeguard accuracy on single-column resumes: 0 false positives out of 10.** Every genuinely single-column resume fell back to production extraction exactly — delta = 0.000 in all 10 cases (`single_col_layout_trap_01/02`, `embed_link_01/02`, `high_signal_01/02`, `low_signal_01/02`, `non_usa_01/02`). This is a strong safety signal: the safeguards do not introduce regressions on resumes that shouldn't be split.
+**Safeguard accuracy on single-column resumes: 0 false positives out of 10.** Every genuinely single-column resume fell back to production extraction exactly — delta = 0.000 in all 10 cases (`single_col_layout_trap_01/02`, `embed_link_01/02`, `high_signal_01/02`, `low_signal_01/02`, `non_usa_01/02`). This holds after all fixes described below — no new false positives were introduced at any stage.
 
-**Safeguard sensitivity on true multi-column resumes: only 5 of 10 triggered layout-aware extraction.** `multi_col_03`, `multi_col_05`, `dense_skills_01`, `dense_skills_02`, and `project_heavy_01` all fell back to production despite being genuine multi-column layouts, meaning current thresholds are too conservative and miss half of the cases they are meant to fix.
+**Safeguard sensitivity on true multi-column resumes: 6 of 10 trigger layout-aware extraction.** `dense_skills_01`, `dense_skills_02`, `multi_col_04` (`multi_col_04` triggers but is not measurable — see below), `multi_col_05`, and `project_heavy_01` still fall back to production despite being genuine multi-column layouts, meaning current thresholds remain too conservative for some legitimate two-column layouts.
 
-**Results on the 5 cases where layout-aware extraction actually triggered:**
+**Final results on the 6 cases where layout-aware extraction triggers:**
 
 | Resume | Prod F1 | LA F1 | Delta | Verdict |
 |---|---|---|---|---|
-| `header_contact_01` | 0.000 | 0.517 | **+0.517** | Real improvement — sidebar skills recovered |
+| `header_contact_01` | 0.000 | 0.467 | **+0.467** | Real improvement — sidebar skills recovered |
 | `multi_col_01` | 0.500 | 0.667 | **+0.167** | Real improvement |
+| `multi_col_02` | 0.258 | 0.381 | **+0.123** | Confirmed fix — see below |
+| `multi_col_03` | 0.360 | 0.562 | **+0.202** | Real improvement, newly recovered after header-detection fix |
 | `multi_col_04` | 0.000 | 0.000 | 0.000 | Not meaningful — golden JSON has an empty skills array for this resume (skills sit under "Areas of Expertise," excluded per labeling rules), so both scores are forced to 0 regardless of extraction quality |
-| `multi_col_02` | 0.258 | 0.000 | **-0.258** | Regression — the confirmed true multi-column case from PR #274 that layout-aware extraction was meant to fix |
-| `sparse_skill_01` | 0.400 | 0.000 | **-0.400** | Regression |
+| `sparse_skill_01` | 0.400 | 0.556 | **+0.156** | Confirmed fix — see below |
 
-Two genuine improvements, two genuine regressions to complete failure (F1 = 0.0). Both regressions share the same symptom: skills extraction drops to zero even though column detection correctly identified the multi-column structure. This points to a **text-formatting bug in the header-scoped output** (one skill per line, stripped of original commas/delimiters) breaking `parse_resume()`'s downstream skill-parsing logic — not a column-detection failure.
+**Root cause of the two regressions — confirmed, not hypothesized.** Diagnostic output (`diagnostics.json`, generated per-resume for every triggered case: production text, layout-aware text, extracted skills for both, and exact skill-level diffs against gold) traced both original regressions to the same bug: `_get_flat_blocks()` flattened all lines within a PyMuPDF text block into a single space-joined string, discarding the internal line breaks that separate individual skill items and, in `sparse_skill_01`'s case, separate a trailing content line from an immediately following section header. This corrupted both header detection (a header glued to preceding text is no longer recognizable as a standalone header) and multi-item skill lists (collapsed into one unreadable string). Fixing `_get_flat_blocks()` to preserve line breaks (joining lines with `\n` instead of flattening to a single string) resolved both cases with zero skills lost in either (`lost_in_la: []` in both diagnostics entries), confirmed by rerunning the full comparison.
 
 ---
 
-## 5. What causes missed detections and output-format regressions
+## 5. What causes missed detections, and what was fixed
 
-With current thresholds, zero false positives occurred on the single-column corpus — the safeguards are working as intended for that failure mode. The two live problems are:
+**Header detection bug — found and fixed.** `_is_header()` previously lowercased text before checking `.isupper()`, making the uppercase-detection path permanently unreachable. This was fixed to check case before lowercasing. `HEADER_KEYWORDS` was also expanded to cover corpus headings not previously recognized (`profile`, `career summary`, `key skills`, `areas of expertise`, `short courses`, `technical toolkit`, `core competencies`, `specialised skills`). This fix alone recovered `multi_col_03` from a missed case to a correctly triggered improvement (+0.202), with zero new false positives introduced on the single-column corpus.
 
-1. **Safeguards too conservative** — 5 of 10 true multi-column resumes fell back to production when they shouldn't have, suggesting `MIN_BLOCKS_PER_LANE`, `MIN_VERTICAL_OVERLAP_RATIO`, or `MIN_HEADERS_ACROSS_LANES` are tuned too strictly for legitimate but less "textbook" two-column layouts.
-2. **Header-scoped text assembly loses formatting** — when a split is accepted, reconstructing text one item per line (stripping commas and inline delimiters) appears to break skill-list parsing downstream, causing complete extraction failure even when column detection itself was correct.
+**Text-flattening bug — found and fixed.** As detailed in Section 4, `_get_flat_blocks()` was collapsing multi-line blocks into single strings, which was the confirmed root cause of both prior regressions. Both `multi_col_02` and `sparse_skill_01` are now net improvements after this fix.
+
+**Remaining open issue: safeguards still too conservative on some true multi-column resumes.** `dense_skills_01`, `dense_skills_02`, `multi_col_05`, and `project_heavy_01` still fall back to production despite being genuine two-column layouts. This is a distinct, still-unresolved issue from the two fixed above — likely related to `MIN_BLOCKS_PER_LANE`, `MIN_VERTICAL_OVERLAP_RATIO`, or `MIN_HEADERS_ACROSS_LANES` being tuned too strictly for these particular layouts, but this has not yet been diagnosed with the same rigor as the two confirmed bugs above and should not be assumed without further investigation.
 
 ---
 
@@ -111,11 +115,11 @@ Current safeguards (`backend/benchmarks/layout_aware_extraction/layout_aware_ext
 - Sustained two-column structure requirement (headers must be present in both lanes)
 - Low-confidence fallback to production extraction when any safeguard fails
 
-**Next steps identified by this comparison:**
+**Next steps:**
 
-- Loosen/tune `min_blocks_per_lane` and `min_vertical_overlap_ratio` thresholds against the 5 missed true multi-column cases to find where they are being excluded unnecessarily
-- Preserve original block-level punctuation/delimiters when reconstructing header-scoped text, rather than flattening to one bare line per item, to fix the `multi_col_02` / `sparse_skill_01` regressions
-- Re-run `compare_layout_aware.py` after both fixes to confirm no new false positives are introduced on the single-column corpus
+- Diagnose why the remaining 4 true multi-column resumes still fall back, using the same diagnostics-first approach that resolved the two confirmed bugs above, before adjusting any threshold values
+- Investigate the tokenization gap responsible for `multi_col_02`'s remaining distance from a perfect score (e.g. gold `"environmental testing procedures"` vs. LA's separate `"environmental testing"` + `"procedures"`) — a normalization issue distinct from the now-fixed corruption bug
+- `sparse_skill_01`'s `la_skills` output includes some noise from a personal-statement callout box (e.g. `"jordan"`, `"mitchell"` as stray entries) — a precision issue worth a future look, separate from the recall bug that was fixed
 
 All safeguards are implemented as real, testable code with explicit thresholds — not inline conditionals — so they can be tuned and re-benchmarked independently.
 
@@ -125,6 +129,6 @@ All safeguards are implemented as real, testable code with explicit thresholds �
 
 **Keep experimental — do not adopt.**
 
-Measured comparison against production confirms the safeguards are safe on single-column resumes (0/10 false positives) but too conservative on multi-column resumes (5/10 missed), and even when correctly triggered, results are inconsistent: 2 improvements, 2 regressions to complete failure. Both regressions were traced to a text-formatting bug in header-scoped reconstruction, not a detection failure, meaning the core column-detection approach is sound but the current implementation is not yet production-safe.
+The approach shows promise, and the safeguards appear conservative on this corpus (zero false positives across all 10 single-column controls), but both detection coverage and text reconstruction required further validation before this iteration — and that validation is now largely complete. Two confirmed bugs (header detection, block text flattening) have been root-caused via diagnostic evidence and fixed, converting two prior regressions into improvements with zero regressions remaining across the full 20-resume corpus. One open issue remains: 4 of 10 true multi-column resumes still fail to trigger layout-aware extraction at all, which has not yet been diagnosed with the same rigor.
 
-Before any further evaluation: fix the header-scoped text-assembly bug, retune the safeguard thresholds against the missed multi-column cases, and re-run this comparison. Revisit the adopt/defer decision once that re-run shows consistent improvement on multi-column resumes with continued zero regression on single-column resumes.
+Before revisiting adoption: diagnose why the remaining 4 multi-column cases don't trigger, address the tokenization and callout-box noise issues noted above, and re-run this comparison. Revisit the adopt/defer decision once detection coverage across true multi-column resumes is more complete and consistent, with continued zero regression on single-column resumes.
