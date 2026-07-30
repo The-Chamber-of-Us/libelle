@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
+# Keep these constants aligned with backend/benchmarks/v2_annotation_spec.md,
+# the local source of truth for the V2 annotation contract from #320.
 V2_TOP_LEVEL_FIELDS = {
     "resume_id",
     "source_persona",
