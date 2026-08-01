@@ -588,7 +588,7 @@ def write_summary_md(
     lines.append(f"- Unknown skills captured: `{len(resolver_summary['unknown_skills'])}`")
     lines.append("- Note: This measures resolver alias-map coverage over skills emitted by the parser. It is not end-to-end parser skill recovery against the gold skills; TP / FP / FN / precision / recall / F1 scoring above remains unchanged.")
 
-    # Replaced FP-only heatmap with separate FP/FN/zero-TP summaries
+    # Report the highest false-positive, false-negative, and zero-TP cases separately.
     lines.append("\n## Top False-Positive Cases\n")
     lines.append("| Resume | Field | Parser | FP Count |")
     lines.append("|--------|-------|--------|----------|")
@@ -605,7 +605,7 @@ def write_summary_md(
             f"{r['tp_count']} | {r['fn_count']} |"
         )
 
-    #0 positive case addition
+    # Surface severe recall failures where expected values received no matches.
     lines.append("\n## Zero-TP Cases (Severe Recall Loss)\n")
     lines.append("| Resume | Field | Parser | FN Count |")
     lines.append("|--------|-------|--------|----------|")
