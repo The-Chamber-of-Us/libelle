@@ -4,10 +4,21 @@ from starlette.datastructures import Headers
 from starlette.requests import HTTPConnection
 
 from api.routes import intake
+from services import intake_service
 from services.rate_limit import InMemoryIntakeRateLimiter
 
 
-PDF_BYTES = b"%PDF-1.4\nstub"
+def _pdf_bytes() -> bytes:
+    import fitz
+
+    doc = fitz.open()
+    doc.new_page().insert_text((72, 72), "resume")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    return pdf_bytes
+
+
+PDF_BYTES = _pdf_bytes()
 
 
 def _client() -> TestClient:
@@ -236,3 +247,81 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
     assert "drive_file_id" not in response.json()
     assert "drive_file_url" not in response.json()
     assert captured["parsed"] is False
+
+
+def test_invalid_resume_is_rejected_before_drive_or_parser(monkeypatch):
+    captured = {"drive": False, "parsed": False, "row": False}
+
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: captured.update(drive=True),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **_: captured.update(row=True),
+    )
+    monkeypatch.setattr(
+        intake,
+        "parse_and_update",
+        lambda *args: captured.update(parsed=True),
+    )
+    monkeypatch.setattr(
+        intake,
+        "intake_rate_limiter",
+        InMemoryIntakeRateLimiter(
+            enabled=False,
+            per_ip_limit=0,
+            per_email_limit=0,
+            global_limit=0,
+        ),
+    )
+
+    response = _client().post(
+        "/api/upload",
+        data={
+            "full_name": "Test User",
+            "email": "test@example.com",
+            "location": "Remote",
+            "interests": "Engineering",
+            "availability": "Weekly",
+            "experience_level": "Mid",
+            "consent": "true",
+        },
+        files={"file": ("resume.pdf", b"not a pdf", "application/pdf")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "INVALID_PDF"
+    assert captured == {"drive": False, "parsed": False, "row": False}
+
+
+def test_empty_present_upload_is_rejected(monkeypatch):
+    monkeypatch.setattr(
+        intake,
+        "intake_rate_limiter",
+        InMemoryIntakeRateLimiter(
+            enabled=False,
+            per_ip_limit=0,
+            per_email_limit=0,
+            global_limit=0,
+        ),
+    )
+
+    response = _client().post(
+        "/api/upload",
+        data={
+            "full_name": "Test User",
+            "email": "test@example.com",
+            "location": "Remote",
+            "interests": "Engineering",
+            "availability": "Weekly",
+            "experience_level": "Mid",
+            "consent": "true",
+        },
+        files={"file": ("resume.pdf", b"", "application/pdf")},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["code"] == "EMPTY_FILE"
