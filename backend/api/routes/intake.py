@@ -88,10 +88,11 @@ async def upload_volunteer_application(
                 },
                 headers={"Retry-After": str(decision.retry_after_seconds)},
             )
-        pdf_bytes = await file.read() if file and file.filename else None
+        pdf_bytes = await file.read() if file else None
         result = finalize_submission(
             pdf_bytes=pdf_bytes,
-            original_filename=file.filename if file and file.filename else None,
+            original_filename=file.filename if file else None,
+            content_type=file.content_type if file else None,
             normalized=normalized,
             linkedin_url=linkedin_url,
             github_url=github_url,
