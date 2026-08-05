@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from starlette.datastructures import Headers
+from starlette.requests import HTTPConnection
 
 from api.routes import intake
 from services.rate_limit import InMemoryIntakeRateLimiter
@@ -28,6 +30,78 @@ def _upload(client: TestClient, email: str = "test@example.com"):
         },
         files={"file": ("resume.pdf", PDF_BYTES, "application/pdf")},
     )
+
+
+def _request_with_client(host: str, headers: dict[str, str]) -> HTTPConnection:
+    return HTTPConnection(
+        {
+            "type": "http",
+            "headers": Headers(headers).raw,
+            "client": (host, 12345),
+        }
+    )
+
+
+def test_client_ip_ignores_forwarded_headers_from_untrusted_socket(monkeypatch):
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS", [])
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_FORWARD_PROXY_CIDRS", [])
+
+    request = _request_with_client(
+        "198.51.100.10",
+        {
+            "cf-connecting-ip": "203.0.113.77",
+            "x-forwarded-for": "203.0.113.88",
+        },
+    )
+
+    assert intake._client_ip(request) == "198.51.100.10"
+
+
+def test_client_ip_prefers_cloudflare_header_from_trusted_cloudflare_boundary(monkeypatch):
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS", ["127.0.0.1/32"])
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_FORWARD_PROXY_CIDRS", ["127.0.0.1/32"])
+
+    request = _request_with_client(
+        "127.0.0.1",
+        {
+            "cf-connecting-ip": "203.0.113.77",
+            "x-forwarded-for": "198.51.100.99",
+        },
+    )
+
+    assert intake._client_ip(request) == "203.0.113.77"
+
+
+def test_client_ip_uses_forwarded_for_only_from_trusted_forward_proxy(monkeypatch):
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS", [])
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_FORWARD_PROXY_CIDRS", ["10.0.0.0/8"])
+
+    trusted_request = _request_with_client(
+        "10.1.2.3",
+        {"x-forwarded-for": "203.0.113.88, 10.1.2.3"},
+    )
+    untrusted_request = _request_with_client(
+        "198.51.100.10",
+        {"x-forwarded-for": "203.0.113.88, 198.51.100.10"},
+    )
+
+    assert intake._client_ip(trusted_request) == "203.0.113.88"
+    assert intake._client_ip(untrusted_request) == "198.51.100.10"
+
+
+def test_client_ip_falls_back_to_socket_when_trusted_header_is_invalid(monkeypatch):
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS", ["127.0.0.1/32"])
+    monkeypatch.setattr(intake, "INTAKE_TRUSTED_FORWARD_PROXY_CIDRS", ["127.0.0.1/32"])
+
+    request = _request_with_client(
+        "127.0.0.1",
+        {
+            "cf-connecting-ip": "not-an-ip",
+            "x-forwarded-for": "also-not-an-ip",
+        },
+    )
+
+    assert intake._client_ip(request) == "127.0.0.1"
 
 
 def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
