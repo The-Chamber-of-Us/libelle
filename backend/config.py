@@ -11,6 +11,10 @@ def _bool_env(name: str, default: str) -> bool:
 def _int_env(name: str, default: str) -> int:
     return int(os.getenv(name, default))
 
+
+def _csv_env(name: str, default: str = "") -> list[str]:
+    return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
+
 # ---- Google Sheets ----
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
@@ -34,3 +38,5 @@ ENABLE_INTAKE_RATE_LIMITING = _bool_env("ENABLE_INTAKE_RATE_LIMITING", "true")
 INTAKE_RATE_LIMIT_PER_IP_PER_MINUTE = _int_env("INTAKE_RATE_LIMIT_PER_IP_PER_MINUTE", "60")
 INTAKE_RATE_LIMIT_PER_EMAIL_PER_HOUR = _int_env("INTAKE_RATE_LIMIT_PER_EMAIL_PER_HOUR", "10")
 INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE = _int_env("INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE", "120")
+INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS = _csv_env("INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS")
+INTAKE_TRUSTED_FORWARD_PROXY_CIDRS = _csv_env("INTAKE_TRUSTED_FORWARD_PROXY_CIDRS")

@@ -81,6 +81,21 @@ Expected backend bind address:
 127.0.0.1:8003
 ```
 
+## Public Intake Client IP Trust
+
+Public intake rate limiting does not trust forwarded client-IP headers by
+default. Staging should enable `CF-Connecting-IP` only for the controlled local
+Cloudflare/nginx hop:
+
+```text
+INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS=127.0.0.1/32,::1/128
+INTAKE_TRUSTED_FORWARD_PROXY_CIDRS=
+```
+
+See [Public Intake Proxy Trust](./intake_proxy_trust.md) for the local,
+staging, and production trust boundary and the expected production origin-access
+restrictions.
+
 Useful commands:
 
 ```bash
