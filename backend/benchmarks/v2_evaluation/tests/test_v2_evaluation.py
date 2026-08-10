@@ -5,7 +5,10 @@ from backend.benchmarks.v2_evaluation.score_v2_structure import (
     evaluate,
     score_current_parser_fields,
 )
-from backend.benchmarks.v2_evaluation.validate_v2_goldens import discover_and_validate
+from backend.benchmarks.v2_evaluation.validate_v2_goldens import (
+    discover_and_validate,
+    records_to_summary,
+)
 
 
 def _write(path: Path, data):
@@ -205,3 +208,79 @@ def test_scores_current_parser_supported_fields():
     assert metrics["skills"]["fp"] == 1
     assert metrics["location"]["components"]["raw"]["status"] == "match"
     assert metrics["phone"]["tp"] == 1
+
+
+def test_skill_scoring_preserves_semantic_punctuation():
+    golden = _golden()
+    golden["skills"] = ["C++", "Node.js", "ACE/ADE"]
+    predicted = {"skills": {"value": ["C#", "Node.js", "ACE/ADE"]}}
+
+    metrics = score_current_parser_fields(golden, predicted)
+
+    assert metrics["skills"]["tp"] == 2
+    assert metrics["skills"]["fp"] == 1
+    assert metrics["skills"]["fn"] == 1
+    assert "c#" in metrics["skills"]["fp_examples"]
+    assert "c++" in metrics["skills"]["fn_examples"]
+
+
+def test_empty_prediction_evaluates_supported_fields():
+    golden = _golden()
+    golden["phone"] = "(555) 010-2222"
+
+    metrics = score_current_parser_fields(golden, {})
+
+    assert metrics["skills"]["status"] == "evaluated"
+    assert metrics["skills"]["fn"] == 1
+    assert metrics["location"]["status"] == "evaluated"
+    assert metrics["location"]["components"]["raw"]["status"] == "missing"
+    assert metrics["phone"]["status"] == "evaluated"
+    assert metrics["phone"]["fn"] == 1
+
+
+def test_missing_prediction_is_not_evaluated():
+    metrics = score_current_parser_fields(_golden(), None)
+
+    assert metrics["skills"]["status"] == "not evaluated"
+    assert metrics["location"]["status"] == "not evaluated"
+    assert metrics["phone"]["status"] == "not evaluated"
+
+
+def test_raw_and_adapter_location_predictions_score_equivalently():
+    golden = _golden()
+    golden["location"] = {
+        "city": "Ithaca",
+        "country": "United States",
+        "raw": "Ithaca, NY",
+    }
+    raw_prediction = {"locations": {"value": ["Ithaca, NY"]}}
+    adapter_prediction = {
+        "location": {
+            "city": "Ithaca",
+            "country": "United States",
+            "raw": "Ithaca, NY",
+        }
+    }
+
+    raw_metrics = score_current_parser_fields(golden, raw_prediction)
+    adapter_metrics = score_current_parser_fields(golden, adapter_prediction)
+
+    assert raw_metrics["location"] == adapter_metrics["location"]
+
+
+def test_v1_validation_summary_status_is_skipped(tmp_path):
+    _write(tmp_path / "pdf" / "legacy.pdf", b"%PDF")
+    _write(
+        tmp_path / "gold" / "legacy.json",
+        {
+            "submission_id": "legacy",
+            "skills": [],
+            "location": {"city": "", "country": "", "raw": ""},
+            "notes": None,
+        },
+    )
+
+    records = discover_and_validate(tmp_path / "pdf", tmp_path / "gold")
+    summary = records_to_summary(records)
+
+    assert summary["fixtures"][0]["validation_status"] == "skipped"

@@ -19,6 +19,7 @@ from .models import (
     dedupe_normalized,
     load_json,
     normalize_for_exact,
+    normalize_skill_for_exact,
     relative_fixture_map,
 )
 from .validate_v2_goldens import discover_and_validate
@@ -44,6 +45,14 @@ UNSUPPORTED_FIELDS = [
     "project_experience_structure",
 ]
 
+US_STATES = {
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID",
+    "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS",
+    "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK",
+    "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV",
+    "WI", "WY", "DC",
+}
+
 
 def _prf(tp: int, fp: int, fn: int) -> Dict[str, float]:
     precision = tp / (tp + fp) if tp + fp else 0.0
@@ -63,6 +72,27 @@ def _field_value(predicted: Dict[str, Any], field: str, default: Any) -> Any:
     return value
 
 
+def _split_location(raw: str) -> Dict[str, str]:
+    if not raw:
+        return {"city": "", "country": "", "raw": ""}
+
+    parts = [part.strip() for part in raw.split(",")]
+    city = parts[0] if parts else ""
+    country = ""
+    if len(parts) > 1:
+        last = parts[-1].strip().upper().split()[0] if parts[-1].strip() else ""
+        country = "United States" if last in US_STATES else parts[-1].strip()
+    return {"city": city, "country": country, "raw": raw}
+
+
+def _canonical_prediction(predicted: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "skills": _prediction_skills(predicted),
+        "location": _prediction_location(predicted),
+        "phones": _prediction_phones(predicted),
+    }
+
+
 def _prediction_skills(predicted: Dict[str, Any]) -> List[str]:
     value = _field_value(predicted, "skills", [])
     if isinstance(value, list):
@@ -75,17 +105,19 @@ def _prediction_skills(predicted: Dict[str, Any]) -> List[str]:
 def _prediction_location(predicted: Dict[str, Any]) -> Dict[str, str]:
     location = predicted.get("location")
     if isinstance(location, dict):
+        raw = str(location.get("raw") or "")
+        split = _split_location(raw)
         return {
-            "city": str(location.get("city") or ""),
-            "country": str(location.get("country") or ""),
-            "raw": str(location.get("raw") or ""),
+            "city": str(location.get("city") or split["city"]),
+            "country": str(location.get("country") or split["country"]),
+            "raw": raw,
         }
 
     locations = _field_value(predicted, "locations", [])
     if isinstance(locations, list) and locations:
-        return {"city": "", "country": "", "raw": str(locations[0])}
+        return _split_location(str(locations[0]))
     if isinstance(locations, str):
-        return {"city": "", "country": "", "raw": locations}
+        return _split_location(locations)
     return {"city": "", "country": "", "raw": ""}
 
 
@@ -102,9 +134,14 @@ def _phone_digits(value: Any) -> str:
     return re.sub(r"\D+", "", str(value or ""))
 
 
-def _set_metric(predicted_values: List[Any], golden_values: List[Any]) -> Dict[str, Any]:
-    pred_set = set(dedupe_normalized(predicted_values))
-    gold_set = set(dedupe_normalized(golden_values))
+def _set_metric(
+    predicted_values: List[Any],
+    golden_values: List[Any],
+    *,
+    normalizer=normalize_for_exact,
+) -> Dict[str, Any]:
+    pred_set = set(dedupe_normalized(predicted_values, normalizer=normalizer))
+    gold_set = set(dedupe_normalized(golden_values, normalizer=normalizer))
     tp_values = sorted(pred_set & gold_set)
     fp_values = sorted(pred_set - gold_set)
     fn_values = sorted(gold_set - pred_set)
@@ -162,13 +199,15 @@ def _location_metric(golden: Dict[str, Any], predicted: Dict[str, Any]) -> Dict[
 
 def _phone_metric(golden: Dict[str, Any], predicted: Dict[str, Any]) -> Dict[str, Any]:
     gold_phone = _phone_digits(golden.get("phone"))
-    pred_phones = [_phone_digits(phone) for phone in _prediction_phones(predicted)]
+    pred_phones = [_phone_digits(phone) for phone in predicted.get("phones", [])]
     pred_phones = [phone for phone in pred_phones if phone]
     return _set_metric(pred_phones, [gold_phone] if gold_phone else [])
 
 
-def score_current_parser_fields(golden: Dict[str, Any], predicted: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    if not predicted:
+def score_current_parser_fields(
+    golden: Dict[str, Any], predicted: Optional[Dict[str, Any]]
+) -> Dict[str, Any]:
+    if predicted is None:
         reason = "no current-parser prediction supplied"
         return {
             "skills": _metric_not_evaluated(reason),
@@ -176,10 +215,15 @@ def score_current_parser_fields(golden: Dict[str, Any], predicted: Optional[Dict
             "phone": _metric_not_evaluated(reason),
         }
 
+    canonical_prediction = _canonical_prediction(predicted)
     return {
-        "skills": _set_metric(_prediction_skills(predicted), golden.get("skills") or []),
-        "location": _location_metric(golden, predicted),
-        "phone": _phone_metric(golden, predicted),
+        "skills": _set_metric(
+            canonical_prediction["skills"],
+            golden.get("skills") or [],
+            normalizer=normalize_skill_for_exact,
+        ),
+        "location": _location_metric(golden, canonical_prediction),
+        "phone": _phone_metric(golden, canonical_prediction),
     }
 
 

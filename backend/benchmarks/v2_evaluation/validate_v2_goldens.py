@@ -246,12 +246,18 @@ def records_to_summary(records: Iterable[FixtureRecord]) -> Dict[str, Any]:
     total_errors = 0
     for record in records:
         errors = [issue for issue in record.issues if issue.severity == "error"]
+        if errors:
+            validation_status = "invalid"
+        elif record.schema_version != "v2":
+            validation_status = "skipped"
+        else:
+            validation_status = "valid"
         total_errors += len(errors)
         fixtures.append(
             {
                 "fixture_id": record.fixture_id,
                 "schema_version": record.schema_version,
-                "validation_status": "valid" if not errors else "invalid",
+                "validation_status": validation_status,
                 "failure_count": len(errors),
                 "issues": [
                     {
@@ -304,4 +310,3 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

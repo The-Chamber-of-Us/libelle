@@ -44,9 +44,11 @@ artificial zeroes.
 
 ## Baseline Metrics
 
-Normalization is deterministic: values are trimmed, lowercased, stripped of
-ASCII punctuation, and whitespace-collapsed. Matching is exact after
-normalization. Duplicates are collapsed for set-style fields.
+Normalization is deterministic and field-specific. Non-skill exact fields are
+trimmed, lowercased, stripped of ASCII punctuation, and whitespace-collapsed.
+Skill matching trims, lowercases, and collapses whitespace while preserving
+punctuation that carries meaning, such as `C++`, `C#`, `Node.js`, `STAAD.Pro`,
+and `ACE/ADE`. Duplicates are collapsed for set-style fields.
 
 Supported metrics:
 

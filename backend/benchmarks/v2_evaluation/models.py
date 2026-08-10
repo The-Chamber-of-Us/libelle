@@ -92,7 +92,7 @@ def display_fixture_id(golden: Optional[Dict[str, Any]], fallback: str) -> str:
 
 
 def normalize_for_exact(value: Any) -> str:
-    """Deterministic baseline normalization: case, punctuation, and whitespace."""
+    """Deterministic baseline normalization for non-skill exact fields."""
     if value is None:
         return ""
     text = str(value).strip().lower()
@@ -101,11 +101,20 @@ def normalize_for_exact(value: Any) -> str:
     return text.strip()
 
 
-def dedupe_normalized(values: Iterable[Any]) -> List[str]:
+def normalize_skill_for_exact(value: Any) -> str:
+    """Normalize skills without erasing punctuation that changes meaning."""
+    if value is None:
+        return ""
+    text = str(value).strip().lower()
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def dedupe_normalized(values: Iterable[Any], *, normalizer=normalize_for_exact) -> List[str]:
     seen = set()
     out: List[str] = []
     for value in values:
-        normalized = normalize_for_exact(value)
+        normalized = normalizer(value)
         if normalized and normalized not in seen:
             seen.add(normalized)
             out.append(normalized)
