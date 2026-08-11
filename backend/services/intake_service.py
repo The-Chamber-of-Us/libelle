@@ -193,7 +193,10 @@ def finalize_submission(
     submission_id = str(uuid.uuid4())
     ui_data = _build_ui_data(normalized, linkedin_url, github_url, motivation)
 
-    if pdf_bytes is None and not original_filename and not content_type:
+    no_uploaded_resume = (pdf_bytes is None or pdf_bytes == b"") and not (
+        original_filename or ""
+    ).strip()
+    if validated_resume is None and no_uploaded_resume:
         print(f"[UPLOAD] submission_id={submission_id} no resume provided; status=missing")
         write_base_row(
             submission_id=submission_id,

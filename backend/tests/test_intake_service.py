@@ -120,6 +120,37 @@ def test_finalize_submission_without_resume_records_missing(monkeypatch):
     assert captured["drive_file_id"] == ""
 
 
+def test_finalize_submission_empty_browser_file_part_records_missing(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **kwargs: captured.update(kwargs),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
+    )
+
+    result = intake_service.finalize_submission(
+        pdf_bytes=b"",
+        original_filename="",
+        content_type="application/octet-stream",
+        normalized=_normalized(),
+        linkedin_url=None,
+        github_url=None,
+        motivation=None,
+    )
+
+    assert result["resume_status"] == "missing"
+    assert result["resume_filename"] == ""
+    assert result["drive_file_id"] == ""
+    assert captured["resume_status"] == "missing"
+    assert captured["resume_filename"] == ""
+    assert captured["drive_file_id"] == ""
+
+
 def test_finalize_submission_records_failed_drive_upload(monkeypatch):
     captured = {}
     monkeypatch.setattr(

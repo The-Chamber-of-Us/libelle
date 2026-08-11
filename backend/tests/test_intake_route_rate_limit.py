@@ -208,6 +208,56 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
     assert captured["parsed"] is False
 
 
+def test_empty_browser_file_part_succeeds_without_parser_job(monkeypatch):
+    captured = {"parsed": False, "row": None}
+
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **kwargs: captured.update(row=kwargs),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
+    )
+    monkeypatch.setattr(
+        intake,
+        "parse_and_update",
+        lambda *args: captured.update(parsed=True),
+    )
+    monkeypatch.setattr(
+        intake,
+        "intake_rate_limiter",
+        InMemoryIntakeRateLimiter(
+            enabled=False,
+            per_ip_limit=0,
+            per_email_limit=0,
+            global_limit=0,
+        ),
+    )
+
+    response = _client().post(
+        "/api/upload",
+        data={
+            "full_name": "Test User",
+            "email": "test@example.com",
+            "location": "Remote",
+            "interests": "Engineering",
+            "availability": "Weekly",
+            "experience_level": "Mid",
+            "consent": "true",
+        },
+        files={"file": ("", b"", "application/octet-stream")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["resume_status"] == "missing"
+    assert response.json()["resume_filename"] == ""
+    assert captured["row"]["resume_status"] == "missing"
+    assert captured["parsed"] is False
+
+
 def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
     captured = {"parsed": False}
 

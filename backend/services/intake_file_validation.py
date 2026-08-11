@@ -92,13 +92,6 @@ def validate_resume_upload(
             status_code=413,
         )
 
-    if b"%PDF-" not in file_bytes[:1024]:
-        raise ResumeFileValidationError(
-            "INVALID_PDF",
-            "The uploaded resume is not a readable PDF.",
-            status_code=400,
-        )
-
     try:
         extracted_text = extract_text_from_pdf_bytes(file_bytes)
     except PasswordProtectedPDFError:
