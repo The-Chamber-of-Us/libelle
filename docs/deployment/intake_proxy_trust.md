@@ -40,8 +40,25 @@ INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS=127.0.0.1/32,::1/128
 
 Staging should trust only the local proxy or tunnel hop that is controlled by
 TCUS and expected to provide Cloudflare headers. For the current Raspberry Pi
-topology, the backend is bound to loopback behind nginx/cloudflared, so staging
-can use:
+topology:
+
+```text
+Cloudflare Tunnel -> nginx -> FastAPI
+```
+
+the backend's socket peer is nginx on loopback, not Cloudflare itself. The
+loopback CIDR setting is appropriate only if at least one of these conditions is
+true:
+
+- nginx is reachable only through the Cloudflare-controlled path, for example
+  Cloudflare Tunnel with direct origin access blocked.
+- nginx strips any inbound `CF-Connecting-IP` header from the request and
+  replaces it with the Cloudflare-provided client IP before proxying to FastAPI.
+
+If nginx forwards an arbitrary client-supplied `CF-Connecting-IP` header, the
+backend cannot distinguish that spoofed value from one supplied by the trusted
+local proxy. With the tunnel/origin-access restriction or nginx header
+sanitization in place, staging can use:
 
 ```text
 INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS=127.0.0.1/32,::1/128

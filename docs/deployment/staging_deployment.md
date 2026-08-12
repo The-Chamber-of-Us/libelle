@@ -84,8 +84,19 @@ Expected backend bind address:
 ## Public Intake Client IP Trust
 
 Public intake rate limiting does not trust forwarded client-IP headers by
-default. Staging should enable `CF-Connecting-IP` only for the controlled local
-Cloudflare/nginx hop:
+default. In the documented staging topology:
+
+```text
+Cloudflare Tunnel -> nginx -> FastAPI
+```
+
+the backend socket peer is nginx on loopback, not Cloudflare directly. Staging
+should enable `CF-Connecting-IP` for the local nginx hop only when nginx is
+reachable solely through the Cloudflare-controlled path, such as Cloudflare
+Tunnel with direct origin access blocked, or when nginx strips any inbound
+`CF-Connecting-IP` header and replaces it before proxying to FastAPI.
+
+With that trust boundary in place, staging can use:
 
 ```text
 INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS=127.0.0.1/32,::1/128
