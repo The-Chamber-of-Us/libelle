@@ -44,6 +44,8 @@ Current storage facts:
 - `/snapshot` derives reviewer-facing state from `submissions`,
   `parser_results`, `ops`, and `errors`.
 - The latest parser result is selected by `created_at`, then `parser_run_id`.
+  That is the current v0.4 read behavior, not the target authority rule once
+  durable parser jobs exist.
 
 ## Proposed Intake Boundary
 
@@ -101,6 +103,8 @@ Add a required `parser_jobs` tab:
 | `locked_at` | Claim timestamp. |
 | `lock_expires_at` | Stale-lock recovery timestamp. |
 | `last_parser_run_id` | Latest attempt run ID, successful or failed. |
+| `authoritative_parser_run_id` | Successful attempt that `/snapshot` should read for reviewer-facing parser output. Empty until parser success is finalized. |
+| `parser_started_at` | Timestamp of the first attempt that actually began parser execution. Empty while queued before any parser attempt starts. |
 | `last_error_code` | Most recent failure code. |
 | `last_error_summary` | Short operational failure summary. |
 | `created_at` | Job creation timestamp. |
@@ -125,7 +129,8 @@ Rules:
 
 - Create a parser job only after the `submissions` row has been appended with
   `resume_status == uploaded`.
-- Use `submission_id` as the idempotency key for the initial parser job.
+- Use `parse_resume:{submission_id}` as the idempotency key for the initial
+  parser job.
 - The durable job payload should contain identifiers, not resume contents.
 - Do not store raw resume text in the job table.
 - If text extraction remains in intake temporarily, pass the text to the worker
@@ -136,6 +141,21 @@ Rules:
 - A recovery scanner must be able to create a missing job for any
   `submissions.resume_status == uploaded` record with no parser job and no
   successful parser result.
+
+Submission persistence and parser job creation are not one transaction in
+Sheets. Intake/job creation is therefore eventually reconciled, not atomic.
+The persisted uploaded submission is durable evidence that recovery can use
+even if both job creation and enqueue error logging fail.
+
+The recovery scanner must deterministically repair records matching all of
+these conditions:
+
+- `submissions.resume_status == uploaded`;
+- no `parser_jobs` row exists for `parse_resume:{submission_id}`; and
+- no successful parser result exists for the submission.
+
+The scanner must use the same job idempotency key as intake so repeated scans
+return the existing job instead of creating duplicate active work.
 
 ## parser_run_id Ownership
 
@@ -150,9 +170,14 @@ Rules:
 - Successful attempts append rows to `parser_results`.
 - Failed attempts append rows to `errors` with both `submission_id` and
   `parser_run_id` once the errors schema is extended.
-- The authoritative parser result remains the latest successful
-  `parser_results` row selected by `created_at`, then `parser_run_id`, until a
-  future schema adds an explicit result state.
+- The authoritative parser result is the successful `parser_run_id` recorded in
+  `parser_jobs.authoritative_parser_run_id`.
+- `/snapshot` should read parser-owned and resolver-owned fields from that
+  authoritative attempt. It must not select an older or stale duplicate attempt
+  merely because that attempt appended a later timestamp.
+- `created_at`, then `parser_run_id`, may remain a temporary fallback only for
+  legacy submissions that do not yet have a `parser_jobs` row or
+  `authoritative_parser_run_id`.
 - Prior attempts remain traceable through append-only `parser_results`,
   `errors`, and `parser_jobs` state history or job audit rows.
 
@@ -163,6 +188,18 @@ writer may keep a fallback only as a defensive guard, not as the owner.
 ## Idempotency and Duplicate Prevention
 
 Job idempotency key: `parse_resume:{submission_id}`.
+
+Initial guarantee: duplicate execution may occur; duplicate authoritative state
+must not. Google Sheets does not provide an atomic compare-and-swap claim
+primitive, so two pollers can both read a job as claimable before either sees
+the other's update.
+
+The first Sheets-backed implementation supports one active polling worker in
+staging and Raspberry Pi deployments. Leases exist for crash recovery, stale
+claim detection, and future queue migration; they are not a complete horizontal
+worker concurrency guarantee on Sheets. Running multiple active pollers against
+the same Sheets queue is unsupported until the queue backend provides an atomic
+claim primitive or an equivalent repository-level guarantee.
 
 Duplicate enqueue:
 
@@ -188,11 +225,65 @@ Duplicate worker execution:
   should be monotonic: `succeeded` is terminal unless a reviewer explicitly
   requests a new manual retry.
 
-For Sheets, exact compare-and-swap is limited. The first implementation should
-minimize duplicate claims with a short polling interval, process-level worker
-identity, and a re-read before finalization. If duplicate execution still
-occurs, append-only parser results and latest-row selection keep the reviewer
-state deterministic.
+Parser result write idempotency:
+
+- `(submission_id, parser_run_id)` identifies one logical parser attempt/result.
+- Retrying persistence for the same `parser_run_id` must not create a second
+  logical result.
+- If a Sheets append succeeds but the worker times out before receiving
+  confirmation, the retry path must re-read for `(submission_id,
+  parser_run_id)` before appending. If the row already exists, persistence is
+  complete for that logical result.
+- If physical duplicate rows are ever discovered for the same `(submission_id,
+  parser_run_id)`, repository/read-model code must collapse them to one logical
+  result and surface an operational error; duplicates must not produce
+  conflicting reviewer state.
+
+Authoritative finalization:
+
+- A worker may set `parser_jobs.authoritative_parser_run_id` only after it has
+  persisted parser success for the same `parser_run_id` and re-read the job row
+  to confirm the job is still running for that attempt.
+- If the job already has a different `authoritative_parser_run_id`, the worker
+  must treat its own attempt as stale and leave reviewer-facing authority
+  unchanged.
+- A stale worker must never be able to become authoritative after the job has
+  advanced to another successful attempt.
+
+For Sheets, the repository should still minimize duplicate claims with a short
+polling interval, process-level worker identity, and a re-read before
+finalization. Those mitigations are secondary to the authority rule above.
+
+## Parser and Resolver Boundary
+
+Issue #338 is scoped to moving today's asynchronous parser execution behind a
+durable boundary. The first worker may execute the same unit of work that
+`parse_and_update()` performs today: parse the resume, run Resolver V1 over the
+parser output, and persist the resulting read-model data.
+
+That does not redefine parser/resolver ownership or introduce a general
+pipeline orchestrator. Parser-owned fields remain parser output, resolver-owned
+fields remain Resolver V1 normalization, and `/snapshot` continues to derive
+reviewer-facing state from the v0.4 state contract.
+
+The worker contract must keep parser success and resolver failure separately
+observable:
+
+- Once parser execution succeeds, parser-owned output for that `parser_run_id`
+  must be durably persisted or recoverably idempotent before Resolver V1 runs.
+- Resolver failure after parser success must append/log resolver-stage failure
+  evidence and derive `ParserState = succeeded`,
+  `ResolverState = failed`.
+- A resolver failure after parser success must not set `parser_jobs.status =
+  failed` as a parser failure. For the initial parser job, `succeeded` means the
+  authoritative parser output was persisted; resolver failure is represented by
+  resolver state and error evidence unless a later issue introduces a dedicated
+  resolver job.
+- Resolver failure must not collapse successful parser output into a generic
+  parser failure, delete parser output, or cause `/snapshot` to hide valid
+  parser fields.
+- If resolver enrichment is persisted after parser output, it must target the
+  same logical `(submission_id, parser_run_id)` result and remain idempotent.
 
 ## State Mapping
 
@@ -201,7 +292,9 @@ Persisted operational states:
 - `submissions.resume_status`: `missing`, `uploaded`, `failed`
 - `parser_jobs.status`: `queued`, `running`, `retry_scheduled`, `succeeded`,
   `failed`, `enqueue_failed`
-- `parser_results` rows: successful parser/resolver-enriched output attempts
+- `parser_results` rows: logical parser attempt results keyed by
+  `(submission_id, parser_run_id)`, with parser-owned output and optional
+  resolver-owned enrichment for the same attempt
 - `errors` rows: parser, resolver, enqueue, and worker failures
 
 Derived state-contract states:
@@ -212,13 +305,20 @@ Derived state-contract states:
 | Resume upload failed | `upload_failed` | `not_started` | `not_started` |
 | Resume uploaded, job queued | `uploaded` | `not_started` | `not_started` |
 | Job running | `uploaded` | `started` | `not_started` |
-| Retry scheduled | `uploaded` | `not_started` or `started` | `not_started` |
+| Retry scheduled before any attempt starts | `uploaded` | `not_started` | `not_started` |
+| Retry scheduled after at least one parser attempt started | `uploaded` | `started` | `not_started` |
 | Parser succeeded, resolver not run | `uploaded` | `succeeded` | `not_started` |
 | Parser and resolver succeeded | `uploaded` | `succeeded` | `succeeded` |
-| Parser failed, retry remains | `uploaded` | `not_started` or `started` | `not_started` |
+| Parser failed before execution began, retry remains | `uploaded` | `not_started` | `not_started` |
+| Parser failed after execution began, retry remains | `uploaded` | `started` | `not_started` |
 | Parser retry exhausted | `uploaded` | `failed` | `skipped_no_parser_output` |
 | Resolver failed after parser output | `uploaded` | `succeeded` | `failed` |
 | Downstream Sheets/Drive unavailable | Preserve last known state; expose error and stale job health through `/snapshot`. |
+
+For `retry_scheduled`, `ParserState` is deterministic: use `not_started` only
+when no attempt actually began parser execution, and `started` once any attempt
+has crossed the parser execution boundary. `parser_jobs.parser_started_at` is
+the durable job-level evidence for that distinction.
 
 `retry_scheduled`, `retry_exhausted`, and `downstream_unavailable` are
 operational job/read-model facts, not new core state-contract enum values unless
@@ -254,20 +354,29 @@ Polling worker claims job with lease
 Create parser_run_id for attempt
   |
   v
-Parse resume and run resolver
+Parse resume
   |
   +-- retryable failure ---> errors row + retry_scheduled
   |
   +-- exhausted failure ---> errors row + job failed
   |
   v
-Append parser_results row
+Persist parser-owned output for parser_run_id
   |
   v
-Mark parser_jobs succeeded
+Run Resolver V1 for the same parser_run_id
+  |
+  +-- resolver failure ----> resolver error row
+  |                         + parser_jobs authoritative parser success
   |
   v
-/snapshot selects latest parser_results row and derives health
+Persist resolver-owned output when available
+  |
+  v
+Mark parser_jobs succeeded with authoritative_parser_run_id
+  |
+  v
+/snapshot follows authoritative_parser_run_id and derives health
 ```
 
 ## Retry Policy
@@ -275,10 +384,14 @@ Mark parser_jobs succeeded
 Default policy:
 
 - `max_attempts`: 3 total attempts.
-- Backoff: 1 minute, 5 minutes, 15 minutes, with small jitter if multiple jobs
-  are queued.
+- Backoff after failed attempts 1 and 2: 1 minute, then 5 minutes, with small
+  jitter if multiple jobs are queued.
 - Stale running lease timeout: 15 minutes, adjusted after parser duration is
   measured.
+
+`max_attempts = 3` means three total executions: the initial execution plus at
+most two automatic retries. It does not mean one initial execution plus three
+retries.
 
 Retryable failures:
 
@@ -349,10 +462,15 @@ Job claimed but never acknowledged:
 Storage succeeds but parser-result persistence fails:
 
 - The worker treats this as retryable until max attempts are exhausted.
-- If a later retry appends a result successfully, the job becomes `succeeded`.
+- If a retry for the same `parser_run_id` finds the existing result row,
+  persistence is complete for that logical result.
+- If a later retry with a new `parser_run_id` appends a result successfully, the
+  job may become `succeeded` only by setting
+  `authoritative_parser_run_id` to that successful run.
 - If the result append succeeds but marking the job succeeded fails, finalization
   re-reads `parser_results`; if a row for the current `parser_run_id` exists,
-  the worker may safely mark the job `succeeded` on the next pass.
+  and the job has no different authoritative run, the worker may safely mark the
+  job `succeeded` with the current `parser_run_id` on the next pass.
 
 ## Deployment Model
 
@@ -471,7 +589,8 @@ unnecessary personal information. Logs should prefer `submission_id`,
 
 2. Move parser run ownership to a worker attempt boundary.
    Acceptance: worker-generated `parser_run_id` is passed into
-   `parser_results`; `update_resume_in_sheet()` fallback is retained only for
+   `parser_results`; `(submission_id, parser_run_id)` is treated as one
+   logical result; `update_resume_in_sheet()` fallback is retained only for
    defensive compatibility.
 
 3. Replace FastAPI `BackgroundTasks` parser scheduling with durable enqueue.
@@ -479,12 +598,13 @@ unnecessary personal information. Logs should prefer `submission_id`,
    durable job creation; parser completion is not implied.
 
 4. Add polling parser worker.
-   Acceptance: worker claims queued jobs, processes one attempt, records success
-   or failure, and honors max attempts and lease expiry.
+   Acceptance: worker claims queued jobs, processes one attempt, records parser
+   and resolver outcomes separately, finalizes success through
+   `authoritative_parser_run_id`, and honors max attempts and lease expiry.
 
 5. Add recovery scanner.
-   Acceptance: uploaded submissions without a job or successful parser result
-   receive an idempotent parser job.
+   Acceptance: uploaded submissions with no parser job and no successful parser
+   result receive an idempotent parser job using `parse_resume:{submission_id}`.
 
 6. Extend error/job observability in `/snapshot` or an internal ops endpoint.
    Acceptance: reviewers/operators can see queued, running, retrying, failed,
@@ -504,8 +624,9 @@ unnecessary personal information. Logs should prefer `submission_id`,
   into the worker. Moving extraction into the worker gives a cleaner async
   boundary, but changes the current validation/error timing.
 - Sheets does not provide ideal atomic compare-and-swap semantics for leases.
-  The design relies on re-read-before-finalize and append-only outputs to remain
-  deterministic if duplicate workers run.
+  The first implementation supports one active polling worker; duplicate
+  execution remains an expected failure mode, and the authority/idempotency rules
+  prevent stale or duplicate work from changing reviewer-facing state.
 - The current state contract does not have explicit `retry_scheduled`,
   `retry_exhausted`, or `downstream_unavailable` enums. Those should remain
   operational details unless reviewer-facing product needs require new states.
