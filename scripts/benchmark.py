@@ -547,7 +547,6 @@ def write_summary_md(
     git_commit = _get_git_commit()
     parsers_used = ", ".join(args.parsers)
 
-    #top_fps = sorted(rows, key=lambda r: r["fp_count"], reverse=True)[:3]
     top_fps = sorted(
         [r for r in rows if r["fp_count"] > 0],
         key=lambda r: r["fp_count"],
