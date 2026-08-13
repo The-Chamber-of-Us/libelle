@@ -87,6 +87,24 @@ def _score_one(adapted: Dict[str, Any], golden: Dict[str, Any]) -> Dict[str, flo
 
 
 def run(allow_missing_goldens: bool = False) -> Path:
+    """
+    Compare current production extraction against the layout-aware
+    prototype across the full benchmark corpus, scoring both against
+    the same golden JSONs.
+
+    Fallback guarantee: when layout-aware extraction is not used for a
+    resume, la_text is set directly to the already-computed prod_text,
+    guaranteeing byte-identical production output on fallback. This
+    guarantee is per-document, matching the granularity of
+    extract_text_from_pdf_layout_aware()'s layout_aware_used flag,
+    which is set via any(...) across all pages. For the single-page
+    corpus this comparison currently runs against, per-document and
+    per-page granularity are equivalent, so the guarantee holds exactly
+    as described. A hypothetical multi-page document where some pages
+    trigger layout-aware extraction and others fall back would not get
+    this same fallback guarantee on a per-page basis in the joined
+    result — tracked as follow-up work, not applicable to this corpus.
+    """
     pdfs = sorted(PDF_DIR.glob("*.pdf"))
     if not pdfs:
         print(f"[ERROR] No PDFs found in {PDF_DIR}")
@@ -123,7 +141,7 @@ def run(allow_missing_goldens: bool = False) -> Path:
         # --- Layout-aware path (experimental, enabled=True here only) ---
         la_result = extract_text_from_pdf_layout_aware(pdf_path, enabled=True)
 
-        # Fallback guarantees exact production text for true apples-to-apples scoring
+        # Guarantees byte-identical production text on fallback (single-page corpus only — see run() docstring)
         if la_result["layout_aware_used"]:
             la_text = la_result["text"]
         else:

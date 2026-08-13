@@ -239,9 +239,10 @@ def _header_scoped_text(blocks: list[tuple], boundary: float) -> str:
     Split into lanes by boundary, sort each lane by y0, then group
     content blocks under the nearest header above them within the
     same lane. Left lane emitted before right lane. Each block's
-    original text is preserved as a single line (commas/delimiters
-    within a block are not altered) — only the ordering/grouping
-    changes relative to production extraction.
+    internal line structure — as produced by _get_flat_blocks(),
+    which preserves line breaks between lines within a block — is
+    kept as-is; only block ordering and grouping change relative to
+    production extraction. No line-level content is altered.
     """
     left = sorted([b for b in blocks if b[0] < boundary], key=lambda b: b[1])
     right = sorted([b for b in blocks if b[0] >= boundary], key=lambda b: b[1])

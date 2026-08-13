@@ -14,8 +14,23 @@
     "linkedin.com/in/jcastellano",
     "Instagram: @jcastello"
   ],
-  "skills": [],
-  "notes": "Skills-equivalent content appears under 'AREAS OF EXPERTISE' section header — not an explicit Skills or Tools section per labeling rules, so skills array is empty. True multi-column layout with sidebar containing education, short courses, awards, and references.",
+  "skills": [
+    "Brand Strategy",
+    "Digital Campaign Management",
+    "SEO/SEM",
+    "Content Marketing",
+    "Email Marketing",
+    "HubSpot",
+    "Mailchimp",
+    "Social Media Strategy",
+    "Budget Management",
+    "Google Analytics",
+    "Adobe Creative Suite",
+    "Public Relations",
+    "Event Planning",
+    "Team Leadership"
+  ],
+  "notes": "Skills-equivalent content appears under 'AREAS OF EXPERTISE' section header. Per the canonical V2 specification, this heading is treated as skills-equivalent since its content is primarily tools, platforms, and professional competencies. Root skills array is populated accordingly, with the parenthetical grouping (Email Marketing (HubSpot, Mailchimp)) split into parent + independently meaningful items per the grouped-skills normalization rule; the source-faithful grouped wording is preserved as-is in the sections entry below. True multi-column layout with sidebar containing education, short courses, awards, and references.",
   "sections": [
     {
       "heading": "Summary",

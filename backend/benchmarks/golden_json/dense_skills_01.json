@@ -62,7 +62,7 @@
     "Maze",
     "Lookback"
   ],
-  "notes": "Skills section labeled 'Key Skills' rather than 'Skills' — treated as equivalent. Location field includes a street address alongside city and state. Experience dates appear as section headers rather than inline with entry titles due to layout. Education section lists 'Santa Barbara, CA' as a secondary institution location; per v1 labeling rules, header/contact location ('San Francisco, CA') is preferred and is what appears in the location field, so the education subtitle omits it.",
+ "notes": "Skills section labeled 'Key Skills' rather than 'Skills' — treated as equivalent. Location field includes a street address alongside city and state. Experience dates appear as section headers rather than inline with entry titles due to layout. Per the canonical V2 location contract: root location reflects the header/contact location (San Francisco, CA); the education section's secondary location (Santa Barbara, CA) is not promoted to root but is preserved in the structured education entry.",
   "sections": [
     {
       "heading": "Summary",
@@ -76,7 +76,7 @@
         {
           "title": "California College of the Arts",
           "meta": "2016",
-          "subtitle": "B.F.A Interaction Design",
+          "subtitle": "Santa Barbara, CA, B.F.A Interaction Design",
           "bullets": [
             "GPA 3.87"
           ]

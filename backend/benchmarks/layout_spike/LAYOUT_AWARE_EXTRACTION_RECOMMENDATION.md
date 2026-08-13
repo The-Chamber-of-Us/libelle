@@ -78,7 +78,7 @@ A standalone comparison script (`backend/benchmarks/layout_aware_extraction/comp
 
 **Safeguard accuracy on single-column resumes: 0 false positives out of 10.** Every genuinely single-column resume fell back to production extraction exactly — delta = 0.000 in all 10 cases (`single_col_layout_trap_01/02`, `embed_link_01/02`, `high_signal_01/02`, `low_signal_01/02`, `non_usa_01/02`). This holds after all fixes described below — no new false positives were introduced at any stage.
 
-**Safeguard sensitivity on true multi-column resumes: 6 of 10 trigger layout-aware extraction.** `dense_skills_01`, `dense_skills_02`, `multi_col_04` (`multi_col_04` triggers but is not measurable — see below), `multi_col_05`, and `project_heavy_01` still fall back to production despite being genuine multi-column layouts, meaning current thresholds remain too conservative for some legitimate two-column layouts.
+**Safeguard sensitivity on true multi-column resumes: 6 of 10 trigger layout-aware extraction.** `dense_skills_01`, `dense_skills_02`, `multi_col_05`, and `project_heavy_01` (4 resumes) still fall back to production despite being genuine multi-column layouts, meaning current thresholds remain too conservative for some legitimate two-column layouts.
 
 **Final results on the 6 cases where layout-aware extraction triggers:**
 
@@ -88,7 +88,7 @@ A standalone comparison script (`backend/benchmarks/layout_aware_extraction/comp
 | `multi_col_01` | 0.500 | 0.667 | **+0.167** | Real improvement |
 | `multi_col_02` | 0.258 | 0.381 | **+0.123** | Confirmed fix — see below |
 | `multi_col_03` | 0.360 | 0.562 | **+0.202** | Real improvement, newly recovered after header-detection fix |
-| `multi_col_04` | 0.000 | 0.000 | 0.000 | Not meaningful — golden JSON has an empty skills array for this resume (skills sit under "Areas of Expertise," excluded per labeling rules), so both scores are forced to 0 regardless of extraction quality |
+| `multi_col_04` | 0.000 | 0.387 | **+0.387** | Real improvement — golden JSON now populated per the finalized V2 grouped-skills rule (PR #345); "Areas of Expertise" content is treated as skills-equivalent, making this resume's skill extraction meaningfully scorable |
 | `sparse_skill_01` | 0.400 | 0.556 | **+0.156** | Confirmed fix — see below |
 
 **Root cause of the two regressions — confirmed, not hypothesized.** Diagnostic output (`diagnostics.json`, generated per-resume for every triggered case: production text, layout-aware text, extracted skills for both, and exact skill-level diffs against gold) traced both original regressions to the same bug: `_get_flat_blocks()` flattened all lines within a PyMuPDF text block into a single space-joined string, discarding the internal line breaks that separate individual skill items and, in `sparse_skill_01`'s case, separate a trailing content line from an immediately following section header. This corrupted both header detection (a header glued to preceding text is no longer recognizable as a standalone header) and multi-item skill lists (collapsed into one unreadable string). Fixing `_get_flat_blocks()` to preserve line breaks (joining lines with `\n` instead of flattening to a single string) resolved both cases with zero skills lost in either (`lost_in_la: []` in both diagnostics entries), confirmed by rerunning the full comparison.
@@ -120,6 +120,7 @@ Current safeguards (`backend/benchmarks/layout_aware_extraction/layout_aware_ext
 - Diagnose why the remaining 4 true multi-column resumes still fall back, using the same diagnostics-first approach that resolved the two confirmed bugs above, before adjusting any threshold values
 - Investigate the tokenization gap responsible for `multi_col_02`'s remaining distance from a perfect score (e.g. gold `"environmental testing procedures"` vs. LA's separate `"environmental testing"` + `"procedures"`) — a normalization issue distinct from the now-fixed corruption bug
 - `sparse_skill_01`'s `la_skills` output includes some noise from a personal-statement callout box (e.g. `"jordan"`, `"mitchell"` as stray entries) — a precision issue worth a future look, separate from the recall bug that was fixed
+- **Known limitation, not a current bug:** `extract_text_from_pdf_layout_aware()` sets its top-level `layout_aware_used` flag via `any(...)` across all pages of a document. For a hypothetical multi-page resume where some pages trigger layout-aware extraction and others fall back, the joined result would not guarantee byte-identical production text on the fallback pages the way it does for single-page documents. All fixtures in this corpus are single-page, so this does not affect the reported results above — flagged here as follow-up work before this prototype is tested against multi-page resumes.
 
 All safeguards are implemented as real, testable code with explicit thresholds — not inline conditionals — so they can be tuned and re-benchmarked independently.
 
