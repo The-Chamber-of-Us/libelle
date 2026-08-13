@@ -1,4 +1,5 @@
 import traceback
+from ipaddress import ip_address, ip_network
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
@@ -9,6 +10,8 @@ from config import (
     INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE,
     INTAKE_RATE_LIMIT_PER_EMAIL_PER_HOUR,
     INTAKE_RATE_LIMIT_PER_IP_PER_MINUTE,
+    INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS,
+    INTAKE_TRUSTED_FORWARD_PROXY_CIDRS,
 )
 from services.intake_service import IntakeError, finalize_submission, validate_intake
 from services.rate_limit import InMemoryIntakeRateLimiter
@@ -23,6 +26,34 @@ intake_rate_limiter = InMemoryIntakeRateLimiter(
 )
 
 
+def _is_ip_in_cidrs(value: Optional[str], cidrs: list[str]) -> bool:
+    if not value:
+        return False
+
+    try:
+        candidate = ip_address(value)
+    except ValueError:
+        return False
+
+    for cidr in cidrs:
+        try:
+            if candidate in ip_network(cidr, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False
+
+
+def _normalized_ip(value: Optional[str]) -> Optional[str]:
+    if not value:
+        return None
+
+    try:
+        return str(ip_address(value.strip()))
+    except ValueError:
+        return None
+
+
 def _intake_error_to_http(err: IntakeError) -> HTTPException:
     detail: Dict[str, Any] = {"status": "error", "code": err.code}
     if err.fields is not None:
@@ -33,15 +64,21 @@ def _intake_error_to_http(err: IntakeError) -> HTTPException:
 
 
 def _client_ip(request: Request) -> str:
-    cf_ip = request.headers.get("cf-connecting-ip")
-    if cf_ip:
-        return cf_ip.strip()
+    socket_ip = request.client.host if request.client else None
 
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
+    if _is_ip_in_cidrs(socket_ip, INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS):
+        cf_ip = _normalized_ip(request.headers.get("cf-connecting-ip"))
+        if cf_ip:
+            return cf_ip
 
-    return request.client.host if request.client else "unknown"
+    if _is_ip_in_cidrs(socket_ip, INTAKE_TRUSTED_FORWARD_PROXY_CIDRS):
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            forwarded_ip = _normalized_ip(forwarded_for.split(",", 1)[0])
+            if forwarded_ip:
+                return forwarded_ip
+
+    return socket_ip or "unknown"
 
 
 @router.post("/api/upload")
