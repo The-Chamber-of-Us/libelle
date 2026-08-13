@@ -547,7 +547,24 @@ def write_summary_md(
     git_commit = _get_git_commit()
     parsers_used = ", ".join(args.parsers)
 
-    top_fps = sorted(rows, key=lambda r: r["fp_count"], reverse=True)[:3]
+    top_fps = sorted(
+        [r for r in rows if r["fp_count"] > 0],
+        key=lambda r: r["fp_count"],
+        reverse=True,
+    )[:3]
+
+    top_fns = sorted(
+        [r for r in rows if r["fn_count"] > 0],
+        key=lambda r: r["fn_count"],
+        reverse=True,
+    )[:3]
+
+    # Zero-TP cases: severe recall failures where no expected item was matched
+    zero_tp_cases = sorted(
+        [row for row in rows if row["tp_count"] == 0 and row["fn_count"] > 0],
+        key=lambda row: row["fn_count"],
+        reverse=True,
+    )[:3]
 
     lines = []
 
@@ -570,11 +587,31 @@ def write_summary_md(
     lines.append(f"- Unknown skills captured: `{len(resolver_summary['unknown_skills'])}`")
     lines.append("- Note: This measures resolver alias-map coverage over skills emitted by the parser. It is not end-to-end parser skill recovery against the gold skills; TP / FP / FN / precision / recall / F1 scoring above remains unchanged.")
 
-    lines.append("\n## Failure Heatmap (Top 3 by False Positive resume/field combinations)\n")
+    # Report the highest false-positive, false-negative, and zero-TP cases separately.
+    lines.append("\n## Top False-Positive Cases\n")
     lines.append("| Resume | Field | Parser | FP Count |")
     lines.append("|--------|-------|--------|----------|")
     for r in top_fps:
         lines.append(f"| {r['resume']} | {r['field']} | {r['parser']} | {r['fp_count']} |")
+
+
+    lines.append("\n## Top False-Negative Cases\n")
+    lines.append("| Resume | Field | Parser | TP Count | FN Count |")
+    lines.append("|--------|-------|--------|----------|----------|")
+    for r in top_fns:
+        lines.append(
+            f"| {r['resume']} | {r['field']} | {r['parser']} | "
+            f"{r['tp_count']} | {r['fn_count']} |"
+        )
+
+    # Surface severe recall failures where expected values received no matches.
+    lines.append("\n## Zero-TP Cases (Severe Recall Loss)\n")
+    lines.append("| Resume | Field | Parser | FN Count |")
+    lines.append("|--------|-------|--------|----------|")
+    for r in zero_tp_cases:
+        lines.append(
+            f"| {r['resume']} | {r['field']} | {r['parser']} | {r['fn_count']} |"
+        )
 
     with open(path, "w") as f:
         f.write("\n".join(lines))
