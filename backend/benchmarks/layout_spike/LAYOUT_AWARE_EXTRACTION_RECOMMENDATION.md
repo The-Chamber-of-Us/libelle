@@ -87,7 +87,7 @@ A standalone comparison script (`backend/benchmarks/layout_aware_extraction/comp
 | `header_contact_01` | 0.000 | 0.467 | **+0.467** | Real improvement — sidebar skills recovered |
 | `multi_col_01` | 0.500 | 0.667 | **+0.167** | Real improvement |
 | `multi_col_02` | 0.258 | 0.381 | **+0.123** | Confirmed fix — see below |
-| `multi_col_03` | 0.360 | 0.562 | **+0.202** | Real improvement, newly recovered after header-detection fix |
+| `multi_col_03` | 0.360 | 0.581 | **+0.214** | Real improvement, newly recovered after header-detection fix |
 | `multi_col_04` | 0.000 | 0.387 | **+0.387** | Real improvement — golden JSON now populated per the finalized V2 grouped-skills rule (PR #345); "Areas of Expertise" content is treated as skills-equivalent, making this resume's skill extraction meaningfully scorable |
 | `sparse_skill_01` | 0.400 | 0.556 | **+0.156** | Confirmed fix — see below |
 
@@ -97,7 +97,7 @@ A standalone comparison script (`backend/benchmarks/layout_aware_extraction/comp
 
 ## 5. What causes missed detections, and what was fixed
 
-**Header detection bug — found and fixed.** `_is_header()` previously lowercased text before checking `.isupper()`, making the uppercase-detection path permanently unreachable. This was fixed to check case before lowercasing. `HEADER_KEYWORDS` was also expanded to cover corpus headings not previously recognized (`profile`, `career summary`, `key skills`, `areas of expertise`, `short courses`, `technical toolkit`, `core competencies`, `specialised skills`). This fix alone recovered `multi_col_03` from a missed case to a correctly triggered improvement (+0.202), with zero new false positives introduced on the single-column corpus.
+**Header detection bug — found and fixed.** `_is_header()` previously lowercased text before checking `.isupper()`, making the uppercase-detection path permanently unreachable. This was fixed to check case before lowercasing. `HEADER_KEYWORDS` was also expanded to cover corpus headings not previously recognized (`profile`, `career summary`, `key skills`, `areas of expertise`, `short courses`, `technical toolkit`, `core competencies`, `specialised skills`). This fix alone recovered `multi_col_03` from a missed case to a correctly triggered improvement (+0.214), with zero new false positives introduced on the single-column corpus.
 
 **Text-flattening bug — found and fixed.** As detailed in Section 4, `_get_flat_blocks()` was collapsing multi-line blocks into single strings, which was the confirmed root cause of both prior regressions. Both `multi_col_02` and `sparse_skill_01` are now net improvements after this fix.
 
