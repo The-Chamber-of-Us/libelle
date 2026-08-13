@@ -39,6 +39,8 @@ for p in [str(BASE_DIR), str(BACKEND_DIR)]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from benchmarks.preflight import format_preflight_report, run_preflight
+
 
 # ---------------------------------------------------------------------------
 # Resolver helpers
@@ -730,10 +732,29 @@ def main() -> None:
         help="Optional path to Resolver V1 alias map JSON. If omitted, benchmark.py searches known local paths.",
     )
 
+    parser.add_argument(
+        "--allow-missing",
+        action="store_true",
+        help="Treat missing PDF/golden fixture pairs as warnings instead of aborting preflight.",
+    )
+
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Run corpus preflight validation and exit without scoring.",
+    )
+
     args = parser.parse_args()
 
     pdf_dir = Path(args.pdf_dir)
     golden_dir = Path(args.golden_dir)
+
+    preflight = run_preflight(pdf_dir, golden_dir, allow_missing=args.allow_missing)
+    print(format_preflight_report(preflight))
+    if not preflight.ok:
+        sys.exit(1)
+    if args.validate_only:
+        sys.exit(0)
 
     aliases, aliases_version, alias_path = _load_alias_map(args.aliases_path)
     print(f"[RESOLVER] Loaded {len(aliases)} aliases from {alias_path}")
