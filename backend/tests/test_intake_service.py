@@ -3,13 +3,21 @@ import uuid
 import fitz
 import pytest
 
-from services import intake_service
+from services import intake_file_validation, intake_service
 from services.intake_file_validation import ValidatedResumeUpload
 
 
 def _pdf_bytes(text: str = "resume") -> bytes:
     doc = fitz.open()
     doc.new_page().insert_text((72, 72), text)
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    return pdf_bytes
+
+
+def _image_only_pdf_bytes() -> bytes:
+    doc = fitz.open()
+    doc.new_page()
     pdf_bytes = doc.tobytes()
     doc.close()
     return pdf_bytes
@@ -277,9 +285,47 @@ def test_finalize_submission_rejects_invalid_pdf_content(monkeypatch):
     assert exc_info.value.code == "INVALID_PDF"
 
 
-def test_finalize_submission_enforces_configured_size_limit(monkeypatch):
-    from services import intake_file_validation
+def test_finalize_submission_rejects_pdf_without_extractable_text(monkeypatch):
+    monkeypatch.setattr(intake_service, "write_base_row", lambda **_: None)
 
+    with pytest.raises(intake_service.IntakeError) as exc_info:
+        intake_service.finalize_submission(
+            pdf_bytes=_image_only_pdf_bytes(),
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
+
+    assert exc_info.value.code == "NO_EXTRACTABLE_TEXT"
+    assert exc_info.value.message == (
+        "The uploaded resume PDF does not contain extractable text."
+    )
+
+
+def test_unexpected_pdf_extraction_error_is_not_labeled_invalid_pdf(monkeypatch):
+    monkeypatch.setattr(intake_service, "write_base_row", lambda **_: None)
+    monkeypatch.setattr(
+        intake_file_validation,
+        "extract_text_from_pdf_bytes",
+        lambda _: (_ for _ in ()).throw(RuntimeError("extractor dependency failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="extractor dependency failed"):
+        intake_service.finalize_submission(
+            pdf_bytes=_VALID_PDF_BYTES,
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
+
+
+def test_finalize_submission_enforces_configured_size_limit(monkeypatch):
     monkeypatch.setattr(intake_file_validation, "MAX_PDF_MB", 0)
 
     with pytest.raises(intake_service.IntakeError) as exc_info:

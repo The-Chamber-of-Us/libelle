@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import PurePath
 from typing import Optional
 
+import fitz  # PyMuPDF
+
 from config import MAX_PDF_MB
 from services.pdf_text_extraction import (
     PasswordProtectedPDFError,
@@ -94,13 +96,7 @@ def validate_resume_upload(
 
     try:
         extracted_text = extract_text_from_pdf_bytes(file_bytes)
-    except PasswordProtectedPDFError:
-        raise ResumeFileValidationError(
-            "INVALID_PDF",
-            "The uploaded resume is not a readable PDF.",
-            status_code=400,
-        )
-    except Exception:
+    except (fitz.FileDataError, PasswordProtectedPDFError):
         raise ResumeFileValidationError(
             "INVALID_PDF",
             "The uploaded resume is not a readable PDF.",
@@ -109,8 +105,8 @@ def validate_resume_upload(
 
     if not extracted_text.strip():
         raise ResumeFileValidationError(
-            "INVALID_PDF",
-            "The uploaded resume is not a readable PDF.",
+            "NO_EXTRACTABLE_TEXT",
+            "The uploaded resume PDF does not contain extractable text.",
             status_code=400,
         )
 
