@@ -30,12 +30,17 @@ def extract_text(pdf_path: Path) -> str:
         doc.close()
 
 
+def _case_id(gold: dict, pdf_path: Path) -> str:
+    """Resolve the case ID from either V1 (submission_id) or V2 (resume_id) gold."""
+    return gold.get("submission_id") or gold.get("resume_id") or pdf_path.stem
+
+
 def check_one(pdf_path: Path, gold_path: Path) -> tuple[str, list[str]]:
     issues: list[str] = []
     with open(gold_path) as f:
         gold = json.load(f)
     text = extract_text(pdf_path).lower()
-    case_id = gold["submission_id"]
+    case_id = _case_id(gold, pdf_path)
     raw_loc = (gold.get("location") or {}).get("raw", "")
     if raw_loc and raw_loc.lower() not in text:
         issues.append(f"location.raw={raw_loc!r} not in extracted text")
