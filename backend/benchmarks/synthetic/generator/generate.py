@@ -298,6 +298,8 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--count", type=int, default=30)
     ap.add_argument("--adversarial-ratio", type=float, default=0.30)
+    ap.add_argument("--annotation-version", choices=["v1", "v2"], default="v1",
+                     help="Benchmark annotation schema to derive gold.json in (#347).")
     args = ap.parse_args()
 
     OUT_PDF.mkdir(parents=True, exist_ok=True)
@@ -310,14 +312,15 @@ def main() -> int:
                       autoescape=select_autoescape(["html", "xml"]))
 
     manifest = {"seed": args.seed, "count": args.count,
-                "adversarial_ratio": args.adversarial_ratio, "cases": []}
+                "adversarial_ratio": args.adversarial_ratio,
+                "annotation_version": args.annotation_version, "cases": []}
 
     for idx in range(args.count):
         template_name = _select_template(idx, args.count, args.adversarial_ratio)
         case_id = f"syn_{idx:03d}_{template_name}"
         profile, extras = _build_profile(case_id, template_name, args.seed, idx,
                                          skill_catalog, locations)
-        gold = derive_gold(profile)
+        gold = derive_gold(profile, version=args.annotation_version)
         gold_path = OUT_GOLD / f"{case_id}.json"
         pdf_path = OUT_PDF / f"{case_id}.pdf"
 
