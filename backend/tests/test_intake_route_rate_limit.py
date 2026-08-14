@@ -136,6 +136,8 @@ def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
     second = _upload(client, email="second@example.com")
 
     assert first.status_code == 200
+    assert "drive_file_id" not in first.json()
+    assert "drive_file_url" not in first.json()
     assert second.status_code == 429
     assert second.json()["code"] == "RATE_LIMITED"
     assert second.json()["scope"] == "ip"
@@ -190,6 +192,8 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
     assert response.json()["submission_id"] == "sub_missing"
     assert response.json()["resume_status"] == "missing"
     assert response.json()["resume_filename"] == ""
+    assert "drive_file_id" not in response.json()
+    assert "drive_file_url" not in response.json()
     assert captured["parsed"] is False
 
 
@@ -229,4 +233,6 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
     assert response.json()["submission_id"] == "sub_failed"
     assert response.json()["resume_status"] == "failed"
     assert "resume upload failed" in response.json()["message"]
+    assert "drive_file_id" not in response.json()
+    assert "drive_file_url" not in response.json()
     assert captured["parsed"] is False

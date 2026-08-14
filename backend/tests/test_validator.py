@@ -23,6 +23,29 @@ def test_validate_success_prints_schema_validated(monkeypatch, capsys):
     assert "[SCHEMA] Schema Validated" in capsys.readouterr().out
 
 
+def test_submissions_schema_uses_v04_resume_reference_contract() -> None:
+    assert SHEET_SCHEMA["submissions"] == [
+        "submission_id",
+        "created_at",
+        "full_name",
+        "email",
+        "location_raw",
+        "timezone",
+        "skills_raw",
+        "interests",
+        "experience_level",
+        "availability",
+        "motivation",
+        "linkedin_url",
+        "github_url",
+        "consent_given",
+        "drive_file_id",
+        "resume_filename",
+        "resume_status",
+    ]
+    assert "drive_file_url" not in SHEET_SCHEMA["submissions"]
+
+
 def test_validate_header_mismatch_names_tab_and_diff(monkeypatch):
     snapshot = _matching_snapshot()
     snapshot["headers"]["submissions"] = [

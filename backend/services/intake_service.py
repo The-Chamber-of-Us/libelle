@@ -263,7 +263,7 @@ def finalize_submission(
 
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     try:
-        drive_file_id, _, resume_filename = upload_pdf(
+        drive_file_id, resume_filename = upload_pdf(
             pdf_bytes,
             submission_id,
             original_filename or "resume.pdf",

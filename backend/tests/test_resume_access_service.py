@@ -19,10 +19,6 @@ def test_get_mediated_resume_downloads_uploaded_resume(monkeypatch, caplog) -> N
         },
     )
     monkeypatch.setattr(
-        "storage.drive_repo.find_pdf_by_name",
-        lambda filename: (_ for _ in ()).throw(AssertionError("filename lookup is not allowed")),
-    )
-    monkeypatch.setattr(
         "storage.drive_repo.download_file",
         lambda file_id: b"%PDF test" if file_id == "drive-file-1" else b"",
     )

@@ -16,7 +16,7 @@ def test_upload_pdf_sends_deterministic_filename_to_drive(monkeypatch):
 
     class FakeCreate:
         def execute(self):
-            return {"id": "drive-file-id", "webViewLink": "https://drive.example/view"}
+            return {"id": "drive-file-id"}
 
     class FakeFiles:
         def create(self, *, body, media_body, fields):
@@ -31,7 +31,7 @@ def test_upload_pdf_sends_deterministic_filename_to_drive(monkeypatch):
 
     monkeypatch.setattr(drive_repo, "get_drive_service", lambda: FakeDriveService())
 
-    file_id, web_view, filename = drive_repo.upload_pdf(
+    file_id, filename = drive_repo.upload_pdf(
         b"%PDF-1.4 stub",
         "sub_123",
         "Original Resume.pdf",
@@ -39,7 +39,7 @@ def test_upload_pdf_sends_deterministic_filename_to_drive(monkeypatch):
     )
 
     assert file_id == "drive-file-id"
-    assert web_view == "https://drive.example/view"
     assert filename == "sub_123_Original Resume.pdf"
+    assert captured["fields"] == "id"
     assert captured["body"]["name"] == filename
     assert captured["body"]["parents"] == ["folder-123"]
