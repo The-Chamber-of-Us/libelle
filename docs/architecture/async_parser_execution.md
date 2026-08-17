@@ -201,6 +201,13 @@ worker concurrency guarantee on Sheets. Running multiple active pollers against
 the same Sheets queue is unsupported until the queue backend provides an atomic
 claim primitive or an equivalent repository-level guarantee.
 
+For the first Sheets-backed implementation, lease expiry is an operational
+boundary. A worker whose lease has expired must abort before any further
+persistence, including parser result writes, resolver enrichment writes, error
+state writes for that attempt, or authoritative job finalization. This keeps an
+expired worker from continuing to mutate durable state after the job has become
+claimable by a newer attempt.
+
 Duplicate enqueue:
 
 - Creating the same initial parser job twice must return the existing job
@@ -216,8 +223,12 @@ Duplicate worker execution:
 - Claim updates `status=running`, increments `attempt_count`, sets
   `last_parser_run_id`, and writes a bounded lease through `locked_by`,
   `locked_at`, and `lock_expires_at`.
-- A worker may continue only if its lease and `parser_run_id` still match the
-  job row before finalizing.
+- A worker may continue only while its lease has not expired and its
+  `parser_run_id` still matches the job row.
+- A worker must re-read the job row before every durable side effect after
+  claiming, not only before finalization. If `locked_by`, `parser_run_id`,
+  `status`, or `lock_expires_at` no longer authorizes that attempt, the worker
+  must abort the attempt without writing more state.
 - If a worker finishes after another attempt has already succeeded, it must not
   mark the job failed or overwrite the authoritative result.
 - Parser output writes are append-only. Submission rows are never overwritten.
@@ -230,6 +241,8 @@ Parser result write idempotency:
 - `(submission_id, parser_run_id)` identifies one logical parser attempt/result.
 - Retrying persistence for the same `parser_run_id` must not create a second
   logical result.
+- This is a logical repository/read-model contract, not a physical uniqueness
+  guarantee that Sheets can enforce atomically.
 - If a Sheets append succeeds but the worker times out before receiving
   confirmation, the retry path must re-read for `(submission_id,
   parser_run_id)` before appending. If the row already exists, persistence is
@@ -243,7 +256,8 @@ Authoritative finalization:
 
 - A worker may set `parser_jobs.authoritative_parser_run_id` only after it has
   persisted parser success for the same `parser_run_id` and re-read the job row
-  to confirm the job is still running for that attempt.
+  to confirm the job is still running for that attempt and the lease has not
+  expired.
 - If the job already has a different `authoritative_parser_run_id`, the worker
   must treat its own attempt as stale and leave reviewer-facing authority
   unchanged.
@@ -251,8 +265,12 @@ Authoritative finalization:
   advanced to another successful attempt.
 
 For Sheets, the repository should still minimize duplicate claims with a short
-polling interval, process-level worker identity, and a re-read before
-finalization. Those mitigations are secondary to the authority rule above.
+polling interval, process-level worker identity, and re-reads before durable
+side effects. Those mitigations reduce accidental races but do not create a
+hard stale-worker fencing guarantee under multiple active pollers. A future
+multi-worker implementation requires a queue backend or repository operation
+that can atomically validate an attempt/fencing token during claim and
+finalization.
 
 ## Parser and Resolver Boundary
 
@@ -438,6 +456,9 @@ Worker stops during parsing:
 - The job remains `running` until `lock_expires_at`.
 - Another worker may reclaim it after the lease expires.
 - The new attempt receives a new `parser_run_id`.
+- If the original worker later resumes or finishes after `lock_expires_at`, it
+  must abort before writing parser output, resolver output, errors, or
+  authoritative job state.
 
 Raspberry Pi restarts:
 
@@ -458,6 +479,8 @@ Job claimed but never acknowledged:
 - Lease expiry makes it claimable again.
 - Attempt evidence is visible through `last_parser_run_id`, `attempt_count`, and
   any error rows that were written before the crash.
+- If the original claimant is still alive after lease expiry, it is stale and
+  must not persist additional attempt results or finalization state.
 
 Storage succeeds but parser-result persistence fails:
 
@@ -600,7 +623,8 @@ unnecessary personal information. Logs should prefer `submission_id`,
 4. Add polling parser worker.
    Acceptance: worker claims queued jobs, processes one attempt, records parser
    and resolver outcomes separately, finalizes success through
-   `authoritative_parser_run_id`, and honors max attempts and lease expiry.
+   `authoritative_parser_run_id`, re-checks lease ownership before durable side
+   effects, and aborts expired attempts.
 
 5. Add recovery scanner.
    Acceptance: uploaded submissions with no parser job and no successful parser
@@ -626,7 +650,8 @@ unnecessary personal information. Logs should prefer `submission_id`,
 - Sheets does not provide ideal atomic compare-and-swap semantics for leases.
   The first implementation supports one active polling worker; duplicate
   execution remains an expected failure mode, and the authority/idempotency rules
-  prevent stale or duplicate work from changing reviewer-facing state.
+  define how stale or duplicate work must be handled. A hard multi-worker
+  fencing guarantee requires a backend with atomic claim/finalization support.
 - The current state contract does not have explicit `retry_scheduled`,
   `retry_exhausted`, or `downstream_unavailable` enums. Those should remain
   operational details unless reviewer-facing product needs require new states.
