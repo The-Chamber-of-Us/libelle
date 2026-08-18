@@ -27,11 +27,7 @@ def _patch_io(monkeypatch, captured):
     def fake_upload(pdf_bytes, submission_id, original_filename):
         captured["drive_submission_id"] = submission_id
         captured["drive_original_filename"] = original_filename
-        return (
-            "drive-file-id",
-            "https://drive.example/view",
-            f"{submission_id}_{original_filename}",
-        )
+        return "drive-file-id", f"{submission_id}_{original_filename}"
 
     def fake_write_base_row(**kwargs):
         submission_id = kwargs["submission_id"]
