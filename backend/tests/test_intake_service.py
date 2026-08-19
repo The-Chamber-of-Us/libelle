@@ -3,10 +3,27 @@ import uuid
 import fitz
 import pytest
 
-from services import intake_service
+from services import intake_file_validation, intake_service
+from services.intake_file_validation import ValidatedResumeUpload
 
 
-_VALID_PDF_BYTES = b"%PDF-1.4 stub"
+def _pdf_bytes(text: str = "resume") -> bytes:
+    doc = fitz.open()
+    doc.new_page().insert_text((72, 72), text)
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    return pdf_bytes
+
+
+def _image_only_pdf_bytes() -> bytes:
+    doc = fitz.open()
+    doc.new_page()
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    return pdf_bytes
+
+
+_VALID_PDF_BYTES = _pdf_bytes()
 
 
 def _normalized():
@@ -21,9 +38,6 @@ def _normalized():
 
 
 def _patch_io(monkeypatch, captured):
-    def fake_extract(pdf_bytes):
-        return "extracted resume text"
-
     def fake_upload(pdf_bytes, submission_id, original_filename):
         captured["drive_submission_id"] = submission_id
         captured["drive_original_filename"] = original_filename
@@ -34,7 +48,6 @@ def _patch_io(monkeypatch, captured):
         captured["sheets_submission_id"] = submission_id
         captured["row"] = kwargs
 
-    monkeypatch.setattr(intake_service, "_extract_text_from_pdf", fake_extract)
     monkeypatch.setattr(intake_service, "upload_pdf", fake_upload)
     monkeypatch.setattr(intake_service, "write_base_row", fake_write_base_row)
 
@@ -115,9 +128,39 @@ def test_finalize_submission_without_resume_records_missing(monkeypatch):
     assert captured["drive_file_id"] == ""
 
 
+def test_finalize_submission_empty_browser_file_part_records_missing(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **kwargs: captured.update(kwargs),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
+    )
+
+    result = intake_service.finalize_submission(
+        pdf_bytes=b"",
+        original_filename="",
+        content_type="application/octet-stream",
+        normalized=_normalized(),
+        linkedin_url=None,
+        github_url=None,
+        motivation=None,
+    )
+
+    assert result["resume_status"] == "missing"
+    assert result["resume_filename"] == ""
+    assert result["drive_file_id"] == ""
+    assert captured["resume_status"] == "missing"
+    assert captured["resume_filename"] == ""
+    assert captured["drive_file_id"] == ""
+
+
 def test_finalize_submission_records_failed_drive_upload(monkeypatch):
     captured = {}
-    monkeypatch.setattr(intake_service, "_extract_text_from_pdf", lambda _: "resume text")
     monkeypatch.setattr(
         intake_service,
         "upload_pdf",
@@ -147,27 +190,83 @@ def test_finalize_submission_records_failed_drive_upload(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    ("filename", "content_type"),
+    ("filename", "content_type", "expected_code"),
     [
-        ("resume.txt", "application/pdf"),
-        ("resume.pdf", "text/plain"),
+        ("resume.txt", "application/pdf", "UNSUPPORTED_FILE_TYPE"),
+        ("resume.pdf", "text/plain", "MIME_TYPE_MISMATCH"),
     ],
 )
-def test_validate_intake_rejects_non_pdf_metadata(filename, content_type):
+def test_finalize_submission_rejects_non_pdf_metadata(
+    filename,
+    content_type,
+    expected_code,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
+    )
+
     with pytest.raises(intake_service.IntakeError) as exc_info:
-        intake_service.validate_intake(
-            filename=filename,
+        intake_service.finalize_submission(
+            pdf_bytes=_VALID_PDF_BYTES,
+            original_filename=filename,
             content_type=content_type,
-            full_name="Test User",
-            email="test@example.com",
-            location="Remote",
-            interests="Engineering",
-            availability="Weekly",
-            experience_level="Mid",
-            consent=True,
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
         )
 
-    assert exc_info.value.code == "INVALID_FILE_TYPE"
+    assert exc_info.value.code == expected_code
+
+
+def test_finalize_submission_rejects_present_upload_without_filename(monkeypatch):
+    monkeypatch.setattr(
+        intake_service,
+        "upload_pdf",
+        lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **_: (_ for _ in ()).throw(AssertionError("Sheets should not be called")),
+    )
+
+    with pytest.raises(intake_service.IntakeError) as exc_info:
+        intake_service.finalize_submission(
+            pdf_bytes=_VALID_PDF_BYTES,
+            original_filename="",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
+
+    assert exc_info.value.code == "MISSING_FILE"
+
+
+def test_finalize_submission_rejects_filename_metadata_without_payload(monkeypatch):
+    monkeypatch.setattr(
+        intake_service,
+        "write_base_row",
+        lambda **_: (_ for _ in ()).throw(AssertionError("Sheets should not be called")),
+    )
+
+    with pytest.raises(intake_service.IntakeError) as exc_info:
+        intake_service.finalize_submission(
+            pdf_bytes=None,
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
+
+    assert exc_info.value.code == "MISSING_FILE"
 
 
 def test_finalize_submission_rejects_invalid_pdf_content(monkeypatch):
@@ -183,11 +282,51 @@ def test_finalize_submission_rejects_invalid_pdf_content(monkeypatch):
             motivation=None,
         )
 
-    assert exc_info.value.code == "INVALID_PDF_CONTENT"
+    assert exc_info.value.code == "INVALID_PDF"
+
+
+def test_finalize_submission_rejects_pdf_without_extractable_text(monkeypatch):
+    monkeypatch.setattr(intake_service, "write_base_row", lambda **_: None)
+
+    with pytest.raises(intake_service.IntakeError) as exc_info:
+        intake_service.finalize_submission(
+            pdf_bytes=_image_only_pdf_bytes(),
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
+
+    assert exc_info.value.code == "NO_EXTRACTABLE_TEXT"
+    assert exc_info.value.message == (
+        "The uploaded resume PDF does not contain extractable text."
+    )
+
+
+def test_unexpected_pdf_extraction_error_is_not_labeled_invalid_pdf(monkeypatch):
+    monkeypatch.setattr(intake_service, "write_base_row", lambda **_: None)
+    monkeypatch.setattr(
+        intake_file_validation,
+        "extract_text_from_pdf_bytes",
+        lambda _: (_ for _ in ()).throw(RuntimeError("extractor dependency failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="extractor dependency failed"):
+        intake_service.finalize_submission(
+            pdf_bytes=_VALID_PDF_BYTES,
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
 
 
 def test_finalize_submission_enforces_configured_size_limit(monkeypatch):
-    monkeypatch.setattr(intake_service, "MAX_PDF_MB", 0)
+    monkeypatch.setattr(intake_file_validation, "MAX_PDF_MB", 0)
 
     with pytest.raises(intake_service.IntakeError) as exc_info:
         _finalize()
@@ -206,6 +345,42 @@ def test_password_protected_pdf_is_rejected():
     doc.close()
 
     with pytest.raises(intake_service.IntakeError) as exc_info:
-        intake_service._extract_text_from_pdf(encrypted_pdf)
+        intake_service.finalize_submission(
+            pdf_bytes=encrypted_pdf,
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            normalized=_normalized(),
+            linkedin_url=None,
+            github_url=None,
+            motivation=None,
+        )
 
-    assert exc_info.value.code == "PASSWORD_PROTECTED_PDF"
+    assert exc_info.value.code == "INVALID_PDF"
+
+
+def test_finalize_submission_accepts_prevalidated_resume_without_revalidating(monkeypatch):
+    captured = {}
+    _patch_io(monkeypatch, captured)
+    monkeypatch.setattr(
+        intake_service,
+        "validate_resume_upload",
+        lambda **_: (_ for _ in ()).throw(AssertionError("should use validated upload")),
+    )
+
+    result = intake_service.finalize_submission(
+        pdf_bytes=b"not inspected",
+        original_filename="not-inspected.txt",
+        normalized=_normalized(),
+        linkedin_url=None,
+        github_url=None,
+        motivation=None,
+        validated_resume=ValidatedResumeUpload(
+            pdf_bytes=_VALID_PDF_BYTES,
+            original_filename="resume.pdf",
+            content_type="application/pdf",
+            extracted_text="resume text",
+        ),
+    )
+
+    assert result["resume_status"] == "uploaded"
+    assert captured["drive_original_filename"] == "resume.pdf"

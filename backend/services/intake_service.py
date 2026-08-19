@@ -5,12 +5,15 @@ import traceback
 import uuid
 from typing import Any, Dict, List, Optional, Union
 
-from config import MAX_PDF_MB
+from services.intake_file_validation import (
+    ResumeFileValidationError,
+    ValidatedResumeUpload,
+    validate_resume_upload,
+)
 from storage.drive_repo import upload_pdf
 from storage.sheets_repo import append_error_row, write_base_row
 
 
-ALLOWED_PDF_MIMES = {"application/pdf", "application/x-pdf"}
 EMAIL_IN_TEXT_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
 
@@ -74,26 +77,6 @@ def _parse_interests(raw: Union[str, List[str], None]) -> str:
     return ", ".join(parts) if parts else s
 
 
-def _extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    try:
-        from services.pdf_text_extraction import (
-            PasswordProtectedPDFError,
-            extract_text_from_pdf_bytes,
-        )
-        return extract_text_from_pdf_bytes(pdf_bytes)
-    except PasswordProtectedPDFError:
-        raise IntakeError(
-            "PASSWORD_PROTECTED_PDF",
-            "Password-protected PDFs are not supported",
-            status_code=400,
-        )
-    except IntakeError:
-        raise
-    except Exception:
-        traceback.print_exc()
-        raise IntakeError("PDF_PARSE_FAILED", "PDF parsing failed", status_code=400)
-
-
 def _validate_fields(
     *,
     full_name: Optional[str],
@@ -141,34 +124,6 @@ def _validate_fields(
         "experience_level": experience_level.strip(),
     }
 
-
-def _validate_file_type(filename: str, content_type: Optional[str]) -> None:
-    if not filename.lower().endswith(".pdf"):
-        raise IntakeError("INVALID_FILE_TYPE", "Only PDF files supported", status_code=400)
-
-    normalized_content_type = (content_type or "").split(";", 1)[0].strip().lower()
-    if normalized_content_type and normalized_content_type not in ALLOWED_PDF_MIMES:
-        raise IntakeError("INVALID_FILE_TYPE", "Only PDF files supported", status_code=400)
-
-
-def _validate_file_size(pdf_bytes: bytes) -> None:
-    if len(pdf_bytes) > MAX_PDF_MB * 1024 * 1024:
-        raise IntakeError(
-            "FILE_TOO_LARGE",
-            f"PDF too large (>{MAX_PDF_MB}MB)",
-            status_code=400,
-        )
-
-
-def _validate_pdf_content(pdf_bytes: bytes) -> None:
-    if b"%PDF-" not in pdf_bytes[:1024]:
-        raise IntakeError(
-            "INVALID_PDF_CONTENT",
-            "The uploaded file is not a valid PDF",
-            status_code=400,
-        )
-
-
 def validate_intake(
     *,
     filename: Optional[str],
@@ -182,7 +137,7 @@ def validate_intake(
     consent: Optional[bool],
 ) -> Dict[str, Any]:
     """
-    Validate fields and file metadata without reading file bytes.
+    Validate form fields without reading file bytes.
 
     Raises IntakeError on validation failure. Returns normalized field values for
     the caller to pass to finalize_submission after the PDF bytes have been read.
@@ -196,8 +151,6 @@ def validate_intake(
         experience_level=experience_level,
         consent=consent,
     )
-    if filename:
-        _validate_file_type(filename, content_type)
     return normalized
 
 
@@ -228,17 +181,22 @@ def finalize_submission(
     linkedin_url: Optional[str],
     github_url: Optional[str],
     motivation: Optional[str],
+    content_type: Optional[str] = None,
+    validated_resume: Optional[ValidatedResumeUpload] = None,
 ) -> Dict[str, Any]:
     """
     Persist an intake with an optional validated PDF resume.
 
     Expects `normalized` from a prior validate_intake call. Raises IntakeError on
-    size/extraction failure. Upload failures are persisted with resume_status=failed.
+    resume validation failure. Upload failures are persisted with resume_status=failed.
     """
     submission_id = str(uuid.uuid4())
     ui_data = _build_ui_data(normalized, linkedin_url, github_url, motivation)
 
-    if pdf_bytes is None:
+    no_uploaded_resume = (pdf_bytes is None or pdf_bytes == b"") and not (
+        original_filename or ""
+    ).strip()
+    if validated_resume is None and no_uploaded_resume:
         print(f"[UPLOAD] submission_id={submission_id} no resume provided; status=missing")
         write_base_row(
             submission_id=submission_id,
@@ -255,18 +213,24 @@ def finalize_submission(
             "resume_status": "missing",
         }
 
-    _validate_file_size(pdf_bytes)
-    _validate_pdf_content(pdf_bytes)
-    pre_text = _extract_text_from_pdf(pdf_bytes)
-    if not pre_text.strip():
-        raise IntakeError("NO_TEXT_EXTRACTED", "PDF has no extractable text", status_code=400)
+    if validated_resume is None:
+        try:
+            validated_resume = validate_resume_upload(
+                filename=original_filename,
+                content_type=content_type,
+                file_bytes=pdf_bytes,
+            )
+        except ResumeFileValidationError as exc:
+            raise IntakeError(exc.code, exc.message, status_code=exc.status_code)
+
+    pre_text = validated_resume.extracted_text
 
     print(f"[UPLOAD] submission_id={submission_id} uploading to Drive ...")
     try:
         drive_file_id, resume_filename = upload_pdf(
-            pdf_bytes,
+            validated_resume.pdf_bytes,
             submission_id,
-            original_filename or "resume.pdf",
+            validated_resume.original_filename,
         )
     except Exception as exc:
         traceback.print_exc()
