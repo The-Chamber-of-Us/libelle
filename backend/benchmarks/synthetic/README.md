@@ -80,6 +80,24 @@ that fixed order. This is a derivation-order convenience, not a literal
 rendered layout — the Profile IR doesn't carry template section ordering.
 `links` is always `[]`; `Profile` has no link field to derive from yet.
 
+`consistency_check.py` resolves the case ID from either `submission_id`
+(V1) or `resume_id` (V2), so it works against either annotation version.
+
+### Validating V2 output against the canonical validator (#348)
+
+Generated V2 annotations are expected to pass the canonical V2 corpus
+validator introduced in #321:
+
+```bash
+.venv/bin/python backend/benchmarks/synthetic/generator/generate.py \
+  --seed 42 --count 30 --annotation-version v2
+
+python -m backend.benchmarks.v2_evaluation.validate_v2_goldens \
+  --pdf-dir backend/benchmarks/synthetic/out/pdfs \
+  --golden-dir backend/benchmarks/synthetic/out/golden_json
+# -> Validated 30 fixture records; errors: 0
+```
+
 ## Determinism
 
 Same `--seed` reproduces the same generated text content and gold targets.
