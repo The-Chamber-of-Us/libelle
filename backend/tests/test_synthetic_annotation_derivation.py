@@ -84,7 +84,7 @@ def test_derive_gold_v2_top_level_fields():
     assert gold["phone"] == "(555) 123-4567"
     assert gold["location"] == {"city": "Denver", "country": "United States", "raw": "Denver, CO"}
     assert gold["links"] == []
-    assert gold["skills"] == ["python", "sql", "docker"]
+    assert gold["skills"] == ["Python", "SQL", "Docker"]
     assert gold["notes"] == {"ambiguities": ["ambiguous city"]}
 
 
@@ -117,6 +117,13 @@ def test_derive_gold_v2_omits_empty_sections():
 
     headings = [s["heading"] for s in gold["sections"]]
     assert headings == ["SKILLS"]
+
+
+def test_derive_gold_v2_preserves_display_casing_and_dedupes():
+    profile = _profile(skills=("Python", "python", "Node.js"), tools=("nodejs", "SQL"))
+    gold = derive_gold_v2(profile)
+
+    assert gold["skills"] == ["Python", "Node.js", "SQL"]
 
 
 def test_derive_gold_v2_passes_canonical_validator():
