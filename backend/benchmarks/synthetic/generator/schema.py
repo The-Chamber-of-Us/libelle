@@ -62,7 +62,19 @@ class Profile:
         return asdict(self)
 
 
-def derive_gold(profile: Profile) -> dict:
+def _normalized_skills(profile: Profile) -> list[str]:
+    seen: set[str] = set()
+    skills_normalized: list[str] = []
+    for s in (*profile.skills, *profile.tools):
+        norm = s.strip().lower()
+        if not norm or norm in seen:
+            continue
+        seen.add(norm)
+        skills_normalized.append(norm)
+    return skills_normalized
+
+
+def derive_gold_v1(profile: Profile) -> dict:
     """Derive gold.json from a profile per labeling_rules_v1.md.
 
     Rules:
@@ -73,18 +85,9 @@ def derive_gold(profile: Profile) -> dict:
       - city/country may be null if the rendered raw is intentionally
         unresolvable (e.g. fictional place, ambiguous format).
     """
-    seen: set[str] = set()
-    skills_normalized: list[str] = []
-    for s in (*profile.skills, *profile.tools):
-        norm = s.strip().lower()
-        if not norm or norm in seen:
-            continue
-        seen.add(norm)
-        skills_normalized.append(norm)
-
     return {
         "submission_id": profile.case_id,
-        "skills": skills_normalized,
+        "skills": _normalized_skills(profile),
         "location": {
             "city": profile.location.city,
             "country": profile.location.country,
@@ -94,3 +97,88 @@ def derive_gold(profile: Profile) -> dict:
             "ambiguities": list(profile.meta.boundary_probes),
         },
     }
+
+
+def derive_gold_v2(profile: Profile) -> dict:
+    """Derive a canonical V2 golden per backend/benchmarks/v2_annotation_spec.md.
+
+    Section order (SKILLS, EXPERIENCE, EDUCATION) is a fixed derivation
+    order, not a literal rendered layout — the Profile IR does not carry
+    template section ordering. Sections with no source content are omitted
+    rather than emitted empty.
+    """
+    sections: list[dict] = []
+
+    raw_skills = [s.strip() for s in (*profile.skills, *profile.tools) if s.strip()]
+    if raw_skills:
+        sections.append({"heading": "SKILLS", "items": [", ".join(raw_skills)]})
+
+    if profile.experience:
+        sections.append({
+            "heading": "EXPERIENCE",
+            "items": [
+                {
+                    "title": f"{entry.title}, {entry.company}",
+                    "meta": entry.dates or None,
+                    "subtitle": entry.location_raw or None,
+                    "bullets": list(entry.bullets),
+                }
+                for entry in profile.experience
+            ],
+        })
+
+    if profile.education:
+        sections.append({
+            "heading": "EDUCATION",
+            "items": [
+                {
+                    "title": entry.institution,
+                    "meta": entry.dates or None,
+                    "subtitle": entry.degree or None,
+                    "bullets": [],
+                }
+                for entry in profile.education
+            ],
+        })
+
+    boundary_probes = list(profile.meta.boundary_probes)
+
+    return {
+        "resume_id": profile.case_id,
+        "source_persona": f"{profile.meta.category} synthetic case",
+        "persona": profile.meta.template,
+        "name": profile.name or None,
+        "email": profile.email or None,
+        "phone": profile.phone or None,
+        "location": {
+            "city": profile.location.city or "",
+            "country": profile.location.country or "",
+            "raw": profile.location.raw,
+        } if profile.location.raw else None,
+        "links": [],
+        "skills": _normalized_skills(profile),
+        "notes": {"ambiguities": boundary_probes} if boundary_probes else None,
+        "sections": sections,
+    }
+
+
+ANNOTATION_DERIVERS = {
+    "v1": derive_gold_v1,
+    "v2": derive_gold_v2,
+}
+
+
+def derive_gold(profile: Profile, version: str = "v1") -> dict:
+    """Versioned annotation derivation entry point (see #347).
+
+    The synthetic Profile is the single source of truth; this dispatches to
+    the deriver for the requested annotation schema version without
+    affecting profile generation, rendering, or determinism.
+    """
+    try:
+        deriver = ANNOTATION_DERIVERS[version]
+    except KeyError:
+        raise ValueError(
+            f"Unsupported annotation version {version!r}; expected one of {sorted(ANNOTATION_DERIVERS)}"
+        )
+    return deriver(profile)

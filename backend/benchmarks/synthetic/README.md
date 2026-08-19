@@ -57,6 +57,29 @@ Note: `--adversarial-ratio 0.34` (not the 0.30 default) ensures all 10
 adversarial templates fire at `--count 30`. With 0.30, only 9 fire — the
 last adversarial template is missed.
 
+## Annotation versioning (#347)
+
+Annotation derivation is versioned independently of profile generation and
+rendering. The synthetic `Profile` (`generator/schema.py`) remains the single
+source of truth; `--annotation-version` selects which schema `gold.json` is
+written in:
+
+```bash
+# Default: labeling_rules_v1.md shape ({"submission_id", "skills", "location", "notes"})
+.venv/bin/python backend/benchmarks/synthetic/generator/generate.py --seed 42 --count 30
+
+# Canonical V2 shape (backend/benchmarks/v2_annotation_spec.md)
+.venv/bin/python backend/benchmarks/synthetic/generator/generate.py \
+  --seed 42 --count 30 --annotation-version v2
+```
+
+`derive_gold_v2()` maps `Profile.experience`/`Profile.education` into V2
+`sections[]` (structured `title`/`meta`/`subtitle`/`bullets` entries) and
+`Profile.skills`/`Profile.tools` into a plain-string `SKILLS` section, in
+that fixed order. This is a derivation-order convenience, not a literal
+rendered layout — the Profile IR doesn't carry template section ordering.
+`links` is always `[]`; `Profile` has no link field to derive from yet.
+
 ## Determinism
 
 Same `--seed` reproduces the same generated text content and gold targets.
