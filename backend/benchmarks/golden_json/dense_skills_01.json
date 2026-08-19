@@ -1,0 +1,133 @@
+{
+  "resume_id": "dense_skills_01",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Dense Skills / UI/UX Designer",
+  "name": "Aaliya Nasser",
+  "email": "anasser@example.com",
+  "phone": "000.000.0000",
+  "location": {
+    "city": "San Francisco",
+    "country": "United States",
+    "raw": "123 South St., San Francisco, CA"
+  },
+  "links": [],
+  "skills": [
+    "Figma",
+    "Sketch",
+    "Adobe XD",
+    "InVision",
+    "Zeplin",
+    "Framer",
+    "Principle",
+    "Marvel",
+    "Axure RP",
+    "Balsamiq",
+    "Adobe Illustrator",
+    "Adobe Photoshop",
+    "After Effects",
+    "Lottie",
+    "HTML",
+    "CSS",
+    "JavaScript",
+    "Storybook",
+    "Design Systems",
+    "Component Libraries",
+    "Wireframing",
+    "Prototyping",
+    "User Research",
+    "Usability Testing",
+    "Heuristic Evaluation",
+    "Card Sorting",
+    "Tree Testing",
+    "A/B Testing",
+    "Journey Mapping",
+    "Persona Development",
+    "Information Architecture",
+    "Interaction Design",
+    "Visual Design",
+    "Motion Design",
+    "Responsive Design",
+    "Accessibility",
+    "WCAG 2.1",
+    "iOS Human Interface Guidelines",
+    "Material Design",
+    "Agile/Scrum",
+    "JIRA",
+    "Confluence",
+    "Notion",
+    "Miro",
+    "FigJam",
+    "UserTesting",
+    "Hotjar",
+    "Maze",
+    "Lookback"
+  ],
+ "notes": "Skills section labeled 'Key Skills' rather than 'Skills' — treated as equivalent. Location field includes a street address alongside city and state. Experience dates appear as section headers rather than inline with entry titles due to layout. Per the canonical V2 location contract: root location reflects the header/contact location (San Francisco, CA); the education section's secondary location (Santa Barbara, CA) is not promoted to root but is preserved in the structured education entry.",
+  "sections": [
+    {
+      "heading": "Summary",
+      "items": [
+        "UI/UX designer with 7+ years crafting intuitive, accessible digital experiences across mobile, web, and enterprise platforms. Equally comfortable leading early-stage discovery research and delivering pixel-perfect UI ready for handoff."
+      ]
+    },
+    {
+      "heading": "Education",
+      "items": [
+        {
+          "title": "California College of the Arts",
+          "meta": "2016",
+          "subtitle": "Santa Barbara, CA, B.F.A Interaction Design",
+          "bullets": [
+            "GPA 3.87"
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Key Skills",
+      "items": [
+        "Figma, Sketch, Adobe XD, InVision, Zeplin, Framer, Principle, Marvel, Axure RP, Balsamiq, Adobe Illustrator, Adobe Photoshop, After Effects, Lottie, HTML, CSS, JavaScript (basic), Storybook, Design Systems, Component Libraries, Wireframing, Prototyping, User Research, Usability Testing, Heuristic Evaluation, Card Sorting, Tree Testing, A/B Testing, Journey Mapping, Persona Development, Information Architecture, Interaction Design, Visual Design, Motion Design, Responsive Design, Accessibility (WCAG 2.1), iOS Human Interface Guidelines, Material Design, Agile/Scrum, JIRA, Confluence, Notion, Miro, FigJam, UserTesting, Hotjar, Maze, Lookback"
+      ]
+    },
+    {
+      "heading": "Experience",
+      "items": [
+        {
+          "title": "Lead UX Designer | Fieldstone Digital",
+          "meta": "Mar 2021 - Present",
+          "subtitle": "San Francisco, CA",
+          "bullets": [
+            "Leads UX strategy and execution for a B2B SaaS platform serving 200K+ users, owning the full design process from research through to production handoff.",
+            "Established the company's first design system, reducing UI inconsistencies across the product by 70% and cutting designer-to-developer handoff time significantly."
+          ]
+        },
+        {
+          "title": "UI/UX Designer | Clayburn Apps",
+          "meta": "Jul 2018 - Feb 2021",
+          "subtitle": "Oakland, CA",
+          "bullets": [
+            "Designed end-to-end experiences for three consumer mobile apps across iOS and Android, each achieving above 4.5 star ratings in their respective app stores.",
+            "Collaborated closely with engineering to ensure design feasibility, regularly attending sprint planning and contributing to technical scoping discussions."
+          ]
+        },
+        {
+          "title": "Junior UX Designer | Brightwell Agency",
+          "meta": "Aug 2016 – Jun 2018",
+          "subtitle": "San Jose, CA",
+          "bullets": [
+            "Supported senior designers on client projects spanning fintech, healthcare, and retail, contributing wireframes, prototypes, and user research synthesis.",
+            "Conducted moderated usability tests with end users and documented findings in structured reports delivered to client stakeholders.",
+            "Redesigned the onboarding flow for a healthcare client, reducing drop-off at account creation by 35%."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Certifications",
+      "items": [
+        "Nielsen Normal Group UX Certifications (2020)",
+        "Google UX Design Professional Certificate (2019)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "resume_id": "header_contact_01",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "Contact-Heavy / Administrative",
+  "name": "Denise Okafor",
+  "email": "dokafor@example.com",
+  "phone": "(000) 000-0000",
+  "location": {
+    "city": "Columbus",
+    "country": "United States",
+    "raw": "Columbus, OH"
+  },
+  "links": [
+    "linked.com/in/okafor"
+  ],
+  "skills": [
+    "Microsoft Office",
+    "Word",
+    "Excel",
+    "Outlook",
+    "Google Workspace",
+    "Docs",
+    "Sheets",
+    "Calendar",
+    "Student Information Systems",
+    "PowerSchool",
+    "Infinite Campus",
+    "Scheduling & Calendar Management",
+    "Record Keeping & Filing",
+    "Front Office Reception",
+    "Parent & Community Communication",
+    "Event Coordination",
+    "Budget Tracking",
+    "Confidentiality & FERPA Compliance",
+    "Data Entry & Database Management",
+    "Typing",
+    "Multi-line Phone Systems",
+    "Petty Cash Handling",
+    "Purchase Order Processing",
+    "Staff Onboarding Support",
+    "Inventory Management",
+    "Conflict De-escalation",
+    "First Aid / CPR Certified",
+    "Bilingual Communication",
+    "English",
+    "Spanish"
+  ],
+  "notes": "Dense skills sidebar on the left with 20+ items. Contact details appear as labeled fields (Email:, Phone:, Location:, LinkedIn:) rather than plain values. Experience written as prose paragraphs rather than bullet points.",
+  "sections": [
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Microsoft Office (Word, Excel, Outlook)",
+        "Google Workspace (Docs, Sheets, Calendar)",
+        "Student Information Systems (PowerSchool, Infinite Campus)",
+        "Scheduling & Calendar Management",
+        "Record Keeping & Filing",
+        "Front Office Reception",
+        "Parent & Community Communication",
+        "Event Coordination",
+        "Budget Tracking",
+        "Confidentiality & FERPA Compliance",
+        "Data Entry & Database Management",
+        "Typing (70+ WPM)",
+        "Multi-line Phone Systems",
+        "Petty Cash Handling",
+        "Purchase Order Processing",
+        "Staff Onboarding Support",
+        "Inventory Management",
+        "Conflict De-escalation",
+        "First Aid / CPR Certified",
+        "Bilingual Communication (English, Spanish)"
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "Columbus State Community College",
+          "meta": "2017",
+          "subtitle": "Associate of Applied Business",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "CERTIFICATIONS",
+      "items": [
+        "Microsoft Office Specialist (MOS) — Excel & Word (2019)"
+      ]
+    },
+    {
+      "heading": "AWARDS",
+      "items": [
+        "Columbus City Schools Staff Excellence Award (2022)",
+        "Westfield Elementary Employee of the Month — March 2021"
+      ]
+    },
+    {
+      "heading": "SUMMARY",
+      "items": [
+        "Organized and dependable administrative professional with 6+ years supporting school operations across front office, student services, and faculty coordination. Adept at managing high-traffic environments with warmth and efficiency, maintaining accurate records, and serving as a reliable point of contact for students, parents, and staff."
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Senior Administrative Assistant, Westfield Elementary School",
+          "meta": "Aug 2020 – Present",
+          "subtitle": "OH",
+          "bullets": [
+            "Serves as the primary point of contact for a 450-student elementary school, managing front office operations including visitor check-in, phone communications, and daily correspondence with parents and district staff.",
+            "Maintains and updates student records in PowerSchool, coordinates substitute teacher scheduling, and supports the principal with meeting preparation and calendar management.",
+            "Organizes school-wide events including open house nights, parent-teacher conference scheduling, and end-of-year ceremonies for 400+ attendees."
+          ]
+        },
+        {
+          "title": "Administrative Assistant, Hillcrest Middle School",
+          "meta": "Sep 2017 – Jul 2020",
+          "subtitle": "OH",
+          "bullets": [
+            "Managed attendance tracking and reporting for a 600-student school, liaising with teachers and parents to resolve discrepancies and ensure compliance with district policy.",
+            "Handled procurement of office and classroom supplies, tracking expenditures against a departmental budget.",
+            "Supported the front office team during peak enrollment periods, processing new student registrations and maintaining up-to-date emergency contact records."
+          ]
+        },
+        {
+          "title": "Administrative Volunteer, Columbus Reads Literacy Program",
+          "meta": "2016 – 2017",
+          "subtitle": "OH",
+          "bullets": [
+            "Supported program coordinators at a nonprofit literacy initiative operating across 8 Columbus-area schools, handling volunteer scheduling, attendance tracking, and supply coordination.",
+            "Drafted weekly communications to school liaisons and maintained a database of 150+ active volunteers.",
+            "Assisted in organizing quarterly parent engagement events and compiled program outcome reports submitted to district leadership."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "PROJECTS",
+      "items": [
+        {
+          "title": "Front Office Digital Transition",
+          "meta": "2021",
+          "subtitle": "",
+          "bullets": [
+            "Led the school's shift from paper-based to digital filing for student records, coordinating with the district IT team and training 5 office staff members on the new system.",
+            "Reduced record retrieval time by an estimated 50%."
+          ]
+        },
+        {
+          "title": "Student Records Audit & Clean-Up Initiative",
+          "meta": "2019",
+          "subtitle": "",
+          "bullets": [
+            "Conducted a full audit of physical and digital student records across Hillcrest Middle School's 600-student roster, identifying and resolving 80+ filing inconsistencies and outdated emergency contact entries."
+          ]
+        }
+      ]
+    }
+  ]
+}

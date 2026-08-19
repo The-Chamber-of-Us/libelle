@@ -1,0 +1,103 @@
+{
+  "resume_id": "multi_col_05",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "True Multi-Column / Creative Professional",
+  "name": "Elizabeth Cline",
+  "email": "elizac@plshireme.com",
+  "phone": "000-000-0000",
+  "location": {
+    "city": "Portland",
+    "country": "United States",
+    "raw": "Lonely St, Portland, OR"
+  },
+  "links": [],
+  "skills": [
+    "Adobe Photoshop",
+    "Illustrator",
+    "InDesign",
+    "After Effects",
+    "Figma",
+    "Sketch",
+    "Canva",
+    "CorelDRAW",
+    "Branding & Identity",
+    "Logo Design",
+    "Print Design",
+    "Digital Design",
+    "UI/UX Principles",
+    "Typography",
+    "Layout Design",
+    "Project Management",
+    "Client Communication",
+    "Team Collaboration",
+    "Creative Thinking",
+    "Time Management"
+  ],
+  "notes": "Two-column layout: summary and skills in left sidebar; education and experience in right main column. Location field includes a street name alongside city and state. Skills section contains sub-groups (Software, Design, Soft Skills) — group headers dropped per labeling rules, all items extracted.",
+  "sections": [
+    {
+      "heading": "Summary",
+      "items": [
+        "Graphic designer with 6+ years across branding, packaging, and digital design for consumer and nonprofit clients."
+      ]
+    },
+    {
+      "heading": "Skills",
+      "items": [
+        "Software: Adobe Photoshop, Illustrator, InDesign, After Effects, Figma, Sketch, Canva, CorelDRAW",
+        "Design: Branding & Identity, Logo Design, Print Design, Digital Design, UI/UX Principles, Typography, Layout Design",
+        "Soft Skills: Project Management, Client Communication, Team Collaboration, Creative Thinking, Time Management"
+      ]
+    },
+    {
+      "heading": "Education",
+      "items": [
+        {
+          "title": "Pacific Northwest College of Art",
+          "meta": "2018",
+          "subtitle": "Bachelor of Arts in Graphic Design",
+          "bullets": [
+            "Graduated with honors; coursework focused on typography, brand identity, and visual communication.",
+            "Senior thesis project on sustainable packaging design selected for department showcase."
+          ]
+        },
+        {
+          "title": "University of Engineering and Technology",
+          "meta": "2019",
+          "subtitle": "Diploma in Advertising Management",
+          "bullets": [
+            "Coursework in campaign strategy, consumer behavior, and media planning.",
+            "Completed capstone project developing a full ad campaign for a simulated client brief."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Experience",
+      "items": [
+        {
+          "title": "Senior Graphic Designer, Creativa Agency",
+          "meta": "January 2022 - Present",
+          "subtitle": "",
+          "bullets": [
+            "Led the creative design process for major clients, resulting in a 25% increase in client satisfaction scores.",
+            "Designed and produced a wide range of marketing materials, including digital ads, social media graphics, brochures, and corporate branding packages.",
+            "Collaborated with marketing and content teams to ensure all visuals aligned with campaign goals and brand identity.",
+            "Mentored junior designers, providing feedback and guidance on projects."
+          ]
+        },
+        {
+          "title": "Graphic Designer, Digital Studio",
+          "meta": "March 2019 - December 2021",
+          "subtitle": "",
+          "bullets": [
+            "Developed brand identities, logos, and style guides for over 30 small and medium-sized businesses.",
+            "Managed multiple projects simultaneously, from initial brief to final delivery, consistently meeting deadlines.",
+            "Created compelling visual assets for websites and mobile applications, enhancing user experience.",
+            "Improved workflow efficiency by implementing new design software and project management tools."
+          ]
+        }
+      ]
+    }
+  ]
+}

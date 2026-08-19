@@ -1,0 +1,126 @@
+{
+  "resume_id": "multi_col_04",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "True Multi-Column / Non-Standard Skills Section",
+  "name": "Jordan Castellano",
+  "email": "jordan.castellano@fake.com",
+  "phone": "+000-000-0000",
+  "location": {
+    "city": "Miami",
+    "country": "United States",
+    "raw": "Miami, FL"
+  },
+  "links": [
+    "linkedin.com/in/jcastellano",
+    "Instagram: @jcastello"
+  ],
+  "skills": [
+    "Brand Strategy",
+    "Digital Campaign Management",
+    "SEO/SEM",
+    "Content Marketing",
+    "Email Marketing",
+    "HubSpot",
+    "Mailchimp",
+    "Social Media Strategy",
+    "Budget Management",
+    "Google Analytics",
+    "Adobe Creative Suite",
+    "Public Relations",
+    "Event Planning",
+    "Team Leadership"
+  ],
+  "notes": "Skills-equivalent content appears under 'AREAS OF EXPERTISE' section header. Per the canonical V2 specification, this heading is treated as skills-equivalent since its content is primarily tools, platforms, and professional competencies. Root skills array is populated accordingly, with the parenthetical grouping (Email Marketing (HubSpot, Mailchimp)) split into parent + independently meaningful items per the grouped-skills normalization rule; the source-faithful grouped wording is preserved as-is in the sections entry below. True multi-column layout with sidebar containing education, short courses, awards, and references.",
+  "sections": [
+    {
+      "heading": "Summary",
+      "items": [
+        "Results-driven marketing manager with 7+ years of experience building brand presence and driving growth across digital and traditional channels. Skilled in managing six-figure ad budgets, leading influencer partnerships, and executing rebrand initiatives that improve conversion and engagement. Proven track record of translating data-driven insights into campaigns that grow audience and revenue."
+      ]
+    },
+    {
+      "heading": "AREAS OF EXPERTISE",
+      "items": [
+        "Brand Strategy, Digital Campaign Management, SEO/SEM, Content Marketing, Email Marketing (HubSpot, Mailchimp), Social Media Strategy, Budget Management, Google Analytics, Adobe Creative Suite, Public Relations, Event Planning, Team Leadership"
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Senior Marketing Manager",
+          "meta": "April 2021 - Present",
+          "subtitle": "Studio Shodwe",
+          "bullets": [
+            "Manage marketing and communications responsibilities for 3 brands with a combined $3.2M budget. Specialising in new product launch campaigns.",
+            "Developed integrated and cross-company campaigns to increase brand awareness and double sales year on year.",
+            "Produced media kits for all campaign launches and worked closely with the PR agency to deliver above target press coverage.",
+            "Advised leadership team on strategic consumer marketing opportunities to capitalise on unmet market needs."
+          ]
+        },
+        {
+          "title": "Marketing Manager",
+          "meta": "April 2020 - April 2021",
+          "subtitle": "Studio Shodwe",
+          "bullets": [
+            "Responsible for the online customer service processes and marketing content across multiple social media channels.",
+            "Collaborated with UX designers to improve customer experiences which resulted in a significant decrease in abandoned carts.",
+            "Achieved targets on all campaigns and reduced site bounce rate by 30%.",
+            "Peer-voted team member of the year."
+          ]
+        },
+        {
+          "title": "Communications Manager",
+          "meta": "April 2019 - April 2020",
+          "subtitle": "Salford & Co.",
+          "bullets": [
+            "Built and maintained relationships with media contacts to secure consistent regional press coverage.",
+            "Developed internal communications strategy that improved cross-departmental alignment on campaign timelines."
+          ]
+        },
+        {
+          "title": "Marketing Co-ordinator",
+          "meta": "April 2019 - April 2020",
+          "subtitle": "Salford & Co.",
+          "bullets": [
+            "Responsible for the online customer service processes and marketing content across multiple social media channels.",
+            "Coordinated content calendars across 4 social platforms, increasing engagement rate by 15%.",
+            "Assisted in the planning and execution of quarterly promotional campaigns, supporting a 10% uplift in lead generation."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "Lebanon College",
+          "meta": "2019",
+          "subtitle": "Bachelor of Commerce, Major: MarComms, Minor: Sociology",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "SHORT COURSES",
+      "items": [
+        "Artificial Intelligence in Marketing — Ginyard International Co. 2022",
+        "UX + UI Design — Ginyard International Co. 2021"
+      ]
+    },
+    {
+      "heading": "AWARDS",
+      "items": [
+        "Gold Award for Most Innovative Campaign — Studio Shodwe Consumer Campaign 2021",
+        "Borcelle Merit Award — Salford & Co. Brand Campaign 2021",
+        "Borcelle Excellence & Effectiveness Award — Salford & Co. PR Campaign 2021"
+      ]
+    },
+    {
+      "heading": "REFERENCES",
+      "items": [
+        "Available on request."
+      ]
+    }
+  ]
+}

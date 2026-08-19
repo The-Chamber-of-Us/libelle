@@ -1,0 +1,134 @@
+{
+  "resume_id": "multi_col_03",
+  "source_persona": "Libelle benchmark corpus",
+  "persona": "True Multi-Column / Career Changer",
+  "name": "Dara Okonkwo",
+  "email": "dokonkwo@example.com",
+  "phone": "123-456-7890",
+  "location": {
+    "city": "Denver",
+    "country": "United States",
+    "raw": "Denver, CO"
+  },
+  "links": [],
+  "skills": [
+  "Project Management",
+  "Agile/Scrum",
+  "Stakeholder Engagement",
+  "Budget Management",
+  "Risk Assessment",
+  "Regulatory Compliance",
+  "EPA",
+  "NEPA",
+  "GIS",
+  "ArcGIS",
+  "QGIS",
+  "MS Project",
+  "Field Research",
+  "Water Quality Analysis",
+  "Soil Remediation",
+  "Grant Writing"
+],
+  "notes": "True two-column layout: skills, education, certifications, and awards in right sidebar; career summary and experience in main left column. Multiple locations across experience sections (Denver, Boulder, Fort Collins).",
+  "sections": [
+    {
+      "heading": "CAREER SUMMARY",
+      "items": [
+        "Environmental scientist turned project manager with 8+ years delivering field research, remediation, and sustainability initiatives. Experienced leading cross-functional teams on federal and municipal contracts, with a strong record of keeping complex multi-site projects on scope and on budget."
+      ]
+    },
+    {
+      "heading": "EXPERIENCE",
+      "items": [
+        {
+          "title": "Senior Project Manager, Greenfield Environmental Consulting",
+          "meta": "Mar 2020 - Present",
+          "subtitle": "Denver, CO",
+          "bullets": [
+            "Managed 6 concurrent remediation projects across 3 states with a combined budget of $4.8M, delivering all on schedule.",
+            "Led stakeholder engagement with EPA, state agencies, and local community groups to obtain environmental permits.",
+            "Introduced Agile sprint cycles for internal reporting, reducing documentation turnaround by 40%."
+          ]
+        },
+        {
+          "title": "Environmental Project Manager, Summit Earth Solutions",
+          "meta": "Jan 2017 - Feb 2020",
+          "subtitle": "Boulder, CO",
+          "bullets": [
+            "Oversaw Phase I/II Environmental Site Assessments for 20+ commercial and industrial properties.",
+            "Coordinated field teams of up to 10 scientists across multi-month sampling campaigns.",
+            "Authored technical reports and presented findings to municipal clients and regulatory bodies."
+          ]
+        },
+        {
+          "title": "Environmental Scientist, Rocky Mountain Research Institute",
+          "meta": "Jun 2014 - Dec 2016",
+          "subtitle": "Fort Collins, CO",
+          "bullets": [
+            "Conducted water quality monitoring and soil sampling across 15 watershed sites.",
+            "Contributed to federally funded NEPA compliance reports for land-use planning projects.",
+            "Maintained field data collection protocols and QA/QC procedures."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "EDUCATION",
+      "items": [
+        {
+          "title": "University of Denver",
+          "meta": "2014",
+          "subtitle": "M.S. Environmental Science",
+          "bullets": []
+        },
+        {
+          "title": "University of Maryland",
+          "meta": "2012",
+          "subtitle": "B.S. Biology",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "SKILLS",
+      "items": [
+        "Project Management (PMP Certified)",
+        "Agile/Scrum",
+        "Stakeholder Engagement",
+        "Budget Management",
+        "Risk Assessment",
+        "Regulatory Compliance (EPA, NEPA)",
+        "GIS (ArcGIS, QGIS)",
+        "MS Project",
+        "Field Research",
+        "Water Quality Analysis",
+        "Soil Remediation",
+        "Grant Writing"
+      ]
+    },
+    {
+      "heading": "CERTIFICATIONS",
+      "items": [
+        {
+          "title": "PMP",
+          "meta": "2019",
+          "subtitle": "Project Management Institute",
+          "bullets": []
+        },
+        {
+          "title": "HAZWOPPER",
+          "meta": "2015",
+          "subtitle": "40-Hour",
+          "bullets": []
+        }
+      ]
+    },
+    {
+      "heading": "AWARDS",
+      "items": [
+        "EPA Region 8 Environmental Excellence Recognition, 2022",
+        "Summit Earth Solutions Employee of the Year, 2019"
+      ]
+    }
+  ]
+}
