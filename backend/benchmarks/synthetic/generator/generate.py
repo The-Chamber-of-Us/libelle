@@ -300,6 +300,9 @@ def main() -> int:
     ap.add_argument("--adversarial-ratio", type=float, default=0.30)
     ap.add_argument("--annotation-version", choices=["v1", "v2"], default="v1",
                      help="Benchmark annotation schema to derive gold.json in (#347).")
+    ap.add_argument("--validate", action="store_true",
+                     help="Run consistency + canonical corpus validation (#344/#349) after generation "
+                          "and exit non-zero if the corpus isn't benchmark-ready.")
     args = ap.parse_args()
 
     OUT_PDF.mkdir(parents=True, exist_ok=True)
@@ -346,6 +349,13 @@ def main() -> int:
     print(f"\nWrote {args.count} cases. Manifest: {OUT_MANIFEST}")
     print(f"PDFs:  {OUT_PDF}")
     print(f"Gold:  {OUT_GOLD}")
+
+    if args.validate:
+        from validate_generated import validate_generated
+        print()
+        if not validate_generated(OUT_PDF, OUT_GOLD):
+            return 1
+
     return 0
 
 

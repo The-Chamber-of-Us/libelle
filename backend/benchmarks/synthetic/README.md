@@ -98,6 +98,35 @@ python -m backend.benchmarks.v2_evaluation.validate_v2_goldens \
 # -> Validated 30 fixture records; errors: 0
 ```
 
+### Benchmark-ready validation gate (#349)
+
+Internal consistency (this generator) and canonical corpus validity (#344)
+are two different questions — a fixture can be internally consistent with
+its source profile while still violating the benchmark corpus contract
+(missing fields, ID/filename mismatch, malformed JSON, etc). A generated
+corpus is only *benchmark-ready* when it passes both.
+
+`validate_generated.py` runs both boundaries and reuses the existing
+validators rather than reimplementing either:
+
+```bash
+DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
+  .venv/bin/python backend/benchmarks/synthetic/generator/validate_generated.py
+# -> BENCHMARK-READY, or NOT BENCHMARK-READY with per-fixture diagnostics
+```
+
+Or run it automatically as part of generation with `--validate` (exits
+non-zero if the generated corpus isn't benchmark-ready — safe to use in CI):
+
+```bash
+DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
+  .venv/bin/python backend/benchmarks/synthetic/generator/generate.py \
+    --seed 42 --count 30 --annotation-version v2 --validate
+```
+
+`--validate` is opt-in; omitting it preserves `generate.py`'s prior
+default behavior exactly.
+
 ## Determinism
 
 Same `--seed` reproduces the same generated text content and gold targets.
