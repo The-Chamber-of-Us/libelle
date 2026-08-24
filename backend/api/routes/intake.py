@@ -2,7 +2,7 @@ import traceback
 from ipaddress import ip_address, ip_network
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from config import (
@@ -15,7 +15,6 @@ from config import (
 )
 from services.intake_service import IntakeError, finalize_submission, validate_intake
 from services.rate_limit import InMemoryIntakeRateLimiter
-from services.parser_service import parse_and_update
 
 router = APIRouter()
 intake_rate_limiter = InMemoryIntakeRateLimiter(
@@ -84,7 +83,6 @@ def _client_ip(request: Request) -> str:
 @router.post("/api/upload")
 async def upload_volunteer_application(
     request: Request,
-    background_tasks: BackgroundTasks,
     file: Optional[UploadFile] = File(None),
     full_name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
@@ -150,26 +148,19 @@ async def upload_volunteer_application(
             },
         )
 
-    if result["resume_status"] == "uploaded":
-        background_tasks.add_task(
-            parse_and_update,
-            result["submission_id"],
-            result["drive_file_id"],
-            result["pre_text"],
-        )
+    content = {
+        "status": "success",
+        "submission_id": result["submission_id"],
+        "resume_filename": result["resume_filename"],
+        "resume_status": result["resume_status"],
+        "message": (
+            "Your application was received, but the resume upload failed. "
+            "Please keep your submission ID for follow-up."
+            if result["resume_status"] == "failed"
+            else "Your application has been received"
+        ),
+    }
+    if result.get("parser_job_status") in {"queued", "enqueue_failed"}:
+        content["parser_job_status"] = result["parser_job_status"]
 
-    return JSONResponse(
-        status_code=200,
-        content={
-            "status": "success",
-            "submission_id": result["submission_id"],
-            "resume_filename": result["resume_filename"],
-            "resume_status": result["resume_status"],
-            "message": (
-                "Your application was received, but the resume upload failed. "
-                "Please keep your submission ID for follow-up."
-                if result["resume_status"] == "failed"
-                else "Your application has been received"
-            ),
-        },
-    )
+    return JSONResponse(status_code=200, content=content)
