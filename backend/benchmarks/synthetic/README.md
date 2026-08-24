@@ -75,10 +75,13 @@ written in:
 
 `derive_gold_v2()` maps `Profile.experience`/`Profile.education` into V2
 `sections[]` (structured `title`/`meta`/`subtitle`/`bullets` entries) and
-`Profile.skills`/`Profile.tools` into a plain-string `SKILLS` section, in
-that fixed order. This is a derivation-order convenience, not a literal
-rendered layout — the Profile IR doesn't carry template section ordering.
-`links` is always `[]`; `Profile` has no link field to derive from yet.
+`Profile.skills`/`Profile.tools` into both the root `skills` field and a
+plain-string `SKILLS` section. V2 root skills preserve the Profile's
+canonical display casing while deduping by normalized comparison key. Section
+emission uses a fixed derivation order; this is a derivation-order
+convenience, not a literal rendered layout — the Profile IR doesn't carry
+template section ordering. `links` is always `[]`; `Profile` has no link
+field to derive from yet.
 
 `consistency_check.py` resolves the case ID from either `submission_id`
 (V1) or `resume_id` (V2), so it works against either annotation version.

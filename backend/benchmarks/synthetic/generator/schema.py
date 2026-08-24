@@ -2,10 +2,11 @@
 
 The profile is the single source of truth for a synthetic case. The renderer
 turns it into HTML/PDF; the gold emitter derives gold.json directly from it
-following labeling_rules_v1.md.
+for the selected benchmark annotation schema.
 """
 from __future__ import annotations
 
+import string
 from dataclasses import asdict, dataclass, field
 from typing import Optional
 
@@ -72,6 +73,26 @@ def _normalized_skills(profile: Profile) -> list[str]:
         seen.add(norm)
         skills_normalized.append(norm)
     return skills_normalized
+
+
+def _v2_display_skills(profile: Profile) -> list[str]:
+    """Return V2 root skills with canonical display casing preserved.
+
+    V2 goldens keep first-observed casing while deduping on the normalized
+    comparison key described by the canonical annotation spec. The synthetic
+    Profile already carries canonical skill labels, so this function only
+    trims and dedupes without rewriting display text.
+    """
+    seen: set[str] = set()
+    skills: list[str] = []
+    for skill in (*profile.skills, *profile.tools):
+        display = skill.strip()
+        key = display.casefold().translate(str.maketrans("", "", string.punctuation))
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        skills.append(display)
+    return skills
 
 
 def derive_gold_v1(profile: Profile) -> dict:
@@ -156,7 +177,7 @@ def derive_gold_v2(profile: Profile) -> dict:
             "raw": profile.location.raw,
         } if profile.location.raw else None,
         "links": [],
-        "skills": _normalized_skills(profile),
+        "skills": _v2_display_skills(profile),
         "notes": {"ambiguities": boundary_probes} if boundary_probes else None,
         "sections": sections,
     }

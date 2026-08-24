@@ -299,7 +299,7 @@ def main() -> int:
     ap.add_argument("--count", type=int, default=30)
     ap.add_argument("--adversarial-ratio", type=float, default=0.30)
     ap.add_argument("--annotation-version", choices=["v1", "v2"], default="v1",
-                     help="Benchmark annotation schema to derive gold.json in (#347).")
+                     help="Benchmark annotation schema to derive gold.json in (#348).")
     ap.add_argument("--validate", action="store_true",
                      help="Run consistency + canonical corpus validation (#344/#349) after generation "
                           "and exit non-zero if the corpus isn't benchmark-ready.")
