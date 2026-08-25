@@ -50,6 +50,11 @@ def _patch_io(monkeypatch, captured):
 
     monkeypatch.setattr(intake_service, "upload_pdf", fake_upload)
     monkeypatch.setattr(intake_service, "write_base_row", fake_write_base_row)
+    monkeypatch.setattr(
+        intake_service,
+        "create_parser_job",
+        lambda **kwargs: captured.setdefault("parser_job", kwargs),
+    )
 
 
 def _finalize():
@@ -91,6 +96,13 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
     assert result["resume_filename"] == expected_filename
     assert captured["row"]["resume_status"] == "uploaded"
     assert result["resume_status"] == "uploaded"
+    assert captured["parser_job"] == {
+        "submission_id": result["submission_id"],
+        "drive_file_id": "drive-file-id",
+        "resume_filename": expected_filename,
+        "job_id": f"parse_resume:{result['submission_id']}",
+    }
+    assert result["parser_job_status"] == "queued"
 
 
 def test_finalize_submission_generates_unique_ids(monkeypatch):
@@ -126,6 +138,7 @@ def test_finalize_submission_without_resume_records_missing(monkeypatch):
     assert captured["resume_status"] == "missing"
     assert captured["resume_filename"] == ""
     assert captured["drive_file_id"] == ""
+    assert result["parser_job_status"] == "not_applicable"
 
 
 def test_finalize_submission_empty_browser_file_part_records_missing(monkeypatch):
@@ -187,6 +200,58 @@ def test_finalize_submission_records_failed_drive_upload(monkeypatch):
     assert captured["error"]["submission_id"] == result["submission_id"]
     assert captured["error"]["stage"] == "upload"
     assert captured["error"]["error_code"] == "DRIVE_UPLOAD_FAILED"
+    assert result["parser_job_status"] == "not_applicable"
+
+
+def test_finalize_submission_persists_uploaded_submission_before_parser_job(monkeypatch):
+    events = []
+    _patch_io(monkeypatch, {})
+
+    def fake_write_base_row(**kwargs):
+        events.append(("submission", kwargs["submission_id"], kwargs["resume_status"]))
+
+    def fake_create_parser_job(**kwargs):
+        events.append(("parser_job", kwargs["submission_id"], kwargs["job_id"]))
+
+    monkeypatch.setattr(intake_service, "write_base_row", fake_write_base_row)
+    monkeypatch.setattr(intake_service, "create_parser_job", fake_create_parser_job)
+
+    result = _finalize()
+
+    assert result["resume_status"] == "uploaded"
+    assert events == [
+        ("submission", result["submission_id"], "uploaded"),
+        (
+            "parser_job",
+            result["submission_id"],
+            f"parse_resume:{result['submission_id']}",
+        ),
+    ]
+
+
+def test_finalize_submission_records_parser_enqueue_failure_after_uploaded_row(monkeypatch):
+    captured = {}
+    _patch_io(monkeypatch, captured)
+    monkeypatch.setattr(
+        intake_service,
+        "create_parser_job",
+        lambda **_: (_ for _ in ()).throw(RuntimeError("parser_jobs unavailable")),
+    )
+    monkeypatch.setattr(
+        intake_service,
+        "append_error_row",
+        lambda **kwargs: captured.setdefault("error", kwargs),
+    )
+
+    result = _finalize()
+
+    assert result["resume_status"] == "uploaded"
+    assert result["parser_job_status"] == "enqueue_failed"
+    assert captured["row"]["resume_status"] == "uploaded"
+    assert captured["error"]["submission_id"] == result["submission_id"]
+    assert captured["error"]["stage"] == "parser_enqueue"
+    assert captured["error"]["error_code"] == "PARSER_ENQUEUE_FAILED"
+    assert "job_id=parse_resume:" in captured["error"]["error_details"]
 
 
 @pytest.mark.parametrize(

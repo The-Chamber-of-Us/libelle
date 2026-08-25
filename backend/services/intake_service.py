@@ -11,7 +11,7 @@ from services.intake_file_validation import (
     validate_resume_upload,
 )
 from storage.drive_repo import upload_pdf
-from storage.parser_jobs_repo import create_parse_resume_job
+from storage.parser_jobs_repo import create_parser_job, logical_idempotency_key
 from storage.sheets_repo import append_error_row, write_base_row
 
 
@@ -279,11 +279,13 @@ def finalize_submission(
     print(f"[SHEETS] Base row written for submission_id={submission_id}")
 
     parser_job_status = "queued"
+    parser_job_id = logical_idempotency_key(submission_id)
     try:
-        create_parse_resume_job(
+        create_parser_job(
             submission_id=submission_id,
             drive_file_id=drive_file_id,
             resume_filename=resume_filename,
+            job_id=parser_job_id,
         )
     except Exception as exc:
         parser_job_status = "enqueue_failed"
@@ -300,7 +302,7 @@ def finalize_submission(
                 error_summary="Parser job enqueue failed",
                 error_details=(
                     f"{type(exc).__name__}: {exc}; "
-                    f"job_id=parse_resume:{submission_id}"
+                    f"job_id={parser_job_id}"
                 )[:500],
             )
         except Exception:
