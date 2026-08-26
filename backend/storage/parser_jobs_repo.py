@@ -237,6 +237,9 @@ def claim_job(
             return ClaimResult(claimed=False, job=current)
         if not _timestamp_is_due(current.get("available_at", ""), claimed_at_dt):
             return ClaimResult(claimed=False, job=current)
+        attempt_count = _parse_nonnegative_int(current.get("attempt_count", "0"))
+        if attempt_count is None:
+            return ClaimResult(claimed=False, job=current)
 
         claimed_at = _format_timestamp(claimed_at_dt)
         lock_expires_at = _format_timestamp(
@@ -246,7 +249,7 @@ def claim_job(
         updated.update(
             {
                 "status": STATUS_RUNNING,
-                "attempt_count": str(_safe_int(current.get("attempt_count", "0")) + 1),
+                "attempt_count": str(attempt_count + 1),
                 "locked_by": normalized_worker_id,
                 "locked_at": claimed_at,
                 "lock_expires_at": lock_expires_at,
@@ -409,12 +412,16 @@ def _canonicalize_matches_with_row_number(
 
 
 def _timestamp_is_due(value: str, now: datetime) -> bool:
+    if not str(value or "").strip():
+        return True
     parsed = _parse_timestamp(value)
-    return parsed is None or parsed <= now
+    return parsed is not None and parsed <= now
 
 
 def _timestamp_sort_key(value: str) -> datetime:
-    return _parse_timestamp(value) or datetime.min.replace(tzinfo=timezone.utc)
+    if not str(value or "").strip():
+        return datetime.min.replace(tzinfo=timezone.utc)
+    return _parse_timestamp(value) or datetime.max.replace(tzinfo=timezone.utc)
 
 
 def _parse_timestamp(value: str) -> Optional[datetime]:
@@ -476,8 +483,11 @@ def _validate_int(field_name: str, value: Any, *, minimum: int) -> int:
     return parsed
 
 
-def _safe_int(value: Any) -> int:
+def _parse_nonnegative_int(value: Any) -> Optional[int]:
     try:
-        return int(value)
+        parsed = int(value)
     except (TypeError, ValueError):
-        return 0
+        return None
+    if parsed < 0:
+        return None
+    return parsed

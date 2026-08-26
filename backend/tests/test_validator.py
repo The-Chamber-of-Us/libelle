@@ -23,6 +23,17 @@ def test_validate_success_prints_schema_validated(monkeypatch, capsys):
     assert "[SCHEMA] Schema Validated" in capsys.readouterr().out
 
 
+def test_validate_success_requires_parser_jobs_tab_and_headers(monkeypatch, capsys):
+    snapshot = _matching_snapshot()
+    assert "parser_jobs" in snapshot["tabs"]
+    assert snapshot["headers"]["parser_jobs"] == SHEET_SCHEMA["parser_jobs"]
+    _patch(monkeypatch, snapshot)
+
+    validator.validate_sheet_schema()
+
+    assert "[SCHEMA] Schema Validated" in capsys.readouterr().out
+
+
 def test_submissions_schema_uses_v04_resume_reference_contract() -> None:
     assert SHEET_SCHEMA["submissions"] == [
         "submission_id",
@@ -76,6 +87,20 @@ def test_validate_missing_tab_named_explicitly(monkeypatch):
     assert "'errors'" in message
 
 
+def test_validate_missing_parser_jobs_tab_named_explicitly(monkeypatch):
+    snapshot = _matching_snapshot()
+    snapshot["tabs"].remove("parser_jobs")
+    snapshot["headers"].pop("parser_jobs", None)
+    _patch(monkeypatch, snapshot)
+
+    with pytest.raises(validator.SchemaValidationError) as exc:
+        validator.validate_sheet_schema()
+
+    message = str(exc.value)
+    assert "missing tabs:" in message
+    assert "'parser_jobs'" in message
+
+
 def test_validate_empty_row_reports_all_headers_missing(monkeypatch):
     snapshot = _matching_snapshot()
     snapshot["headers"]["ops"] = []
@@ -112,3 +137,20 @@ def test_validate_present_ops_events_tab_headers_are_checked(monkeypatch):
         validator.validate_sheet_schema()
 
     assert "[ops_events] Header mismatch." in str(exc.value)
+
+
+def test_validate_malformed_parser_jobs_header_is_reported(monkeypatch):
+    snapshot = _matching_snapshot()
+    snapshot["headers"]["parser_jobs"] = [
+        "parser_job_id" if h == "job_id" else h
+        for h in snapshot["headers"]["parser_jobs"]
+    ]
+    _patch(monkeypatch, snapshot)
+
+    with pytest.raises(validator.SchemaValidationError) as exc:
+        validator.validate_sheet_schema()
+
+    message = str(exc.value)
+    assert "[parser_jobs] Header mismatch." in message
+    assert "'job_id'" in message
+    assert "'parser_job_id'" in message

@@ -142,6 +142,16 @@ def test_create_parser_job_returns_existing_logical_job(monkeypatch) -> None:
     assert fake_sheet.values_api.append_calls == []
 
 
+def test_get_job_and_get_parser_job_by_submission_return_none_when_missing(
+    monkeypatch,
+) -> None:
+    fake_sheet = _FakeSheet([])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    assert parser_jobs_repo.get_job("missing_job") is None
+    assert parser_jobs_repo.get_parser_job_by_submission("missing_sub") is None
+
+
 def test_duplicate_logical_jobs_resolve_to_earliest_with_diagnostics(monkeypatch) -> None:
     later = _job(job_id="job_later", created_at="05-26-2026 11:00:00 UTC")
     earlier = _job(job_id="job_earlier", created_at="05-26-2026 09:00:00 UTC")
@@ -187,6 +197,50 @@ def test_list_claimable_jobs_filters_by_status_and_available_at(monkeypatch) -> 
     assert [job["job_id"] for job in jobs] == ["queued_due", "retry_due"]
 
 
+def test_list_claimable_jobs_excludes_malformed_available_at(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(
+                _job(
+                    job_id="malformed_available",
+                    available_at="not a timestamp",
+                )
+            ),
+            _sheet_row(
+                _job(
+                    job_id="blank_available",
+                    submission_id="sub_002",
+                    available_at="",
+                )
+            ),
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_claimable_jobs(
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc)
+    )
+
+    assert [job["job_id"] for job in jobs] == ["blank_available"]
+
+
+@pytest.mark.parametrize(
+    "terminal_status",
+    ["succeeded", "failed", "enqueue_failed"],
+)
+def test_list_claimable_jobs_excludes_terminal_jobs(monkeypatch, terminal_status) -> None:
+    fake_sheet = _FakeSheet(
+        [_sheet_row(_job(job_id=f"job_{terminal_status}", status=terminal_status))]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_claimable_jobs(
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc)
+    )
+
+    assert jobs == []
+
+
 def test_list_claimable_jobs_collapses_duplicate_logical_jobs(monkeypatch) -> None:
     fake_sheet = _FakeSheet(
         [
@@ -226,6 +280,44 @@ def test_claim_job_updates_lease_fields_and_confirms_after_reread(monkeypatch) -
     assert result.job["last_parser_run_id"] == "run_001"
     assert result.job["parser_started_at"] == ""
     assert fake_sheet.values_api.update_calls[0]["range"] == "parser_jobs!A2:S2"
+
+
+@pytest.mark.parametrize("attempt_count", ["oops", "-1"])
+def test_claim_job_fails_closed_for_malformed_attempt_count(
+    monkeypatch,
+    attempt_count,
+) -> None:
+    fake_sheet = _FakeSheet([_sheet_row(_job(attempt_count=attempt_count))])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    result = parser_jobs_repo.claim_job(
+        job_id="job_001",
+        worker_id="worker-a",
+        parser_run_id="run_001",
+        lease_seconds=60,
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    assert result.claimed is False
+    assert result.job["attempt_count"] == attempt_count
+    assert fake_sheet.values_api.update_calls == []
+
+
+def test_claim_job_fails_closed_for_malformed_available_at(monkeypatch) -> None:
+    fake_sheet = _FakeSheet([_sheet_row(_job(available_at="not a timestamp"))])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    result = parser_jobs_repo.claim_job(
+        job_id="job_001",
+        worker_id="worker-a",
+        parser_run_id="run_001",
+        lease_seconds=60,
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    assert result.claimed is False
+    assert result.job["available_at"] == "not a timestamp"
+    assert fake_sheet.values_api.update_calls == []
 
 
 def test_claim_job_reports_false_if_reread_observes_different_claim(monkeypatch) -> None:
@@ -275,3 +367,37 @@ def test_update_job_rejects_unknown_fields_and_invalid_status() -> None:
 
     with pytest.raises(ValueError, match="Unsupported parser job status"):
         parser_jobs_repo.update_job("job_001", {"status": "done"})
+
+
+def test_update_job_changes_mutable_state_and_preserves_identity(monkeypatch) -> None:
+    original = _job()
+    fake_sheet = _FakeSheet([_sheet_row(original)])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+    monkeypatch.setattr(
+        parser_jobs_repo,
+        "_local_timestamp",
+        lambda: "05-26-2026 11:00:00 UTC",
+    )
+
+    updated = parser_jobs_repo.update_job(
+        "job_001",
+        {
+            "status": "retry_scheduled",
+            "attempt_count": 2,
+            "available_at": "05-26-2026 12:00:00 UTC",
+            "last_error_code": "PARSER_TIMEOUT",
+            "last_error_summary": "Parser timed out",
+        },
+    )
+
+    assert updated["job_id"] == original["job_id"]
+    assert updated["submission_id"] == original["submission_id"]
+    assert updated["drive_file_id"] == original["drive_file_id"]
+    assert updated["job_type"] == original["job_type"]
+    assert updated["created_at"] == original["created_at"]
+    assert updated["status"] == "retry_scheduled"
+    assert updated["attempt_count"] == "2"
+    assert updated["available_at"] == "05-26-2026 12:00:00 UTC"
+    assert updated["last_error_code"] == "PARSER_TIMEOUT"
+    assert updated["last_error_summary"] == "Parser timed out"
+    assert updated["updated_at"] == "05-26-2026 11:00:00 UTC"
