@@ -291,9 +291,9 @@ def finalize_submission(
         parser_job_status = "enqueue_failed"
         traceback.print_exc()
         print(
-            f"[PARSER_JOBS] Enqueue failed submission_id={submission_id} "
-            f"error_type={type(exc).__name__}"
-        )
+                f"[PARSER_JOBS] Enqueue failed submission_id={submission_id} "
+                f"error_type={type(exc).__name__}"
+            )
         try:
             append_error_row(
                 submission_id=submission_id,
