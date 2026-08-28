@@ -53,10 +53,10 @@ def get_snapshot_records() -> List[SnapshotRecord]:
     The row readers stay in storage, while snapshot selection and formatting stay
     in this service layer so API routes can remain thin.
     """
+    from storage.parser_jobs_repo import list_all_jobs
     from storage.sheets_repo import (
         load_error_rows,
         load_ops_rows,
-        load_parser_job_rows,
         load_parser_result_rows,
         load_submission_records,
     )
@@ -66,7 +66,7 @@ def get_snapshot_records() -> List[SnapshotRecord]:
         load_parser_result_rows(),
         load_ops_rows(),
         load_error_rows(),
-        load_parser_job_rows(),
+        list_all_jobs(),
     )
 
 

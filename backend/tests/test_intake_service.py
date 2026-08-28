@@ -96,13 +96,13 @@ def test_finalize_submission_threads_same_id_through_drive_and_sheets(monkeypatc
     assert result["resume_filename"] == expected_filename
     assert captured["row"]["resume_status"] == "uploaded"
     assert result["resume_status"] == "uploaded"
+    assert result["parser_job_status"] == "queued"
     assert captured["parser_job"] == {
         "submission_id": result["submission_id"],
         "drive_file_id": "drive-file-id",
         "resume_filename": expected_filename,
         "job_id": f"parse_resume:{result['submission_id']}",
     }
-    assert result["parser_job_status"] == "queued"
 
 
 def test_finalize_submission_generates_unique_ids(monkeypatch):

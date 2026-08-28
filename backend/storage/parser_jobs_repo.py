@@ -149,6 +149,11 @@ def get_parser_job_by_submission(submission_id: str) -> Optional[Dict[str, str]]
     return _canonicalize_matches(matches)
 
 
+def list_all_jobs() -> List[Dict[str, str]]:
+    """Return all observed parser job rows."""
+    return [row for _, row in _load_parser_job_rows_with_sheet_row_numbers()]
+
+
 def list_claimable_jobs(
     *,
     now: Optional[datetime] = None,
@@ -181,9 +186,7 @@ def list_claimable_jobs(
         row = _canonicalize_matches(matches)
         if row is None:
             continue
-        if row.get("status", "") not in CLAIMABLE_STATUSES:
-            continue
-        if not _timestamp_is_due(row.get("available_at", ""), observed_at):
+        if not _is_claimable(row, observed_at):
             continue
         claimable.append(row)
 
@@ -233,9 +236,7 @@ def claim_job(
             return ClaimResult(claimed=False, job=None)
 
         sheet_row_number, current = located
-        if current.get("status", "") not in CLAIMABLE_STATUSES:
-            return ClaimResult(claimed=False, job=current)
-        if not _timestamp_is_due(current.get("available_at", ""), claimed_at_dt):
+        if not _is_claimable(current, claimed_at_dt):
             return ClaimResult(claimed=False, job=current)
         attempt_count = _parse_nonnegative_int(current.get("attempt_count", "0"))
         if attempt_count is None:
@@ -416,6 +417,29 @@ def _timestamp_is_due(value: str, now: datetime) -> bool:
         return True
     parsed = _parse_timestamp(value)
     return parsed is not None and parsed <= now
+
+
+def _is_claimable(row: Dict[str, str], now: datetime) -> bool:
+    if not _has_attempt_remaining(row):
+        return False
+
+    status = row.get("status", "")
+    if status in CLAIMABLE_STATUSES:
+        return _timestamp_is_due(row.get("available_at", ""), now)
+    if status == STATUS_RUNNING:
+        lock_expires_at = row.get("lock_expires_at", "")
+        return bool(lock_expires_at.strip()) and _timestamp_is_due(lock_expires_at, now)
+    return False
+
+
+def _has_attempt_remaining(row: Dict[str, str]) -> bool:
+    attempt_count = _parse_nonnegative_int(row.get("attempt_count", "0"))
+    max_attempts = _parse_nonnegative_int(
+        row.get("max_attempts", str(DEFAULT_MAX_ATTEMPTS))
+    )
+    if attempt_count is None or max_attempts is None:
+        return False
+    return attempt_count < max_attempts
 
 
 def _timestamp_sort_key(value: str) -> datetime:
