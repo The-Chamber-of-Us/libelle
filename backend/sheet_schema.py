@@ -64,12 +64,35 @@ OPS_EVENTS_HEADERS = [
     "source",
 ]
 
+PARSER_JOBS_HEADERS = [
+    "job_id",
+    "submission_id",
+    "drive_file_id",
+    "resume_filename",
+    "job_type",
+    "status",
+    "attempt_count",
+    "max_attempts",
+    "available_at",
+    "locked_by",
+    "locked_at",
+    "lock_expires_at",
+    "last_parser_run_id",
+    "authoritative_parser_run_id",
+    "parser_started_at",
+    "last_error_code",
+    "last_error_summary",
+    "created_at",
+    "updated_at",
+]
+
 SHEET_SCHEMA = {
     "submissions": SUBMISSIONS_HEADERS,
     "parser_results": PARSER_RESULTS_HEADERS,
     "ops": OPS_HEADERS,
     "errors": ERRORS_HEADERS,
     "ops_events": OPS_EVENTS_HEADERS,
+    "parser_jobs": PARSER_JOBS_HEADERS,
 }
 
 # Tabs that existing v0.3 sheets may not have yet. Startup validation checks
