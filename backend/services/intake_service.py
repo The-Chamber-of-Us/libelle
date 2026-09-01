@@ -11,6 +11,7 @@ from services.intake_file_validation import (
     validate_resume_upload,
 )
 from storage.drive_repo import upload_pdf
+from storage.parser_jobs_repo import create_parser_job, logical_idempotency_key
 from storage.sheets_repo import append_error_row, write_base_row
 
 
@@ -211,6 +212,7 @@ def finalize_submission(
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "missing",
+            "parser_job_status": "not_applicable",
         }
 
     if validated_resume is None:
@@ -262,6 +264,7 @@ def finalize_submission(
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "failed",
+            "parser_job_status": "not_applicable",
         }
     print(f"[UPLOAD] Drive uploaded: submission_id={submission_id} file_id={drive_file_id}")
 
@@ -275,10 +278,45 @@ def finalize_submission(
     )
     print(f"[SHEETS] Base row written for submission_id={submission_id}")
 
+    parser_job_status = "queued"
+    parser_job_id = logical_idempotency_key(submission_id)
+    try:
+        create_parser_job(
+            submission_id=submission_id,
+            drive_file_id=drive_file_id,
+            resume_filename=resume_filename,
+            job_id=parser_job_id,
+        )
+    except Exception as exc:
+        parser_job_status = "enqueue_failed"
+        traceback.print_exc()
+        print(
+            f"[PARSER_JOBS] Enqueue failed submission_id={submission_id} "
+            f"error_type={type(exc).__name__}"
+        )
+        try:
+            append_error_row(
+                submission_id=submission_id,
+                stage="parser_enqueue",
+                error_code="PARSER_ENQUEUE_FAILED",
+                error_summary="Parser job enqueue failed",
+                error_details=(
+                    f"{type(exc).__name__}: {exc}; "
+                    f"job_id={parser_job_id}"
+                )[:500],
+            )
+        except Exception:
+            traceback.print_exc()
+            print(
+                f"[PARSER_JOBS] Enqueue error-event write failed "
+                f"submission_id={submission_id}"
+            )
+
     return {
         "submission_id": submission_id,
         "drive_file_id": drive_file_id,
         "pre_text": pre_text,
         "resume_filename": resume_filename,
         "resume_status": "uploaded",
+        "parser_job_status": parser_job_status,
     }

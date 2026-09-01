@@ -136,10 +136,10 @@ def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
             "pre_text": "resume text",
             "resume_filename": "sub_001-resume.pdf",
             "resume_status": "uploaded",
+            "parser_job_status": "queued",
         }
 
     monkeypatch.setattr(intake, "finalize_submission", fake_finalize)
-    monkeypatch.setattr(intake, "parse_and_update", lambda *args: None)
     monkeypatch.setattr(
         intake,
         "intake_rate_limiter",
@@ -157,6 +157,7 @@ def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
     second = _upload(client, email="second@example.com")
 
     assert first.status_code == 200
+    assert first.json()["parser_job_status"] == "queued"
     assert "drive_file_id" not in first.json()
     assert "drive_file_url" not in first.json()
     assert second.status_code == 429
@@ -167,8 +168,6 @@ def test_rate_limited_request_returns_429_before_external_writes(monkeypatch):
 
 
 def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
-    captured = {"parsed": False}
-
     def fake_finalize(**kwargs):
         assert kwargs["pdf_bytes"] is None
         return {
@@ -180,11 +179,6 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
         }
 
     monkeypatch.setattr(intake, "finalize_submission", fake_finalize)
-    monkeypatch.setattr(
-        intake,
-        "parse_and_update",
-        lambda *args: captured.update(parsed=True),
-    )
     monkeypatch.setattr(
         intake,
         "intake_rate_limiter",
@@ -213,13 +207,13 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
     assert response.json()["submission_id"] == "sub_missing"
     assert response.json()["resume_status"] == "missing"
     assert response.json()["resume_filename"] == ""
+    assert "parser_job_status" not in response.json()
     assert "drive_file_id" not in response.json()
     assert "drive_file_url" not in response.json()
-    assert captured["parsed"] is False
 
 
 def test_empty_browser_file_part_succeeds_without_parser_job(monkeypatch):
-    captured = {"parsed": False, "row": None}
+    captured = {"row": None}
 
     monkeypatch.setattr(
         intake_service,
@@ -230,11 +224,6 @@ def test_empty_browser_file_part_succeeds_without_parser_job(monkeypatch):
         intake_service,
         "upload_pdf",
         lambda *_: (_ for _ in ()).throw(AssertionError("Drive should not be called")),
-    )
-    monkeypatch.setattr(
-        intake,
-        "parse_and_update",
-        lambda *args: captured.update(parsed=True),
     )
     monkeypatch.setattr(
         intake,
@@ -264,13 +253,11 @@ def test_empty_browser_file_part_succeeds_without_parser_job(monkeypatch):
     assert response.status_code == 200
     assert response.json()["resume_status"] == "missing"
     assert response.json()["resume_filename"] == ""
+    assert "parser_job_status" not in response.json()
     assert captured["row"]["resume_status"] == "missing"
-    assert captured["parsed"] is False
 
 
 def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
-    captured = {"parsed": False}
-
     monkeypatch.setattr(
         intake,
         "finalize_submission",
@@ -281,11 +268,6 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
             "resume_filename": "",
             "resume_status": "failed",
         },
-    )
-    monkeypatch.setattr(
-        intake,
-        "parse_and_update",
-        lambda *args: captured.update(parsed=True),
     )
     monkeypatch.setattr(
         intake,
@@ -304,13 +286,46 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
     assert response.json()["submission_id"] == "sub_failed"
     assert response.json()["resume_status"] == "failed"
     assert "resume upload failed" in response.json()["message"]
+    assert "parser_job_status" not in response.json()
     assert "drive_file_id" not in response.json()
     assert "drive_file_url" not in response.json()
-    assert captured["parsed"] is False
+
+
+def test_uploaded_resume_response_exposes_parser_enqueue_failure(monkeypatch):
+    monkeypatch.setattr(
+        intake,
+        "finalize_submission",
+        lambda **_: {
+            "submission_id": "sub_uploaded",
+            "drive_file_id": "drive-file-id",
+            "pre_text": "resume text",
+            "resume_filename": "resume.pdf",
+            "resume_status": "uploaded",
+            "parser_job_status": "enqueue_failed",
+        },
+    )
+    monkeypatch.setattr(
+        intake,
+        "intake_rate_limiter",
+        InMemoryIntakeRateLimiter(
+            enabled=False,
+            per_ip_limit=0,
+            per_email_limit=0,
+            global_limit=0,
+        ),
+    )
+
+    response = _upload(_client())
+
+    assert response.status_code == 200
+    assert response.json()["resume_status"] == "uploaded"
+    assert response.json()["parser_job_status"] == "enqueue_failed"
+    assert "drive_file_id" not in response.json()
+    assert "drive_file_url" not in response.json()
 
 
 def test_invalid_resume_is_rejected_before_drive_or_parser(monkeypatch):
-    captured = {"drive": False, "parsed": False, "row": False}
+    captured = {"drive": False, "row": False}
 
     monkeypatch.setattr(
         intake_service,
@@ -321,11 +336,6 @@ def test_invalid_resume_is_rejected_before_drive_or_parser(monkeypatch):
         intake_service,
         "write_base_row",
         lambda **_: captured.update(row=True),
-    )
-    monkeypatch.setattr(
-        intake,
-        "parse_and_update",
-        lambda *args: captured.update(parsed=True),
     )
     monkeypatch.setattr(
         intake,
@@ -354,11 +364,11 @@ def test_invalid_resume_is_rejected_before_drive_or_parser(monkeypatch):
 
     assert response.status_code == 400
     assert response.json()["detail"]["code"] == "INVALID_PDF"
-    assert captured == {"drive": False, "parsed": False, "row": False}
+    assert captured == {"drive": False, "row": False}
 
 
 def test_pdf_without_extractable_text_returns_specific_validation_error(monkeypatch):
-    captured = {"drive": False, "parsed": False, "row": False}
+    captured = {"drive": False, "row": False}
 
     monkeypatch.setattr(
         intake_service,
@@ -369,11 +379,6 @@ def test_pdf_without_extractable_text_returns_specific_validation_error(monkeypa
         intake_service,
         "write_base_row",
         lambda **_: captured.update(row=True),
-    )
-    monkeypatch.setattr(
-        intake,
-        "parse_and_update",
-        lambda *args: captured.update(parsed=True),
     )
     monkeypatch.setattr(
         intake,
@@ -405,7 +410,7 @@ def test_pdf_without_extractable_text_returns_specific_validation_error(monkeypa
     assert response.json()["detail"]["message"] == (
         "The uploaded resume PDF does not contain extractable text."
     )
-    assert captured == {"drive": False, "parsed": False, "row": False}
+    assert captured == {"drive": False, "row": False}
 
 
 def test_empty_present_upload_is_rejected(monkeypatch):
