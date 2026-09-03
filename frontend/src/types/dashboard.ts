@@ -13,6 +13,13 @@ export type ResolverResultState =
   | 'empty_success'
   | 'available'
 export type SnapshotErrorState = 'none' | 'present' | 'unavailable'
+export type ParserJobStatus =
+  | 'queued'
+  | 'running'
+  | 'retry_scheduled'
+  | 'succeeded'
+  | 'failed'
+  | 'enqueue_failed'
 export type SubmissionHealthState =
   | 'complete'
   | 'partial_success'
@@ -70,6 +77,21 @@ export interface SnapshotResolvedData {
   resolver_coverage_score: number | null
 }
 
+export interface SnapshotParserJobData {
+  submission_id: string
+  parser_job_status: ParserJobStatus
+  attempt_count: number
+  max_attempts: number | null
+  parser_run_id: string
+  is_stale: boolean
+  last_error_code: string | null
+  last_error_summary: string | null
+  available_at: string
+  parser_started_at: string
+  created_at: string
+  updated_at: string
+}
+
 export interface SnapshotOpsData {
   status: OpsStatus
   notes: string
@@ -93,6 +115,7 @@ export interface ReviewerSubmissionSnapshot {
   raw: SnapshotRawData
   parsed: SnapshotParsedData
   resolved: SnapshotResolvedData
+  parser_job: SnapshotParserJobData | null
   ops: SnapshotOpsData
   errors: SnapshotErrorsData
 }

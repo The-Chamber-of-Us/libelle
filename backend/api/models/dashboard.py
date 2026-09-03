@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from core.state_contract import VALID_SUBMISSION_HEALTH_STATES
 from ops_schema import VALID_OPS_STATUSES
+from storage.parser_jobs_repo import VALID_JOB_STATUSES
 
 
 class SnapshotModel(BaseModel):
@@ -61,6 +62,21 @@ class SnapshotResolvedData(SnapshotModel):
     unknown_skills: str
     resolver_coverage: str
     resolver_coverage_score: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class SnapshotParserJobData(SnapshotModel):
+    submission_id: str
+    parser_job_status: Literal[VALID_JOB_STATUSES]
+    attempt_count: int = Field(ge=0)
+    max_attempts: int | None = Field(default=None, ge=1)
+    parser_run_id: str
+    is_stale: bool
+    last_error_code: str | None = None
+    last_error_summary: str | None = None
+    available_at: str
+    parser_started_at: str
+    created_at: str
+    updated_at: str
 
 
 class SnapshotOpsData(SnapshotModel):
@@ -138,5 +154,6 @@ class ReviewerSubmissionSnapshot(SnapshotModel):
     raw: SnapshotRawData
     parsed: SnapshotParsedData
     resolved: SnapshotResolvedData
+    parser_job: SnapshotParserJobData | None = None
     ops: SnapshotOpsData
     errors: SnapshotErrorsData

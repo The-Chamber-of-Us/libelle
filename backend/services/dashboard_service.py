@@ -1,6 +1,7 @@
 """Dashboard snapshot composition service."""
 
 import json
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from core.state_contract import (
@@ -19,6 +20,7 @@ SubmissionRecord = Mapping[str, Any]
 ParserResultRow = Mapping[str, Any]
 OpsRow = Mapping[str, Any]
 ErrorRow = Mapping[str, Any]
+ParserJobRow = Mapping[str, Any]
 SnapshotRecord = Dict[str, Any]
 
 SNAPSHOT_STORAGE_ONLY_FIELDS = {"submission_id", "drive_file_id"}
@@ -59,12 +61,14 @@ def get_snapshot_records() -> List[SnapshotRecord]:
         load_parser_result_rows,
         load_submission_records,
     )
+    from storage.parser_jobs_repo import list_parser_jobs
 
     return assemble_snapshot_records(
         load_submission_records(),
         load_parser_result_rows(),
         load_ops_rows(),
         load_error_rows(),
+        list_parser_jobs(),
     )
 
 
@@ -73,6 +77,8 @@ def assemble_snapshot_records(
     parser_rows: List[ParserResultRow],
     ops_rows: List[OpsRow],
     error_rows: Optional[List[ErrorRow]],
+    parser_job_rows: Optional[List[ParserJobRow]] = None,
+    now: Optional[datetime] = None,
 ) -> List[SnapshotRecord]:
     """
     Compose reviewer-facing dashboard snapshot records from preloaded data layers.
@@ -90,6 +96,8 @@ def assemble_snapshot_records(
         ),
         key=lambda item: item[0],
     )
+    parser_jobs_by_submission_id = _index_parser_jobs(parser_job_rows or [])
+    observed_at = _normalize_datetime(now or datetime.now(timezone.utc))
 
     for submission_id, submission in keyed_submissions:
         matching_parser_rows = [
@@ -111,6 +119,11 @@ def assemble_snapshot_records(
                 "raw": _compose_raw_layer(submission),
                 "parsed": _compose_parsed_layer(submission, latest_parser_row, errors),
                 "resolved": _compose_resolved_layer(submission, latest_parser_row, errors),
+                "parser_job": _compose_parser_job_layer(
+                    submission_id,
+                    parser_jobs_by_submission_id.get(submission_id),
+                    observed_at,
+                ),
                 "ops": compose_current_ops_state(submission_id, [dict(row) for row in ops_rows]),
                 "errors": errors,
             }
@@ -273,6 +286,110 @@ def _compose_resolved_layer(
         "available" if state["resolver_state"] == "resolved" else "empty_success"
     )
     return state
+
+
+def _compose_parser_job_layer(
+    submission_id: str,
+    job: Optional[ParserJobRow],
+    now: datetime,
+) -> Optional[Dict[str, Any]]:
+    if job is None:
+        return None
+
+    status = _value_or_blank(job.get("status", ""))
+    return {
+        "submission_id": submission_id,
+        "parser_job_status": status,
+        "attempt_count": _nonnegative_int_or_zero(job.get("attempt_count")),
+        "max_attempts": _positive_int_or_none(job.get("max_attempts")),
+        "parser_run_id": _operational_parser_run_id(job),
+        "is_stale": _is_stale_parser_job(job, now),
+        "last_error_code": _safe_error_code(job.get("last_error_code")),
+        "last_error_summary": _safe_error_summary(job.get("last_error_summary")),
+        "available_at": _value_or_blank(job.get("available_at", "")),
+        "parser_started_at": _value_or_blank(job.get("parser_started_at", "")),
+        "created_at": _value_or_blank(job.get("created_at", "")),
+        "updated_at": _value_or_blank(job.get("updated_at", "")),
+    }
+
+
+def _index_parser_jobs(parser_job_rows: Sequence[ParserJobRow]) -> Dict[str, ParserJobRow]:
+    indexed: Dict[str, ParserJobRow] = {}
+    for row in parser_job_rows:
+        submission_id = str(row.get("submission_id", "")).strip()
+        if submission_id and submission_id not in indexed:
+            indexed[submission_id] = dict(row)
+    return indexed
+
+
+def _operational_parser_run_id(job: ParserJobRow) -> str:
+    authoritative_parser_run_id = _value_or_blank(
+        job.get("authoritative_parser_run_id", "")
+    )
+    if authoritative_parser_run_id:
+        return authoritative_parser_run_id
+    return _value_or_blank(job.get("last_parser_run_id", ""))
+
+
+def _is_stale_parser_job(job: ParserJobRow, now: datetime) -> bool:
+    if _normalized_text(job.get("status")) != "running":
+        return False
+
+    lock_expires_at = _parse_timestamp(job.get("lock_expires_at", ""))
+    return lock_expires_at is not None and lock_expires_at < now
+
+
+def _parse_timestamp(value: Any) -> Optional[datetime]:
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    for fmt in ("%m-%d-%Y %H:%M:%S %Z", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    return _normalize_datetime(parsed)
+
+
+def _normalize_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _nonnegative_int_or_zero(value: Any) -> int:
+    try:
+        parsed = int(str(value or "").strip())
+    except (TypeError, ValueError):
+        return 0
+    return max(parsed, 0)
+
+
+def _positive_int_or_none(value: Any) -> Optional[int]:
+    try:
+        parsed = int(str(value or "").strip())
+    except (TypeError, ValueError):
+        return None
+    return parsed if parsed > 0 else None
+
+
+def _safe_error_code(value: Any) -> Optional[str]:
+    code = str(value or "").strip().upper()
+    return code or None
+
+
+def _safe_error_summary(value: Any) -> Optional[str]:
+    text = " ".join(str(value or "").strip().split())
+    if not text:
+        return None
+    return text[:240]
 
 
 def _compose_errors_layer(

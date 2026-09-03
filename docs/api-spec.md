@@ -157,7 +157,7 @@ Response – 200 OK
 
 ### `GET /snapshot`
 
-Returns the reviewer-facing derived read model. `/snapshot` is never a source of truth and is assembled from the `submissions`, `parser_results`, `ops`, and `errors` tabs at read time.
+Returns the reviewer-facing derived read model. `/snapshot` is never a source of truth and is assembled from the `submissions`, `parser_results`, `parser_jobs`, `ops`, and `errors` tabs at read time.
 
 Each snapshot record always includes these top-level domains:
 
@@ -168,10 +168,11 @@ Each snapshot record always includes these top-level domains:
 | `raw` | Yes | No | Intake/submission fields. Missing sheet values are represented as `""`. |
 | `parsed` | Yes | No | Parser read model. Always present, even when the parser has not run or failed. |
 | `resolved` | Yes | No | Resolver read model. Always present, even when resolver output is unavailable. |
+| `parser_job` | Yes | Yes | Safe durable parser-job operational state, or `null` when no parser job exists for the submission. |
 | `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists. |
 | `errors` | Yes | No | Latest error summary. Always present; raw error details are not exposed. |
 
-Missing top-level domains are invalid. Current nested domains are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
+Missing top-level domains are invalid. Current nested domains other than `parser_job` are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
 
 Storage-only resume references such as `drive_file_id` are not included in `/snapshot`. Reviewers access uploaded resumes through `GET /resumes/{submission_id}`.
 
@@ -183,7 +184,11 @@ Partial pipeline states are explicit:
 | `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available` | Distinguishes parser not run, parser failed, intentionally skipped, successful empty output, and successful non-empty output. |
 | `resolved` | `resolver_state` | `not_run`, `resolved`, `zero_matches` | Legacy dashboard state retained for compatibility. |
 | `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available` | Distinguishes resolver not run, resolver failed, unavailable because parser output is missing/failed, successful empty output, and successful non-empty output. |
+| `parser_job` | `parser_job_status` | `queued`, `running`, `retry_scheduled`, `succeeded`, `failed`, `enqueue_failed` | Durable parser job status from backend storage. |
+| `parser_job` | `is_stale` | `true`, `false` | Derived by the backend when a running job's persisted lease has expired. This does not mutate or reclaim the job. |
 | `errors` | `error_state` | `none`, `present`, `unavailable` | Distinguishes no matching error rows, one or more matching error rows, and an unavailable error source. |
+
+When `parser_job` is present, it may include `submission_id`, `parser_job_status`, `attempt_count`, `max_attempts`, `parser_run_id`, `is_stale`, `last_error_code`, `last_error_summary`, `available_at`, `parser_started_at`, `created_at`, and `updated_at`. `parser_run_id` follows `parser_jobs.authoritative_parser_run_id` when available, falling back to the latest/current parser attempt. Storage and lease internals such as `drive_file_id`, Drive URLs, `resume_filename`, `locked_by`, `locked_at`, and `lock_expires_at` are not exposed.
 
 Legacy parser/resolver payload fields such as `parsed_skills_raw`, `resolved_skill_ids`, and `unknown_skills` are sheet-backed strings. A blank string means no stored value for that field. JSON array strings such as `"[]"` mean the stage ran and stored an empty list; consumers should use the explicit result-state fields rather than infer pipeline state from these strings.
 

@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import datetime, timezone
 
 from core.state_contract import SubmissionHealthState
 import services.dashboard_service as dashboard_service
@@ -19,11 +20,23 @@ def test_get_snapshot_records_loads_layers_and_assembles(monkeypatch) -> None:
     monkeypatch.setattr(sheets_repo, "load_ops_rows", lambda: ops_rows)
     monkeypatch.setattr(sheets_repo, "load_error_rows", lambda: error_rows)
 
-    def fake_assemble(loaded_submissions, loaded_parser_rows, loaded_ops_rows, loaded_error_rows):
+    parser_jobs = [{"submission_id": "sub_001", "status": "queued"}]
+    import storage.parser_jobs_repo as parser_jobs_repo
+
+    monkeypatch.setattr(parser_jobs_repo, "list_parser_jobs", lambda: parser_jobs)
+
+    def fake_assemble(
+        loaded_submissions,
+        loaded_parser_rows,
+        loaded_ops_rows,
+        loaded_error_rows,
+        loaded_parser_jobs,
+    ):
         assert loaded_submissions == submissions
         assert loaded_parser_rows == parser_rows
         assert loaded_ops_rows == ops_rows
         assert loaded_error_rows == error_rows
+        assert loaded_parser_jobs == parser_jobs
         return expected
 
     monkeypatch.setattr(dashboard_service, "assemble_snapshot_records", fake_assemble)
@@ -136,6 +149,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
         "raw",
         "parsed",
         "resolved",
+        "parser_job",
         "ops",
         "errors",
     }
@@ -166,6 +180,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
         "resolver_coverage": "1.0",
         "resolver_coverage_score": 1.0,
     }
+    assert first["parser_job"] is None
     assert first["ops"]["status"] == "contacted"
     assert first["errors"] == {
         "error_state": "present",
@@ -179,6 +194,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
     assert second["submission_health_state"] == SubmissionHealthState.PENDING_PROCESSING.value
     assert second["parsed"]["parser_state"] == "pending"
     assert second["resolved"]["resolver_state"] == "not_run"
+    assert second["parser_job"] is None
     assert second["ops"]["status"] == "new"
     assert second["errors"]["has_error"] is False
 
@@ -447,7 +463,181 @@ def test_assemble_snapshot_records_does_not_mutate_inputs() -> None:
     records = assemble_snapshot_records(submissions, parser_rows, ops_rows, error_rows)
     records[0]["raw"]["full_name"] = "Changed"
     records[0]["parsed"]["parser_run_id"] = "999"
+    records[0]["parser_job"] = {"parser_job_status": "running"}
     records[0]["ops"]["status"] = "contacted"
     records[0]["errors"]["latest_error_summary"] = "Changed"
 
     assert (submissions, parser_rows, ops_rows, error_rows) == original
+
+
+def test_assemble_snapshot_records_surfaces_queued_parser_job_safely() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "Queued Person",
+            "email": "queued@example.org",
+            "drive_file_id": "drive-secret",
+            "resume_status": "uploaded",
+        }
+    }
+    parser_jobs = [
+        {
+            "job_id": "job-secret",
+            "submission_id": "sub_001",
+            "drive_file_id": "drive-secret",
+            "resume_filename": "resume.pdf",
+            "job_type": "parse_resume",
+            "status": "queued",
+            "attempt_count": "0",
+            "max_attempts": "3",
+            "available_at": "05-26-2026 10:00:00 UTC",
+            "locked_by": "worker-secret",
+            "locked_at": "",
+            "lock_expires_at": "",
+            "last_parser_run_id": "",
+            "authoritative_parser_run_id": "",
+            "parser_started_at": "",
+            "last_error_code": "",
+            "last_error_summary": "",
+            "created_at": "05-26-2026 10:00:00 UTC",
+            "updated_at": "05-26-2026 10:00:00 UTC",
+        }
+    ]
+
+    records = assemble_snapshot_records(
+        submissions,
+        [],
+        [],
+        [],
+        parser_jobs,
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    parser_job = records[0]["parser_job"]
+    assert parser_job == {
+        "submission_id": "sub_001",
+        "parser_job_status": "queued",
+        "attempt_count": 0,
+        "max_attempts": 3,
+        "parser_run_id": "",
+        "is_stale": False,
+        "last_error_code": None,
+        "last_error_summary": None,
+        "available_at": "05-26-2026 10:00:00 UTC",
+        "parser_started_at": "",
+        "created_at": "05-26-2026 10:00:00 UTC",
+        "updated_at": "05-26-2026 10:00:00 UTC",
+    }
+    assert "drive_file_id" not in parser_job
+    assert "resume_filename" not in parser_job
+    assert "locked_by" not in parser_job
+    assert "lock_expires_at" not in parser_job
+
+
+def test_assemble_snapshot_records_surfaces_running_job_without_lease_details() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "running",
+                "attempt_count": "1",
+                "max_attempts": "3",
+                "last_parser_run_id": "run-current",
+                "lock_expires_at": "05-26-2026 11:00:00 UTC",
+            }
+        ],
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    parser_job = records[0]["parser_job"]
+    assert parser_job["parser_job_status"] == "running"
+    assert parser_job["attempt_count"] == 1
+    assert parser_job["parser_run_id"] == "run-current"
+    assert parser_job["is_stale"] is False
+    assert "locked_at" not in parser_job
+
+
+def test_assemble_snapshot_records_surfaces_retry_failure_and_stale_states() -> None:
+    submissions = {
+        "sub_retry": {"submission_id": "sub_retry", "resume_status": "uploaded"},
+        "sub_failed": {"submission_id": "sub_failed", "resume_status": "uploaded"},
+        "sub_stale": {"submission_id": "sub_stale", "resume_status": "uploaded"},
+    }
+    parser_jobs = [
+        {
+            "submission_id": "sub_retry",
+            "status": "retry_scheduled",
+            "attempt_count": "2",
+            "max_attempts": "3",
+            "last_parser_run_id": "run-retry",
+            "last_error_code": "parser_timeout",
+            "last_error_summary": " Parser timed out\nwill retry ",
+        },
+        {
+            "submission_id": "sub_failed",
+            "status": "failed",
+            "attempt_count": "3",
+            "max_attempts": "3",
+            "last_parser_run_id": "run-failed",
+            "last_error_code": "PARSER_VALIDATION_FAILED",
+            "last_error_summary": "Parser validation failed",
+        },
+        {
+            "submission_id": "sub_stale",
+            "status": "running",
+            "attempt_count": "1",
+            "max_attempts": "3",
+            "last_parser_run_id": "run-stale",
+            "lock_expires_at": "05-26-2026 10:00:00 UTC",
+        },
+    ]
+
+    records = assemble_snapshot_records(
+        submissions,
+        [],
+        [],
+        [],
+        parser_jobs,
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+    by_submission_id = {record["submission_id"]: record for record in records}
+
+    assert by_submission_id["sub_retry"]["parser_job"]["parser_job_status"] == "retry_scheduled"
+    assert by_submission_id["sub_retry"]["parser_job"]["attempt_count"] == 2
+    assert by_submission_id["sub_retry"]["parser_job"]["last_error_code"] == "PARSER_TIMEOUT"
+    assert (
+        by_submission_id["sub_retry"]["parser_job"]["last_error_summary"]
+        == "Parser timed out will retry"
+    )
+    assert by_submission_id["sub_failed"]["parser_job"]["parser_job_status"] == "failed"
+    assert by_submission_id["sub_failed"]["parser_job"]["last_error_code"] == (
+        "PARSER_VALIDATION_FAILED"
+    )
+    assert by_submission_id["sub_stale"]["parser_job"]["parser_job_status"] == "running"
+    assert by_submission_id["sub_stale"]["parser_job"]["is_stale"] is True
+
+
+def test_assemble_snapshot_records_uses_authoritative_parser_run_for_succeeded_job() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "succeeded",
+                "attempt_count": "2",
+                "max_attempts": "3",
+                "last_parser_run_id": "run-newer-nonauthoritative",
+                "authoritative_parser_run_id": "run-authoritative",
+            }
+        ],
+    )
+
+    assert records[0]["parser_job"]["parser_job_status"] == "succeeded"
+    assert records[0]["parser_job"]["parser_run_id"] == "run-authoritative"

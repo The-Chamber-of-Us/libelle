@@ -149,6 +149,43 @@ def get_parser_job_by_submission(submission_id: str) -> Optional[Dict[str, str]]
     return _canonicalize_matches(matches)
 
 
+def list_parser_jobs() -> List[Dict[str, str]]:
+    """
+    Return canonical logical parse_resume jobs for operational read models.
+
+    Duplicate physical rows for the same logical job are collapsed in the same
+    way as point reads so callers do not expose raw Sheets rows as queue state.
+    """
+    rows_by_logical_key: Dict[str, List[tuple[int, Dict[str, str]]]] = {}
+    for row_number, row in _load_parser_job_rows_with_sheet_row_numbers():
+        if row.get("job_type", "") != JOB_TYPE_PARSE_RESUME:
+            continue
+        submission_id = row.get("submission_id", "")
+        if not submission_id:
+            continue
+        rows_by_logical_key.setdefault(
+            logical_idempotency_key(submission_id, row.get("job_type", "")),
+            [],
+        ).append((row_number, row))
+
+    jobs = [
+        canonical
+        for canonical in (
+            _canonicalize_matches(matches)
+            for matches in rows_by_logical_key.values()
+        )
+        if canonical is not None
+    ]
+    jobs.sort(
+        key=lambda row: (
+            row.get("submission_id", ""),
+            _timestamp_sort_key(row.get("created_at", "")),
+            row.get("job_id", ""),
+        )
+    )
+    return jobs
+
+
 def list_claimable_jobs(
     *,
     now: Optional[datetime] = None,
