@@ -125,6 +125,7 @@ OPS_ATTRIBUTION_FIELDS = (
 # errors tab: append-only failure evidence tied to submission_id.
 AUDIT_ERROR_FIELDS = (
     "submission_id",
+    "parser_run_id",
     "created_at",
     "stage",
     "error_code",

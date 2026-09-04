@@ -53,6 +53,7 @@ def get_snapshot_records() -> List[SnapshotRecord]:
     The row readers stay in storage, while snapshot selection and formatting stay
     in this service layer so API routes can remain thin.
     """
+    from storage.parser_jobs_repo import list_all_jobs
     from storage.sheets_repo import (
         load_error_rows,
         load_ops_rows,
@@ -65,6 +66,7 @@ def get_snapshot_records() -> List[SnapshotRecord]:
         load_parser_result_rows(),
         load_ops_rows(),
         load_error_rows(),
+        list_all_jobs(),
     )
 
 
@@ -73,6 +75,7 @@ def assemble_snapshot_records(
     parser_rows: List[ParserResultRow],
     ops_rows: List[OpsRow],
     error_rows: Optional[List[ErrorRow]],
+    parser_job_rows: Optional[List[Mapping[str, Any]]] = None,
 ) -> List[SnapshotRecord]:
     """
     Compose reviewer-facing dashboard snapshot records from preloaded data layers.
@@ -97,7 +100,11 @@ def assemble_snapshot_records(
             for row in parser_rows
             if str(row.get("submission_id", "")).strip() == submission_id
         ]
-        latest_parser_row = select_latest_parser_result(matching_parser_rows)
+        latest_parser_row = _select_authoritative_or_latest_parser_result(
+            submission_id,
+            matching_parser_rows,
+            parser_job_rows or [],
+        )
         errors = _compose_errors_layer(submission_id, error_rows)
 
         records.append(
@@ -117,6 +124,28 @@ def assemble_snapshot_records(
         )
 
     return records
+
+
+def _select_authoritative_or_latest_parser_result(
+    submission_id: str,
+    parser_rows: List[ParserResultRow],
+    parser_job_rows: List[Mapping[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    authoritative_run_id = ""
+    for job in parser_job_rows:
+        if str(job.get("submission_id", "")).strip() != submission_id:
+            continue
+        candidate = str(job.get("authoritative_parser_run_id", "")).strip()
+        if candidate:
+            authoritative_run_id = candidate
+            break
+
+    if authoritative_run_id:
+        for row in parser_rows:
+            if str(row.get("parser_run_id", "")).strip() == authoritative_run_id:
+                return dict(row)
+
+    return select_latest_parser_result(parser_rows)
 
 
 def _compose_raw_layer(submission: SubmissionRecord) -> Dict[str, Any]:

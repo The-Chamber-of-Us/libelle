@@ -8,22 +8,32 @@ from services.dashboard_service import assemble_snapshot_records
 def test_get_snapshot_records_loads_layers_and_assembles(monkeypatch) -> None:
     submissions = {"sub_001": {"submission_id": "sub_001", "full_name": "First Person"}}
     parser_rows = [{"submission_id": "sub_001", "parser_run_id": "1"}]
+    parser_job_rows = [{"submission_id": "sub_001", "authoritative_parser_run_id": "1"}]
     ops_rows = [{"submission_id": "sub_001", "status": "new"}]
     error_rows = [{"submission_id": "sub_001", "error_summary": "Warning"}]
     expected = [{"submission_id": "sub_001"}]
 
+    import storage.parser_jobs_repo as parser_jobs_repo
     import storage.sheets_repo as sheets_repo
 
     monkeypatch.setattr(sheets_repo, "load_submission_records", lambda: submissions)
     monkeypatch.setattr(sheets_repo, "load_parser_result_rows", lambda: parser_rows)
     monkeypatch.setattr(sheets_repo, "load_ops_rows", lambda: ops_rows)
     monkeypatch.setattr(sheets_repo, "load_error_rows", lambda: error_rows)
+    monkeypatch.setattr(parser_jobs_repo, "list_all_jobs", lambda: parser_job_rows)
 
-    def fake_assemble(loaded_submissions, loaded_parser_rows, loaded_ops_rows, loaded_error_rows):
+    def fake_assemble(
+        loaded_submissions,
+        loaded_parser_rows,
+        loaded_ops_rows,
+        loaded_error_rows,
+        loaded_parser_job_rows,
+    ):
         assert loaded_submissions == submissions
         assert loaded_parser_rows == parser_rows
         assert loaded_ops_rows == ops_rows
         assert loaded_error_rows == error_rows
+        assert loaded_parser_job_rows == parser_job_rows
         return expected
 
     monkeypatch.setattr(dashboard_service, "assemble_snapshot_records", fake_assemble)
@@ -181,6 +191,47 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
     assert second["resolved"]["resolver_state"] == "not_run"
     assert second["ops"]["status"] == "new"
     assert second["errors"]["has_error"] is False
+
+
+def test_assemble_snapshot_records_prefers_authoritative_parser_run_id() -> None:
+    submissions = {
+        "sub_001": {
+            "submission_id": "sub_001",
+            "full_name": "Authoritative",
+            "resume_status": "uploaded",
+        }
+    }
+    parser_rows = [
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "old-authoritative",
+            "created_at": "2026-04-19T11:00:00",
+            "parsed_skills_raw": '["Python"]',
+        },
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "newer-stale",
+            "created_at": "2026-04-19T12:00:00",
+            "parsed_skills_raw": '["Stale"]',
+        },
+    ]
+    parser_job_rows = [
+        {
+            "submission_id": "sub_001",
+            "authoritative_parser_run_id": "old-authoritative",
+        }
+    ]
+
+    records = assemble_snapshot_records(
+        submissions,
+        parser_rows,
+        [],
+        [],
+        parser_job_rows,
+    )
+
+    assert records[0]["parsed"]["parser_run_id"] == "old-authoritative"
+    assert records[0]["parsed"]["parsed_skills_raw"] == '["Python"]'
 
 
 def test_assemble_snapshot_records_derives_no_resume_health_from_missing_resume() -> None:

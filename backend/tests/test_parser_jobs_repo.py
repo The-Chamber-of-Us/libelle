@@ -197,6 +197,54 @@ def test_list_claimable_jobs_filters_by_status_and_available_at(monkeypatch) -> 
     assert [job["job_id"] for job in jobs] == ["queued_due", "retry_due"]
 
 
+def test_expired_running_job_under_max_attempts_is_claimable(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(
+                _job(
+                    job_id="stale_running",
+                    status="running",
+                    attempt_count="2",
+                    max_attempts="3",
+                    locked_by="worker-old",
+                    lock_expires_at="05-26-2026 10:15:00 UTC",
+                )
+            ),
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_claimable_jobs(
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc)
+    )
+
+    assert [job["job_id"] for job in jobs] == ["stale_running"]
+
+
+def test_expired_running_job_at_max_attempts_is_not_claimable(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(
+                _job(
+                    job_id="final_attempt_crashed",
+                    status="running",
+                    attempt_count="3",
+                    max_attempts="3",
+                    locked_by="worker-old",
+                    lock_expires_at="05-26-2026 10:15:00 UTC",
+                )
+            ),
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_claimable_jobs(
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc)
+    )
+
+    assert jobs == []
+
+
 def test_list_claimable_jobs_excludes_malformed_available_at(monkeypatch) -> None:
     fake_sheet = _FakeSheet(
         [
@@ -317,6 +365,35 @@ def test_claim_job_fails_closed_for_malformed_available_at(monkeypatch) -> None:
 
     assert result.claimed is False
     assert result.job["available_at"] == "not a timestamp"
+    assert fake_sheet.values_api.update_calls == []
+
+
+def test_claim_job_refuses_expired_running_job_at_max_attempts(monkeypatch) -> None:
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(
+                _job(
+                    status="running",
+                    attempt_count="3",
+                    max_attempts="3",
+                    locked_by="worker-old",
+                    lock_expires_at="05-26-2026 10:15:00 UTC",
+                )
+            )
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    result = parser_jobs_repo.claim_job(
+        job_id="job_001",
+        worker_id="worker-a",
+        parser_run_id="run_004",
+        lease_seconds=60,
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    assert result.claimed is False
+    assert result.job["attempt_count"] == "3"
     assert fake_sheet.values_api.update_calls == []
 
 

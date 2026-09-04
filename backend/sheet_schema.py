@@ -45,23 +45,12 @@ OPS_HEADERS = [
 
 ERRORS_HEADERS = [
     "submission_id",
+    "parser_run_id",
     "created_at",
     "stage",
     "error_code",
     "error_summary",
     "error_details",
-]
-
-OPS_EVENTS_HEADERS = [
-    "event_id",
-    "submission_id",
-    "actor_email",
-    "action",
-    "field_changed",
-    "old_value",
-    "new_value",
-    "created_at",
-    "source",
 ]
 
 PARSER_JOBS_HEADERS = [
@@ -86,13 +75,25 @@ PARSER_JOBS_HEADERS = [
     "updated_at",
 ]
 
+OPS_EVENTS_HEADERS = [
+    "event_id",
+    "submission_id",
+    "actor_email",
+    "action",
+    "field_changed",
+    "old_value",
+    "new_value",
+    "created_at",
+    "source",
+]
+
 SHEET_SCHEMA = {
     "submissions": SUBMISSIONS_HEADERS,
     "parser_results": PARSER_RESULTS_HEADERS,
+    "parser_jobs": PARSER_JOBS_HEADERS,
     "ops": OPS_HEADERS,
     "errors": ERRORS_HEADERS,
     "ops_events": OPS_EVENTS_HEADERS,
-    "parser_jobs": PARSER_JOBS_HEADERS,
 }
 
 # Tabs that existing v0.3 sheets may not have yet. Startup validation checks
