@@ -40,8 +40,19 @@ def _is_section_header(line: str) -> bool:
         return True
     return False
 
-def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_when_header: bool = True):
+def _collect_section_lines(
+    lines: List[str],
+    start_patterns: List[str],
+    stop_when_header: bool = True,
+    collect_all: bool = False,
+    additional_stop_patterns: Tuple[str, ...] = (),
+):
     start_re = re.compile('|'.join(start_patterns), re.IGNORECASE)
+    additional_stop_re = (
+        re.compile('|'.join(additional_stop_patterns), re.IGNORECASE)
+        if additional_stop_patterns
+        else None
+    )
     collected = []
     capturing = False
     end_index = len(lines)
@@ -51,14 +62,24 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
         tokens = cleaned.split()
         if len(tokens) >= 3 and sum(len(t) for t in tokens) / len(tokens) <= 2.5:
             cleaned = cleaned.replace(' ', '')
-        
-        if not capturing and start_re.match(cleaned):
+
+        is_start = bool(start_re.match(cleaned))
+        if capturing and collect_all and is_start:
+            continue
+
+        is_additional_stop = bool(
+            additional_stop_re and additional_stop_re.match(cleaned)
+        )
+        if capturing and stop_when_header and (_is_section_header(line) or is_additional_stop):
+            end_index = i
+            if not collect_all:
+                break
+            capturing = False
+
+        if not capturing and is_start:
             capturing = True
             continue
         if capturing:
-            if stop_when_header and _is_section_header(line):
-                end_index = i
-                break
             collected.append(line)
     return collected, end_index
 
@@ -179,9 +200,20 @@ def extract_skills(text: str) -> Tuple[List[str], float]:
         r'^programming\s+languages:?$',
         r'^qualifications:?$',
     ]
+    skill_stop_patterns = (
+        r'^additional\s+projects:?$',
+        r'^additional\s+analytics\s+work:?$',
+        r'^impact\s+highlights:?$',
+        r'^selected\s+reporting\s+work:?$',
+    )
 
     lines = _get_lines(text)
-    skills_lines, _ = _collect_section_lines(lines, skills_patterns)
+    skills_lines, _ = _collect_section_lines(
+        lines,
+        skills_patterns,
+        collect_all=True,
+        additional_stop_patterns=skill_stop_patterns,
+    )
     cleaned = []
     for l in skills_lines:
         if re.match(r'^[^:]{1,40}:\s+\S', l):

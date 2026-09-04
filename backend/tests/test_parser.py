@@ -1,4 +1,11 @@
-from parser import _is_section_header, _split_skill_line, extract_location, extract_skills
+from parser import (
+    _is_section_header,
+    _split_skill_line,
+    extract_location,
+    extract_project_experience,
+    extract_skills,
+    extract_work_experience,
+)
 
 
 def test_volunteering_is_section_header():
@@ -165,3 +172,139 @@ def test_leadership_is_not_treated_as_skills_section():
     skills, confidence = extract_skills(text)
     assert skills == []
     assert confidence == 0.0
+
+
+def test_resume_201_skills_stop_at_additional_projects():
+    text = (
+        "SKILLS\n"
+        "Python, Java, SQL\n"
+        "ADDITIONAL PROJECTS\n"
+        "Student Organization Check-In Tracker\n"
+        "Python and Airtable"
+    )
+
+    skills, confidence = extract_skills(text)
+
+    assert confidence == 1.0
+    assert skills == ["python", "java", "sql"]
+
+
+def test_resume_203_skills_stop_at_additional_analytics_work():
+    text = (
+        "SKILLS\n"
+        "SQL, Python, pandas, Tableau\n"
+        "ADDITIONAL ANALYTICS WORK\n"
+        "Referral Queue Aging Review\n"
+        "Exported referral queue snapshots"
+    )
+
+    skills, confidence = extract_skills(text)
+
+    assert confidence == 1.0
+    assert skills == ["sql", "python", "pandas", "tableau"]
+
+
+def test_resume_208_collects_every_explicit_skills_section():
+    text = (
+        "CORE COMPETENCIES\n"
+        "Revenue operations, Salesforce reporting\n"
+        "IMPACT HIGHLIGHTS\n"
+        "Customer Expansion Analysis\n"
+        "PROFESSIONAL BACKGROUND\n"
+        "Revenue Operations Associate\n"
+        "ACADEMIC TRAINING\n"
+        "Bachelor of Arts in Economics\n"
+        "TECHNICAL TOOLKIT\n"
+        "Salesforce, Excel, SQL, Tableau\n"
+        "SELECTED REPORTING WORK\n"
+        "Renewal Forecast Hygiene"
+    )
+
+    skills, confidence = extract_skills(text)
+
+    assert confidence == 1.0
+    assert skills == [
+        "revenue operations",
+        "salesforce reporting",
+        "salesforce",
+        "excel",
+        "sql",
+        "tableau",
+    ]
+
+
+def test_subsequent_supported_skill_headings_are_not_extracted_as_skills():
+    supported_headings = [
+        "SKILLS",
+        "TECHNICAL SKILLS",
+        "TOOLS",
+        "TECH STACK",
+        "TOOLKIT",
+        "TECHNICAL TOOLKIT",
+        "CORE TECHNOLOGIES",
+        "CORE SKILLS",
+        "KEY SKILLS",
+        "PROFESSIONAL SKILLS",
+        "TECHNICAL PROFICIENCIES",
+        "CORE COMPETENCIES",
+        "COMPETENCIES",
+        "TECHNOLOGIES",
+        "TOOLS & TECHNOLOGIES",
+        "TOOLS AND TECHNOLOGIES",
+        "AREAS OF EXPERTISE",
+        "SKILLS & EXPERTISE",
+        "SKILLS AND EXPERTISE",
+        "TECHNICAL EXPERTISE",
+        "PROGRAMMING LANGUAGES",
+        "QUALIFICATIONS",
+    ]
+    text = "\n".join([*supported_headings, "Python", "EDUCATION", "BSc"])
+
+    skills, confidence = extract_skills(text)
+
+    assert confidence == 1.0
+    assert skills == ["python"]
+
+
+def test_collects_multiple_explicit_skill_sections_with_an_empty_section():
+    text = (
+        "SKILLS\n"
+        "PROJECTS\n"
+        "Portfolio\n"
+        "TECHNICAL PROFICIENCIES\n"
+        "Python, SQL\n"
+        "EDUCATION\n"
+        "BSc"
+    )
+
+    skills, confidence = extract_skills(text)
+
+    assert confidence == 1.0
+    assert skills == ["python", "sql"]
+
+
+def test_adjacent_empty_skill_sections_are_safe():
+    text = "SKILLS\nTECHNICAL SKILLS\nTOOLS\nEDUCATION\nBSc"
+
+    skills, confidence = extract_skills(text)
+
+    assert skills == []
+    assert confidence == 0.0
+
+
+def test_skill_specific_boundaries_do_not_stop_work_or_project_extraction():
+    headings = [
+        "ADDITIONAL PROJECTS",
+        "ADDITIONAL ANALYTICS WORK",
+        "IMPACT HIGHLIGHTS",
+        "SELECTED REPORTING WORK",
+    ]
+
+    for heading in headings:
+        work_text = f"WORK EXPERIENCE\nEngineer\n{heading}\nDetail\nEDUCATION\nBSc"
+        work_entries, _, _ = extract_work_experience(work_text)
+        assert work_entries == [f"Engineer {heading} Detail"]
+
+        project_text = f"PROJECTS\nDashboard\n{heading}\nDetail\nEDUCATION\nBSc"
+        project_entries, _ = extract_project_experience(project_text, 0)
+        assert project_entries == [f"Dashboard {heading} Detail"]
