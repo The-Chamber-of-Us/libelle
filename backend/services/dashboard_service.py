@@ -12,7 +12,7 @@ from core.state_contract import (
 )
 from services.dashboard_errors import summarize_submission_errors
 from services.dashboard_ops_state import compose_current_ops_state
-from services.dashboard_parser_results import select_latest_parser_result
+from services.dashboard_parser_results import select_parser_result
 from sheet_schema import SUBMISSIONS_HEADERS
 
 
@@ -100,12 +100,18 @@ def assemble_snapshot_records(
     observed_at = _normalize_datetime(now or datetime.now(timezone.utc))
 
     for submission_id, submission in keyed_submissions:
+        parser_job = parser_jobs_by_submission_id.get(submission_id)
         matching_parser_rows = [
             dict(row)
             for row in parser_rows
             if str(row.get("submission_id", "")).strip() == submission_id
         ]
-        latest_parser_row = select_latest_parser_result(matching_parser_rows)
+        selected_parser_row = select_parser_result(
+            matching_parser_rows,
+            authoritative_parser_run_id=(
+                parser_job.get("authoritative_parser_run_id", "") if parser_job else ""
+            ),
+        )
         errors = _compose_errors_layer(submission_id, error_rows)
 
         records.append(
@@ -113,15 +119,26 @@ def assemble_snapshot_records(
                 "submission_id": submission_id,
                 "submission_health_state": _compose_submission_health_state(
                     submission,
-                    latest_parser_row,
+                    selected_parser_row,
                     errors,
+                    parser_job,
                 ),
                 "raw": _compose_raw_layer(submission),
-                "parsed": _compose_parsed_layer(submission, latest_parser_row, errors),
-                "resolved": _compose_resolved_layer(submission, latest_parser_row, errors),
+                "parsed": _compose_parsed_layer(
+                    submission,
+                    selected_parser_row,
+                    errors,
+                    parser_job,
+                ),
+                "resolved": _compose_resolved_layer(
+                    submission,
+                    selected_parser_row,
+                    errors,
+                    parser_job,
+                ),
                 "parser_job": _compose_parser_job_layer(
                     submission_id,
-                    parser_jobs_by_submission_id.get(submission_id),
+                    parser_job,
                     observed_at,
                 ),
                 "ops": compose_current_ops_state(submission_id, [dict(row) for row in ops_rows]),
@@ -140,12 +157,23 @@ def _compose_submission_health_state(
     submission: SubmissionRecord,
     parser_row: Optional[Dict[str, Any]],
     errors: Mapping[str, Any],
+    parser_job: Optional[ParserJobRow] = None,
 ) -> str:
     return derive_submission_health_state(
         {
             "resume_state": _resume_state_from_submission(submission),
-            "parser_state": _parser_state_from_snapshot(submission, parser_row, errors),
-            "resolver_state": _resolver_state_from_snapshot(submission, parser_row, errors),
+            "parser_state": _parser_state_from_snapshot(
+                submission,
+                parser_row,
+                errors,
+                parser_job,
+            ),
+            "resolver_state": _resolver_state_from_snapshot(
+                submission,
+                parser_row,
+                errors,
+                parser_job,
+            ),
         }
     )
 
@@ -171,6 +199,7 @@ def _parser_state_from_snapshot(
     submission: SubmissionRecord,
     parser_row: Optional[Dict[str, Any]],
     errors: Mapping[str, Any],
+    parser_job: Optional[ParserJobRow] = None,
 ) -> str:
     explicit_state = _normalized_text(submission.get("parser_state"))
     if explicit_state:
@@ -180,6 +209,8 @@ def _parser_state_from_snapshot(
         return ParserState.SKIPPED_NO_RESUME.value
     if parser_row:
         return ParserState.SUCCEEDED.value
+    if _parser_job_is_terminal_failure(parser_job):
+        return ParserState.FAILED.value
     if _latest_error_code(errors) == "PARSER_FAILED":
         return ParserState.FAILED.value
     return ParserState.NOT_STARTED.value
@@ -189,13 +220,14 @@ def _resolver_state_from_snapshot(
     submission: SubmissionRecord,
     parser_row: Optional[Dict[str, Any]],
     errors: Mapping[str, Any],
+    parser_job: Optional[ParserJobRow] = None,
 ) -> str:
     explicit_state = _normalized_text(submission.get("resolver_state"))
     if explicit_state:
         return explicit_state
 
     resume_state = _resume_state_from_submission(submission)
-    parser_state = _parser_state_from_snapshot(submission, parser_row, errors)
+    parser_state = _parser_state_from_snapshot(submission, parser_row, errors, parser_job)
     if resume_state == ResumeState.NONE_PROVIDED.value:
         return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
     if _latest_error_code(errors) == "RESOLVER_FAILED":
@@ -211,6 +243,7 @@ def _compose_parsed_layer(
     submission: SubmissionRecord,
     parser_row: Optional[Dict[str, Any]],
     errors: Mapping[str, Any],
+    parser_job: Optional[ParserJobRow] = None,
 ) -> Dict[str, Any]:
     state: Dict[str, Any] = {
         "parser_state": "pending",
@@ -225,7 +258,9 @@ def _compose_parsed_layer(
     }
 
     if not parser_row:
-        if _latest_error_code(errors) == "PARSER_FAILED":
+        if _latest_error_code(errors) == "PARSER_FAILED" or _parser_job_is_terminal_failure(
+            parser_job
+        ):
             state["parser_result_state"] = "failed"
         elif _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
             state["parser_result_state"] = "skipped"
@@ -246,6 +281,7 @@ def _compose_resolved_layer(
     submission: SubmissionRecord,
     parser_row: Optional[Dict[str, Any]],
     errors: Optional[Mapping[str, Any]] = None,
+    parser_job: Optional[ParserJobRow] = None,
 ) -> Dict[str, Any]:
     state: Dict[str, Any] = {
         "resolver_state": "not_run",
@@ -265,6 +301,7 @@ def _compose_resolved_layer(
     if not parser_row:
         if (
             _latest_error_code(errors or {}) == "PARSER_FAILED"
+            or _parser_job_is_terminal_failure(parser_job)
             or _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value
         ):
             state["resolver_result_state"] = "unavailable_upstream"
@@ -296,14 +333,23 @@ def _compose_parser_job_layer(
     if job is None:
         return None
 
-    status = _value_or_blank(job.get("status", ""))
+    status, status_is_valid = _safe_parser_job_status(job.get("status", ""))
+    attempt_count = _nonnegative_int_or_none(job.get("attempt_count"))
+    max_attempts = _positive_int_or_none(job.get("max_attempts"))
+    is_stale = _is_stale_parser_job(job, now)
     return {
         "submission_id": submission_id,
         "parser_job_status": status,
-        "attempt_count": _nonnegative_int_or_zero(job.get("attempt_count")),
-        "max_attempts": _positive_int_or_none(job.get("max_attempts")),
+        "attempt_count": attempt_count,
+        "max_attempts": max_attempts,
         "parser_run_id": _operational_parser_run_id(job),
-        "is_stale": _is_stale_parser_job(job, now),
+        "is_stale": is_stale,
+        "parser_job_state_quality": _parser_job_state_quality(
+            status_is_valid,
+            attempt_count,
+            max_attempts,
+            is_stale,
+        ),
         "last_error_code": _safe_error_code(job.get("last_error_code")),
         "last_error_summary": _safe_error_summary(job.get("last_error_summary")),
         "available_at": _value_or_blank(job.get("available_at", "")),
@@ -331,12 +377,46 @@ def _operational_parser_run_id(job: ParserJobRow) -> str:
     return _value_or_blank(job.get("last_parser_run_id", ""))
 
 
-def _is_stale_parser_job(job: ParserJobRow, now: datetime) -> bool:
+def _is_stale_parser_job(job: ParserJobRow, now: datetime) -> Optional[bool]:
     if _normalized_text(job.get("status")) != "running":
         return False
 
-    lock_expires_at = _parse_timestamp(job.get("lock_expires_at", ""))
+    raw_lock_expires_at = str(job.get("lock_expires_at", "") or "").strip()
+    if not raw_lock_expires_at:
+        return None
+
+    lock_expires_at = _parse_timestamp(raw_lock_expires_at)
+    if lock_expires_at is None:
+        return None
     return lock_expires_at is not None and lock_expires_at < now
+
+
+def _parser_job_is_terminal_failure(job: Optional[ParserJobRow]) -> bool:
+    if job is None:
+        return False
+    return _normalized_text(job.get("status")) in {"failed", "enqueue_failed"}
+
+
+def _safe_parser_job_status(value: Any) -> tuple[str, bool]:
+    from storage.parser_jobs_repo import VALID_JOB_STATUSES
+
+    status = str(value or "").strip()
+    if status in VALID_JOB_STATUSES:
+        return status, True
+    return "unknown", False
+
+
+def _parser_job_state_quality(
+    status_is_valid: bool,
+    attempt_count: Optional[int],
+    max_attempts: Optional[int],
+    is_stale: Optional[bool],
+) -> str:
+    if not status_is_valid:
+        return "malformed"
+    if attempt_count is None or max_attempts is None or is_stale is None:
+        return "malformed"
+    return "valid"
 
 
 def _parse_timestamp(value: Any) -> Optional[datetime]:
@@ -364,12 +444,12 @@ def _normalize_datetime(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def _nonnegative_int_or_zero(value: Any) -> int:
+def _nonnegative_int_or_none(value: Any) -> Optional[int]:
     try:
         parsed = int(str(value or "").strip())
     except (TypeError, ValueError):
-        return 0
-    return max(parsed, 0)
+        return None
+    return parsed if parsed >= 0 else None
 
 
 def _positive_int_or_none(value: Any) -> Optional[int]:

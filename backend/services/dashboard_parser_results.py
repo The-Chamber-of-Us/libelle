@@ -86,3 +86,25 @@ def select_latest_parser_result(
     )
 
     return dict(latest_row)
+
+
+def select_parser_result(
+    parser_rows: List[ParserResultRow],
+    *,
+    authoritative_parser_run_id: Any = "",
+) -> Optional[ParserResultRow]:
+    """
+    Select the parser_results row that should back reviewer-facing snapshot data.
+
+    When parser_jobs records an authoritative successful run, that run owns the
+    parser/resolver content shown in /snapshot. Legacy rows without authoritative
+    job state continue to use latest-result selection.
+    """
+    authoritative_id = str(authoritative_parser_run_id or "").strip()
+    if authoritative_id:
+        for row in parser_rows:
+            if str(row.get("parser_run_id", "")).strip() == authoritative_id:
+                return dict(row)
+        return None
+
+    return select_latest_parser_result(parser_rows)

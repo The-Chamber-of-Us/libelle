@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from core.state_contract import VALID_SUBMISSION_HEALTH_STATES
 from ops_schema import VALID_OPS_STATUSES
-from storage.parser_jobs_repo import VALID_JOB_STATUSES
 
 
 class SnapshotModel(BaseModel):
@@ -66,11 +65,20 @@ class SnapshotResolvedData(SnapshotModel):
 
 class SnapshotParserJobData(SnapshotModel):
     submission_id: str
-    parser_job_status: Literal[VALID_JOB_STATUSES]
-    attempt_count: int = Field(ge=0)
+    parser_job_status: Literal[
+        "queued",
+        "running",
+        "retry_scheduled",
+        "succeeded",
+        "failed",
+        "enqueue_failed",
+        "unknown",
+    ]
+    attempt_count: int | None = Field(default=None, ge=0)
     max_attempts: int | None = Field(default=None, ge=1)
     parser_run_id: str
-    is_stale: bool
+    is_stale: bool | None
+    parser_job_state_quality: Literal["valid", "malformed"]
     last_error_code: str | None = None
     last_error_summary: str | None = None
     available_at: str

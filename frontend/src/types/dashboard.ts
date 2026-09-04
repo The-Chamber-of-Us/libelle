@@ -20,6 +20,7 @@ export type ParserJobStatus =
   | 'succeeded'
   | 'failed'
   | 'enqueue_failed'
+  | 'unknown'
 export type SubmissionHealthState =
   | 'complete'
   | 'partial_success'
@@ -80,10 +81,11 @@ export interface SnapshotResolvedData {
 export interface SnapshotParserJobData {
   submission_id: string
   parser_job_status: ParserJobStatus
-  attempt_count: number
+  attempt_count: number | null
   max_attempts: number | null
   parser_run_id: string
-  is_stale: boolean
+  is_stale: boolean | null
+  parser_job_state_quality: 'valid' | 'malformed'
   last_error_code: string | null
   last_error_summary: string | null
   available_at: string

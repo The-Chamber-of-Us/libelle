@@ -521,6 +521,7 @@ def test_assemble_snapshot_records_surfaces_queued_parser_job_safely() -> None:
         "max_attempts": 3,
         "parser_run_id": "",
         "is_stale": False,
+        "parser_job_state_quality": "valid",
         "last_error_code": None,
         "last_error_summary": None,
         "available_at": "05-26-2026 10:00:00 UTC",
@@ -624,7 +625,36 @@ def test_assemble_snapshot_records_surfaces_retry_failure_and_stale_states() -> 
 def test_assemble_snapshot_records_uses_authoritative_parser_run_for_succeeded_job() -> None:
     records = assemble_snapshot_records(
         {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
-        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "parser_run_id": "run-authoritative",
+                "created_at": "2026-04-20T10:00:00",
+                "parser_version": "parser-v1",
+                "parsed_skills_raw": '["authoritative"]',
+                "parsed_location_raw": "Authoritative City",
+                "parser_confidence": "0.80",
+                "resolver_version": "resolver-v1",
+                "aliases_version": "aliases-v1",
+                "resolved_skill_ids": '["authoritative"]',
+                "unknown_skills": "[]",
+                "resolver_coverage": "1.0",
+            },
+            {
+                "submission_id": "sub_001",
+                "parser_run_id": "run-newer-nonauthoritative",
+                "created_at": "2026-04-20T11:00:00",
+                "parser_version": "parser-v1",
+                "parsed_skills_raw": '["newer"]',
+                "parsed_location_raw": "Newer City",
+                "parser_confidence": "0.90",
+                "resolver_version": "resolver-v1",
+                "aliases_version": "aliases-v1",
+                "resolved_skill_ids": '["newer"]',
+                "unknown_skills": "[]",
+                "resolver_coverage": "1.0",
+            },
+        ],
         [],
         [],
         [
@@ -641,3 +671,77 @@ def test_assemble_snapshot_records_uses_authoritative_parser_run_for_succeeded_j
 
     assert records[0]["parser_job"]["parser_job_status"] == "succeeded"
     assert records[0]["parser_job"]["parser_run_id"] == "run-authoritative"
+    assert records[0]["parsed"]["parser_run_id"] == "run-authoritative"
+    assert records[0]["parsed"]["parsed_skills_raw"] == '["authoritative"]'
+    assert records[0]["resolved"]["resolved_skill_ids"] == '["authoritative"]'
+
+
+def test_assemble_snapshot_records_derives_parser_failed_health_from_terminal_job() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "failed",
+                "attempt_count": "3",
+                "max_attempts": "3",
+                "last_parser_run_id": "run-failed",
+            }
+        ],
+    )
+
+    assert records[0]["submission_health_state"] == SubmissionHealthState.PARSER_FAILED.value
+    assert records[0]["parsed"]["parser_result_state"] == "failed"
+    assert records[0]["resolved"]["resolver_result_state"] == "unavailable_upstream"
+    assert records[0]["parser_job"]["parser_job_status"] == "failed"
+
+
+def test_assemble_snapshot_records_preserves_malformed_parser_job_state_as_unknown() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "running",
+                "attempt_count": "oops",
+                "max_attempts": "0",
+                "last_parser_run_id": "run-current",
+                "lock_expires_at": "not a timestamp",
+            }
+        ],
+        now=datetime(2026, 5, 26, 10, 30, tzinfo=timezone.utc),
+    )
+
+    parser_job = records[0]["parser_job"]
+    assert parser_job["parser_job_status"] == "running"
+    assert parser_job["attempt_count"] is None
+    assert parser_job["max_attempts"] is None
+    assert parser_job["is_stale"] is None
+    assert parser_job["parser_job_state_quality"] == "malformed"
+
+
+def test_assemble_snapshot_records_marks_unknown_for_invalid_parser_job_status() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "definitely_not_valid",
+                "attempt_count": "1",
+                "max_attempts": "3",
+            }
+        ],
+    )
+
+    parser_job = records[0]["parser_job"]
+    assert parser_job["parser_job_status"] == "unknown"
+    assert parser_job["parser_job_state_quality"] == "malformed"
