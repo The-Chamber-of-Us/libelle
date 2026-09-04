@@ -269,7 +269,7 @@ def test_heading_and_content_in_same_pdf_block_are_supported():
     assert skills == ["python", "sql", "docker"]
 
 
-def test_full_width_skill_heading_can_govern_two_safe_lanes():
+def test_full_width_skill_heading_fails_closed_and_remains_safe():
     extracted = _extracted(
         _block("TECHNICAL SKILLS", 40, 35, width=532, index=0),
         _block("Python\nSQL", 45, 80, width=205, height=50, index=1),
@@ -286,7 +286,176 @@ def test_full_width_skill_heading_can_govern_two_safe_lanes():
 
     skills, projection = _skills(extracted)
 
+    assert projection.layout is LayoutKind.AMBIGUOUS
+    assert skills == ["python", "sql", "docker", "aws"]
+
+
+def _assert_fails_closed_without_unsupported_skills(
+    extracted: ExtractedPdfText, unsupported: set[str]
+):
+    skills, projection = _skills(extracted)
+
+    assert projection.layout is LayoutKind.AMBIGUOUS
+    assert unsupported.isdisjoint(skills)
+    return skills
+
+
+def test_fragmented_single_column_contact_and_dates_fail_closed():
+    extracted = _extracted(
+        _block("CONTACT", 430, 30, width=120, index=0),
+        _block("person@example.com", 430, 60, width=130, index=1),
+        _block("PROFILE", 55, 35, width=170, index=2),
+        _block("Operations specialist", 55, 70, width=260, index=3),
+        _block("SKILLS", 55, 110, width=170, index=4),
+        _block("Scheduling, Excel", 72, 140, width=230, index=5),
+        _block("EXPERIENCE", 55, 200, width=170, index=6),
+        _block("Coordinator", 72, 230, width=230, index=7),
+        _block("2022 - 2024", 430, 235, width=120, index=8),
+        _block("PROJECTS", 55, 390, width=170, index=9),
+        _block("Managed office relocation", 72, 420, width=260, index=10),
+        _block("2020 - 2022", 430, 425, width=120, index=11),
+    )
+
+    skills = _assert_fails_closed_without_unsupported_skills(
+        extracted,
+        {"2022 - 2024", "2020 - 2022", "coordinator", "managed office relocation"},
+    )
+
+    assert skills == ["scheduling", "excel"]
+
+
+def test_hanging_indents_and_x_scatter_do_not_establish_lanes():
+    extracted = _extracted(
+        _block("CONTACT", 310, 30, width=180, index=0),
+        _block("person@example.com", 315, 60, width=190, index=1),
+        _block("SUMMARY", 60, 35, width=170, index=2),
+        _block("Platform engineer", 64, 70, width=230, index=3),
+        _block("SKILLS", 60, 115, width=170, index=4),
+        _block("Python, SQL", 72, 145, width=210, index=5),
+        _block("EXPERIENCE", 60, 210, width=170, index=6),
+        _block("Senior Engineer", 85, 240, width=230, index=7),
+        _block("2021 - Present", 320, 245, width=140, index=8),
+        _block("PROJECTS", 60, 410, width=170, index=9),
+        _block("Built billing workflows", 85, 440, width=240, index=10),
+        _block("2020 - 2021", 315, 445, width=140, index=11),
+    )
+
+    skills = _assert_fails_closed_without_unsupported_skills(
+        extracted,
+        {
+            "senior engineer",
+            "2021 - present",
+            "built billing workflows",
+            "2020 - 2021",
+        },
+    )
+
+    assert skills == ["python", "sql"]
+
+
+def test_wide_mixed_skill_block_does_not_broadcast_skill_authority():
+    extracted = _extracted(
+        _block("SUMMARY", 55, 30, width=180, index=0),
+        _block("Engineer", 55, 60, width=180, index=1),
+        _block("CONTACT", 430, 30, width=130, index=2),
+        _block("person@example.com", 430, 60, width=150, index=3),
+        _block(
+            "SKILLS\nPython, SQL, Docker, AWS, Kubernetes, Terraform, FastAPI",
+            55,
+            120,
+            width=518,
+            height=45,
+            index=4,
+        ),
+        _block("EXPERIENCE", 55, 175, width=180, index=5),
+        _block("Engineer", 55, 210, width=180, index=6),
+        _block("2022 - 2024", 430, 210, width=130, index=7),
+        _block("PROJECTS", 55, 380, width=180, index=8),
+        _block("Built customer billing workflows", 55, 415, width=290, index=9),
+        _block("EDUCATION", 430, 300, width=130, index=10),
+        _block("BSc", 430, 335, width=130, index=11),
+        _block("CERTIFICATIONS", 430, 460, width=145, index=12),
+        _block("Cloud certificate", 430, 495, width=145, index=13),
+    )
+
+    skills = _assert_fails_closed_without_unsupported_skills(
+        extracted,
+        {"2022 - 2024", "built customer billing workflows", "engineer"},
+    )
+
+    assert skills == [
+        "python",
+        "sql",
+        "docker",
+        "aws",
+        "kubernetes",
+        "terraform",
+        "fastapi",
+    ]
+
+
+def test_narrow_lane_skill_block_crossing_candidate_boundary_is_not_shared():
+    extracted = _extracted(
+        _block("SUMMARY", 36, 30, width=180, index=0),
+        _block("Operations specialist", 36, 65, width=185, index=1),
+        _block("CONTACT", 36, 180, width=90, index=2),
+        _block("person@example.com", 36, 215, width=155, index=3),
+        _block("EDUCATION\nSKILLS", 36, 350, width=145, height=80, index=4),
+        _block("Python", 36, 450, width=100, index=5),
+        _block("SQL", 36, 485, width=100, index=6),
+        _block("Candidate Name", 220, 35, width=220, index=7),
+        _block("EXPERIENCE", 258, 180, width=170, index=8),
+        _block("Senior Engineer", 258, 215, width=230, index=9),
+        _block("Built customer workflows", 258, 250, width=280, index=10),
+        _block("PROJECTS", 258, 450, width=170, index=11),
+        _block("Portfolio migration", 258, 485, width=240, index=12),
+    )
+
+    skills, projection = _skills(extracted)
+
     assert projection.layout is LayoutKind.MULTI_COLUMN
+    assert skills == ["python", "sql"]
+
+
+def test_left_gutter_headings_and_indented_single_flow_fail_closed():
+    extracted = _extracted(
+        _block("SUMMARY", 55, 30, width=90, index=0),
+        _block("Platform engineer", 175, 35, width=300, index=1),
+        _block("SKILLS", 55, 100, width=90, index=2),
+        _block("Python, SQL", 175, 105, width=250, index=3),
+        _block("EXPERIENCE", 55, 190, width=100, index=4),
+        _block("Senior Engineer", 175, 195, width=250, index=5),
+        _block("Led incident reviews", 175, 230, width=280, index=6),
+        _block("PROJECTS", 55, 390, width=90, index=7),
+        _block("Portfolio migration", 175, 395, width=270, index=8),
+    )
+
+    skills = _assert_fails_closed_without_unsupported_skills(
+        extracted,
+        {"senior engineer", "led incident reviews", "portfolio migration"},
+    )
+
+    assert skills == ["python", "sql"]
+
+
+def test_full_width_section_transitions_do_not_emit_lane_narrative():
+    extracted = _extracted(
+        _block("SKILLS", 40, 35, width=532, index=0),
+        _block("Python, SQL", 45, 80, width=205, index=1),
+        _block("Docker, AWS", 335, 80, width=235, index=2),
+        _block("EXPERIENCE", 40, 170, width=532, index=3),
+        _block("Engineer", 45, 210, width=205, index=4),
+        _block("Led platform migration", 335, 210, width=235, index=5),
+        _block("PROJECTS", 40, 350, width=532, index=6),
+        _block("Portfolio", 45, 390, width=205, index=7),
+        _block("Built billing workflows", 335, 390, width=235, index=8),
+    )
+
+    skills = _assert_fails_closed_without_unsupported_skills(
+        extracted,
+        {"engineer", "led platform migration", "portfolio", "built billing workflows"},
+    )
+
     assert skills == ["python", "sql", "docker", "aws"]
 
 
@@ -340,6 +509,53 @@ def _sample_pdf_bytes() -> bytes:
     value = document.tobytes()
     document.close()
     return value
+
+
+def _unsafe_shared_skill_pdf_bytes() -> bytes:
+    document = fitz.open()
+    page = document.new_page(width=PAGE_WIDTH, height=PAGE_HEIGHT)
+    blocks = (
+        (fitz.Rect(55, 30, 250, 50), "SUMMARY"),
+        (fitz.Rect(55, 60, 300, 80), "Platform engineer"),
+        (fitz.Rect(430, 30, 575, 50), "CONTACT"),
+        (fitz.Rect(430, 60, 575, 80), "person@example.com"),
+        (
+            fitz.Rect(55, 120, 575, 165),
+            "SKILLS\nPython, SQL, Docker, AWS, Kubernetes, Terraform, "
+            "FastAPI, PostgreSQL, Redis, GitHub Actions",
+        ),
+        (fitz.Rect(55, 175, 250, 195), "EXPERIENCE"),
+        (fitz.Rect(55, 210, 300, 230), "Senior Engineer"),
+        (fitz.Rect(430, 210, 575, 230), "2022 - 2024"),
+        (fitz.Rect(430, 300, 575, 320), "EDUCATION"),
+        (fitz.Rect(430, 335, 575, 355), "BSc"),
+        (fitz.Rect(55, 380, 250, 400), "PROJECTS"),
+        (fitz.Rect(55, 415, 350, 435), "Built customer billing workflows"),
+        (fitz.Rect(430, 460, 575, 480), "CERTIFICATIONS"),
+        (fitz.Rect(430, 495, 575, 515), "Cloud certificate"),
+    )
+    for rectangle, text in blocks:
+        page.insert_textbox(rectangle, text, fontsize=10)
+    value = document.tobytes()
+    document.close()
+    return value
+
+
+def test_real_pdf_shared_skill_block_fails_closed_without_narrative():
+    pdf_bytes = _unsafe_shared_skill_pdf_bytes()
+    extracted = extract_pdf_text_from_bytes(pdf_bytes)
+
+    skills, projection = _skills(extracted)
+    canonical_skills = parse_resume_pdf(pdf_bytes)["skills"]["value"]
+
+    assert projection.layout is LayoutKind.AMBIGUOUS
+    assert skills == canonical_skills
+    assert {
+        "2022 - 2024",
+        "senior engineer",
+        "built customer billing workflows",
+    }.isdisjoint(skills)
+    assert {"python", "sql", "docker", "aws"}.issubset(skills)
 
 
 def test_existing_bytes_extraction_caller_returns_identical_flattened_text():

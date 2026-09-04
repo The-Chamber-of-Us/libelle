@@ -22,11 +22,13 @@ from services.pdf_text_extraction import (
 )
 
 
-MIN_BLOCKS_PER_LANE = 3
+MIN_SECTION_HEADINGS_PER_LANE = 2
+MIN_CONTENT_BLOCKS_PER_LANE = 2
 MIN_VERTICAL_OVERLAP_RATIO = 0.30
 EDGE_CONFINEMENT_RATIO = 0.15
 GAP_BOUNDARY_RATIO = 0.10
 DOMINANT_START_RATIO = 0.75
+SHARED_HEADING_WIDTH_RATIO = 0.70
 
 
 class LayoutKind(Enum):
@@ -53,6 +55,30 @@ def _is_layout_header(block: PositionedTextBlock) -> bool:
         or _is_skill_start_header(line)
         or _is_skill_stop_header(line)
         for line in block.text.splitlines()
+    )
+
+
+def _has_sustained_lane_evidence(
+    blocks: Sequence[PositionedTextBlock],
+) -> bool:
+    heading_count = sum(_is_layout_header(block) for block in blocks)
+    content_count = len(blocks) - heading_count
+    return (
+        heading_count >= MIN_SECTION_HEADINGS_PER_LANE
+        and content_count >= MIN_CONTENT_BLOCKS_PER_LANE
+    )
+
+
+def _contains_skill_start(block: PositionedTextBlock) -> bool:
+    return any(_is_skill_start_header(line) for line in block.text.splitlines())
+
+
+def _is_shared_heading(
+    block: PositionedTextBlock, page_width: float
+) -> bool:
+    return (
+        block.x1 - block.x0 >= page_width * SHARED_HEADING_WIDTH_RATIO
+        and _is_layout_header(block)
     )
 
 
@@ -116,15 +142,13 @@ def _guarded_boundary(page: PositionedTextPage) -> Optional[float]:
 
     left = [block for block in page.blocks if block.x0 < boundary]
     right = [block for block in page.blocks if block.x0 >= boundary]
-    if len(left) < MIN_BLOCKS_PER_LANE or len(right) < MIN_BLOCKS_PER_LANE:
+    if not _has_sustained_lane_evidence(left):
+        return None
+    if not _has_sustained_lane_evidence(right):
         return None
     if _vertical_overlap(left, right, page.height) < MIN_VERTICAL_OVERLAP_RATIO:
         return None
     if _is_edge_confined(left, page.height) or _is_edge_confined(right, page.height):
-        return None
-    if not any(_is_layout_header(block) for block in left):
-        return None
-    if not any(_is_layout_header(block) for block in right):
         return None
     return boundary
 
@@ -150,6 +174,13 @@ def _dominant_start_ratio(page: PositionedTextPage) -> float:
 def _classify_page(page: PositionedTextPage) -> _PageDecision:
     boundary = _guarded_boundary(page)
     if boundary is not None:
+        if any(
+            block.x0 < boundary < block.x1
+            and _is_shared_heading(block, page.width)
+            and _contains_skill_start(block)
+            for block in page.blocks
+        ):
+            return _PageDecision(LayoutKind.AMBIGUOUS)
         return _PageDecision(LayoutKind.MULTI_COLUMN, boundary)
 
     raw_boundary = _raw_boundary(page.blocks, page.width)
@@ -191,9 +222,7 @@ def _page_streams(
     left = []
     right = []
     for block in page.blocks:
-        is_full_width_heading = (
-            block.x1 - block.x0 >= page.width * 0.70 and _is_layout_header(block)
-        )
+        is_full_width_heading = _is_shared_heading(block, page.width)
         if is_full_width_heading:
             shared.append(block)
         elif block.x0 < decision.boundary:
