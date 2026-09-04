@@ -165,6 +165,40 @@ def test_duplicate_logical_jobs_resolve_to_earliest_with_diagnostics(monkeypatch
     assert returned["_duplicate_job_ids"] == "job_later"
 
 
+def test_list_parser_jobs_returns_canonical_logical_jobs(monkeypatch) -> None:
+    later_duplicate = _job(
+        job_id="job_later",
+        submission_id="sub_001",
+        created_at="05-26-2026 11:00:00 UTC",
+    )
+    earlier_duplicate = _job(
+        job_id="job_earlier",
+        submission_id="sub_001",
+        created_at="05-26-2026 09:00:00 UTC",
+    )
+    second_submission = _job(job_id="job_002", submission_id="sub_002")
+    ignored_job_type = _job(
+        job_id="job_ignored",
+        submission_id="sub_003",
+        job_type="other",
+    )
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(later_duplicate),
+            _sheet_row(second_submission),
+            _sheet_row(ignored_job_type),
+            _sheet_row(earlier_duplicate),
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_parser_jobs()
+
+    assert [job["job_id"] for job in jobs] == ["job_earlier", "job_002"]
+    assert jobs[0]["_duplicate_count"] == "1"
+    assert jobs[0]["_duplicate_job_ids"] == "job_later"
+
+
 def test_list_claimable_jobs_filters_by_status_and_available_at(monkeypatch) -> None:
     fake_sheet = _FakeSheet(
         [

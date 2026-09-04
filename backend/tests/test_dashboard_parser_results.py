@@ -1,4 +1,4 @@
-from services.dashboard_parser_results import select_latest_parser_result
+from services.dashboard_parser_results import select_latest_parser_result, select_parser_result
 
 
 def test_select_latest_parser_result_returns_none_for_empty_rows() -> None:
@@ -73,3 +73,38 @@ def test_select_latest_parser_result_returns_copy() -> None:
     latest["parser_run_id"] = "999"
 
     assert row["parser_run_id"] == "1"
+
+
+def test_select_parser_result_prefers_authoritative_run_id() -> None:
+    rows = [
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "run-authoritative",
+            "created_at": "04-20-2026 10:00:00 UTC",
+            "parsed_skills_raw": "authoritative",
+        },
+        {
+            "submission_id": "sub_001",
+            "parser_run_id": "run-newer",
+            "created_at": "04-20-2026 11:00:00 UTC",
+            "parsed_skills_raw": "newer",
+        },
+    ]
+
+    selected = select_parser_result(
+        rows,
+        authoritative_parser_run_id="run-authoritative",
+    )
+
+    assert selected is not None
+    assert selected["parser_run_id"] == "run-authoritative"
+    assert selected["parsed_skills_raw"] == "authoritative"
+
+
+def test_select_parser_result_returns_none_for_missing_authoritative_run_id() -> None:
+    selected = select_parser_result(
+        [{"submission_id": "sub_001", "parser_run_id": "run-present"}],
+        authoritative_parser_run_id="run-missing",
+    )
+
+    assert selected is None
