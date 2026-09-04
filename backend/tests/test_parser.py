@@ -1,4 +1,11 @@
-from parser import _is_section_header, _split_skill_line, extract_location, extract_skills
+from parser import (
+    _is_section_header,
+    _split_skill_line,
+    extract_location,
+    extract_project_experience,
+    extract_skills,
+    extract_work_experience,
+)
 
 
 def test_volunteering_is_section_header():
@@ -165,3 +172,22 @@ def test_leadership_is_not_treated_as_skills_section():
     skills, confidence = extract_skills(text)
     assert skills == []
     assert confidence == 0.0
+
+
+def test_skill_local_boundaries_do_not_change_work_or_project_extraction():
+    headings = [
+        "ADDITIONAL PROJECTS",
+        "ADDITIONAL ANALYTICS WORK",
+        "IMPACT HIGHLIGHTS",
+        "SELECTED REPORTING WORK",
+        "SOFT SKILLS",
+    ]
+
+    for heading in headings:
+        work_text = f"WORK EXPERIENCE\nEngineer\n{heading}\nDetail\nEDUCATION\nBSc"
+        work_entries, _, _ = extract_work_experience(work_text)
+        assert work_entries == [f"Engineer {heading} Detail"]
+
+        project_text = f"PROJECTS\nDashboard\n{heading}\nDetail\nEDUCATION\nBSc"
+        project_entries, _ = extract_project_experience(project_text, 0)
+        assert project_entries == [f"Dashboard {heading} Detail"]
