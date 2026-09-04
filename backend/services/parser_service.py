@@ -4,10 +4,11 @@ import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from parser import parse_resume
 from resolver.normalize import normalize_key
 from resolver.resolver import resolve_extracted_profile
 from resolver.schemas import ExtractedProfileV1
+from services.resume_pdf_parser import parse_resume_pdf
+from storage.drive_repo import download_file
 from storage.sheets_repo import append_error_row, update_resume_in_sheet
 
 
@@ -93,11 +94,11 @@ def _add_resolver_output(parsed: Dict[str, Any], submission_id: str) -> None:
     parsed["resolver_coverage"] = round(resolved.stats.coverage, 3)
 
 
-def parse_and_update(submission_id: str, drive_file_id: str, pre_extracted_text: str) -> None:
-    """Parse the extracted resume text and update the parser_results row in Sheets."""
+def parse_and_update(submission_id: str, drive_file_id: str) -> None:
+    """Reconstruct parsing from the durable PDF and update parser_results."""
     try:
         print(f"[JOB] Parsing submission_id={submission_id} drive_file_id={drive_file_id} ...")
-        parsed = parse_resume(pre_extracted_text or "")
+        parsed = parse_resume_pdf(download_file(drive_file_id))
         parsed["submission_id"] = submission_id
         parsed["drive_file_id"] = drive_file_id
     except Exception as e:

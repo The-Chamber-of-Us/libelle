@@ -272,14 +272,11 @@ def _split_location(raw: str) -> Tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 def _run_libelle(pdf_path: Path) -> Tuple[Dict[str, Any], float]:
-    """Extract text with PyMuPDF and run Libelle parser. Returns (raw_parsed, runtime_ms)."""
-    from services.pdf_text_extraction import extract_text_from_pdf_path
-    from parser import parse_resume
-
-    text = extract_text_from_pdf_path(pdf_path)
+    """Run the canonical PDF parser. Returns (raw_parsed, runtime_ms)."""
+    from services.resume_pdf_parser import parse_resume_pdf
 
     t0 = time.perf_counter()
-    result = parse_resume(text)
+    result = parse_resume_pdf(pdf_path.read_bytes())
     runtime_ms = (time.perf_counter() - t0) * 1000
     return result, runtime_ms
 

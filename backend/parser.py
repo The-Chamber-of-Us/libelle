@@ -4,6 +4,45 @@ from typing import List, Dict, Tuple, Any
 from utils.text_normalization import normalize_text
 
 
+SKILL_START_PATTERNS = (
+    r'^skills:?$',
+    r'^technical\s+skills:?$',
+    r'^tools:?$',
+    r'^tech\s+stack:?$',
+    r'^toolkit:?$',
+    r'^technical\s+toolkit:?$',
+    r'^core\s+technologies:?$',
+    r'^core\s+skills:?$',
+    r'^key\s+skills:?$',
+    r'^professional\s+skills:?$',
+    r'^technical\s+proficiencies:?$',
+    r'^core\s+competencies:?$',
+    r'^competencies:?$',
+    r'^technologies:?$',
+    r'^tools\s+(?:&|and)\s+technologies:?$',
+    r'^areas\s+of\s+expertise:?$',
+    r'^skills\s+(?:&|and)\s+expertise:?$',
+    r'^technical\s+expertise:?$',
+    r'^programming\s+languages:?$',
+    r'^qualifications:?$',
+)
+
+# These boundaries are deliberately local to skill projection. They are not
+# added to the parser's general section taxonomy.
+SKILL_LOCAL_STOP_PATTERNS = (
+    r'^additional\s+projects:?$',
+    r'^additional\s+analytics\s+work:?$',
+    r'^impact\s+highlights:?$',
+    r'^selected\s+reporting\s+work:?$',
+    r'^soft\s+skills:?$',
+)
+
+_SKILL_START_RE = re.compile('|'.join(SKILL_START_PATTERNS), re.IGNORECASE)
+_SKILL_LOCAL_STOP_RE = re.compile(
+    '|'.join(SKILL_LOCAL_STOP_PATTERNS), re.IGNORECASE
+)
+
+
 def _get_lines(text: str) -> List[str]:
     return [line.rstrip() for line in text.splitlines()]
 
@@ -39,6 +78,23 @@ def _is_section_header(line: str) -> bool:
     if re.match(headers[0], s.lower()):
         return True
     return False
+
+
+def _clean_heading(line: str) -> str:
+    cleaned = _clean_line(line)
+    tokens = cleaned.split()
+    if len(tokens) >= 3 and sum(len(token) for token in tokens) / len(tokens) <= 2.5:
+        cleaned = cleaned.replace(' ', '')
+    return cleaned
+
+
+def _is_skill_start_header(line: str) -> bool:
+    return bool(_SKILL_START_RE.match(_clean_heading(line)))
+
+
+def _is_skill_stop_header(line: str) -> bool:
+    cleaned = _clean_heading(line)
+    return bool(_SKILL_LOCAL_STOP_RE.match(cleaned)) or _is_section_header(line)
 
 def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_when_header: bool = True):
     start_re = re.compile('|'.join(start_patterns), re.IGNORECASE)
@@ -157,31 +213,8 @@ def _split_skill_line(line: str) -> List[str]:
     return re.split(r'[•,·;|]', line)
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
-    skills_patterns = [
-        r'^skills:?$',
-        r'^technical\s+skills:?$',
-        r'^tools:?$',
-        r'^tech\s+stack:?$',
-        r'^toolkit:?$',
-        r'^technical\s+toolkit:?$',
-        r'^core\s+technologies:?$',
-        r'^core\s+skills:?$',
-        r'^key\s+skills:?$',
-        r'^professional\s+skills:?$',
-        r'^technical\s+proficiencies:?$',
-        r'^core\s+competencies:?$',
-        r'^competencies:?$',
-        r'^technologies:?$',
-        r'^tools\s+(?:&|and)\s+technologies:?$',
-        r'^areas\s+of\s+expertise:?$',
-        r'^skills\s+(?:&|and)\s+expertise:?$',
-        r'^technical\s+expertise:?$',
-        r'^programming\s+languages:?$',
-        r'^qualifications:?$',
-    ]
-
     lines = _get_lines(text)
-    skills_lines, _ = _collect_section_lines(lines, skills_patterns)
+    skills_lines, _ = _collect_section_lines(lines, list(SKILL_START_PATTERNS))
     cleaned = []
     for l in skills_lines:
         if re.match(r'^[^:]{1,40}:\s+\S', l):
@@ -237,10 +270,10 @@ def extract_project_experience(text: str, start_index: int) -> Tuple[List[str], 
     conf = 1.0 if entries else min(1.0, len(project_lines) / max(1, len(lines)))
     return entries, conf
 
-def parse_resume(text: str) -> Dict[str, Any]:
+def _parse_resume_with_skill_text(text: str, skill_text: str) -> Dict[str, Any]:
     phones, phone_conf = extract_phone(text)
     locations, loc_conf = extract_location(text)
-    skills, skills_conf = extract_skills(text)
+    skills, skills_conf = extract_skills(skill_text)
     education, edu_conf = extract_education(text)
     work_experience, work_conf, work_end_index = extract_work_experience(text)
     project_experience, project_conf = extract_project_experience(text, work_end_index)
@@ -254,3 +287,8 @@ def parse_resume(text: str) -> Dict[str, Any]:
         "work_experience": {"value": work_experience, "confidence": work_conf},
         "project_experience": {"value": project_experience, "confidence": project_conf},
     }
+
+
+def parse_resume(text: str) -> Dict[str, Any]:
+    """Parse the established flattened-text contract."""
+    return _parse_resume_with_skill_text(text, text)
