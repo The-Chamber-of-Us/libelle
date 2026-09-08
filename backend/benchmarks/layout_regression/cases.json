@@ -1,0 +1,114 @@
+[
+  {
+    "id": "fragmented_flow",
+    "purpose": "One visual flow with x scatter, right-aligned contact and dates, bullets and hanging continuations.",
+    "layout": "AMBIGUOUS",
+    "blocks": [
+      {"x": 48, "y": 42, "text": "SUMMARY", "size": 11},
+      {"x": 592, "y": 61, "text": "layout@example.com", "size": 11, "align": "right"},
+      {"x": 58, "y": 88, "text": "Synthetic operations specialist", "size": 11},
+      {"x": 48, "y": 128, "text": "SKILLS", "size": 11},
+      {"x": 69, "y": 153, "text": "Python, SQL", "size": 11},
+      {"x": 48, "y": 209, "text": "EXPERIENCE", "size": 11},
+      {"x": 80, "y": 242, "text": "Operations engineer", "size": 11},
+      {"x": 592, "y": 265, "text": "2019 - 2023", "size": 11, "align": "right"},
+      {"x": 67, "y": 298, "text": "· Built inventory reports", "size": 11},
+      {"x": 94, "y": 325, "text": "for regional planning teams", "size": 11},
+      {"x": 48, "y": 407, "text": "PROJECTS", "size": 11},
+      {"x": 79, "y": 440, "text": "· Coordinated warehouse migration", "size": 11},
+      {"x": 592, "y": 468, "text": "2017 - 2019", "size": 11, "align": "right"},
+      {"x": 95, "y": 494, "text": "with weekly status reviews", "size": 11}
+    ],
+    "skills": ["python", "sql"],
+    "expected_skills": ["python", "sql"],
+    "excluded": ["layout@example.com", "2019 - 2023", "2017 - 2019", "operations engineer", "built inventory reports", "for regional planning teams", "coordinated warehouse migration", "with weekly status reviews", "experience", "projects"],
+    "crossing_text": null
+  },
+  {
+    "id": "wide_skill_start",
+    "purpose": "Wide mixed SKILLS block crosses candidate lanes above narrow work and education sections.",
+    "layout": "AMBIGUOUS",
+    "blocks": [
+      {"x": 46, "y": 40, "text": "SUMMARY", "size": 11},
+      {"x": 46, "y": 75, "text": "Synthetic engineer", "size": 11},
+      {"x": 425, "y": 48, "text": "CONTACT", "size": 11},
+      {"x": 425, "y": 83, "text": "layout@example.com", "size": 10},
+      {"x": 46, "y": 133, "text": "SKILLS\nPython, SQL, Docker, AWS, Kubernetes, Terraform, FastAPI, PostgreSQL, Redis, Git, GitHub Actions", "size": 11},
+      {"x": 46, "y": 201, "text": "EXPERIENCE", "size": 11},
+      {"x": 64, "y": 238, "text": "Release engineer", "size": 11},
+      {"x": 425, "y": 263, "text": "2018 - 2024", "size": 11},
+      {"x": 425, "y": 320, "text": "EDUCATION", "size": 11},
+      {"x": 425, "y": 355, "text": "Synthetic diploma", "size": 11},
+      {"x": 46, "y": 411, "text": "PROJECTS", "size": 11},
+      {"x": 64, "y": 448, "text": "Built release reporting workflows", "size": 11},
+      {"x": 425, "y": 501, "text": "CERTIFICATIONS", "size": 11},
+      {"x": 425, "y": 536, "text": "Example certificate", "size": 11}
+    ],
+    "skills": ["python", "sql", "docker", "aws", "kubernetes", "terraform", "fastapi", "postgresql", "redis", "git", "github actions"],
+    "expected_skills": ["python", "sql", "docker", "aws", "kubernetes", "terraform", "fastapi", "postgresql", "redis", "git", "github actions"],
+    "excluded": ["layout@example.com", "2018 - 2024", "release engineer", "built release reporting workflows", "synthetic diploma", "example certificate", "experience", "projects", "education", "certifications"],
+    "crossing_text": "SKILLS",
+    "candidate_boundary": 244.5
+  },
+  {
+    "id": "ambiguous_columns",
+    "purpose": "Two tall blocks look like columns but lack independent section/content evidence; only first skill section owns text.",
+    "layout": "AMBIGUOUS",
+    "blocks": [
+      {"x": 52, "y": 60, "text": "SKILLS\nPython\nPROJECTS\nBuilt routing reports\nWeekly delivery reviews", "size": 11},
+      {"x": 344, "y": 74, "text": "TOOLS\nDocker\nEXPERIENCE\nManaged service rollout\n2020 - 2025", "size": 11}
+    ],
+    "skills": ["python", "docker"],
+    "expected_skills": ["python"],
+    "excluded": ["docker", "built routing reports", "weekly delivery reviews", "managed service rollout", "2020 - 2025", "tools", "projects", "experience"],
+    "crossing_text": null
+  },
+  {
+    "id": "crossing_lane_start",
+    "purpose": "Narrow left skill-start block crosses the midpoint between column starts but belongs only to its originating lane.",
+    "layout": "MULTI_COLUMN",
+    "blocks": [
+      {"x": 42, "y": 42, "text": "SUMMARY", "size": 11},
+      {"x": 42, "y": 77, "text": "Synthetic analyst", "size": 11},
+      {"x": 42, "y": 179, "text": "CONTACT", "size": 11},
+      {"x": 42, "y": 215, "text": "layout@example.com", "size": 10},
+      {"x": 42, "y": 346, "text": "EDUCATION\nTECHNICAL SKILLS", "size": 14},
+      {"x": 42, "y": 443, "text": "Python", "size": 11},
+      {"x": 42, "y": 480, "text": "SQL", "size": 11},
+      {"x": 260, "y": 55, "text": "SYNTHETIC CANDIDATE", "size": 11},
+      {"x": 260, "y": 185, "text": "EXPERIENCE", "size": 11},
+      {"x": 260, "y": 223, "text": "Systems engineer", "size": 11},
+      {"x": 260, "y": 280, "text": "Led warehouse rollout", "size": 11},
+      {"x": 260, "y": 452, "text": "PROJECTS", "size": 11},
+      {"x": 260, "y": 491, "text": "Built delivery dashboards", "size": 11}
+    ],
+    "skills": ["python", "sql"],
+    "expected_skills": ["python", "sql"],
+    "excluded": ["layout@example.com", "systems engineer", "led warehouse rollout", "built delivery dashboards", "experience", "projects", "education"],
+    "crossing_text": "TECHNICAL SKILLS",
+    "candidate_boundary": 151
+  },
+  {
+    "id": "genuine_columns",
+    "purpose": "Sustained independent sections in both columns recover skills despite interleaved work headings in flattened text.",
+    "layout": "MULTI_COLUMN",
+    "blocks": [
+      {"x": 50, "y": 50, "text": "SKILLS", "size": 11},
+      {"x": 50, "y": 100, "text": "Python, SQL", "size": 11},
+      {"x": 50, "y": 145, "text": "Docker", "size": 11},
+      {"x": 50, "y": 365, "text": "EDUCATION", "size": 11},
+      {"x": 50, "y": 406, "text": "Synthetic diploma", "size": 11},
+      {"x": 352, "y": 66, "text": "EXPERIENCE", "size": 11},
+      {"x": 352, "y": 110, "text": "Platform engineer", "size": 11},
+      {"x": 352, "y": 156, "text": "2016 - 2024", "size": 11},
+      {"x": 352, "y": 375, "text": "PROJECTS", "size": 11},
+      {"x": 352, "y": 420, "text": "Built scheduling reports", "size": 11},
+      {"x": 352, "y": 505, "text": "TOOLS", "size": 11},
+      {"x": 352, "y": 545, "text": "Git, AWS", "size": 11}
+    ],
+    "skills": ["python", "sql", "docker", "git", "aws"],
+    "expected_skills": ["python", "sql", "docker", "git", "aws"],
+    "excluded": ["platform engineer", "2016 - 2024", "built scheduling reports", "synthetic diploma", "experience", "projects", "education", "tools"],
+    "crossing_text": null
+  }
+]
