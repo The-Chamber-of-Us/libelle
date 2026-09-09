@@ -86,6 +86,7 @@ def _snapshot_payload() -> list[dict]:
                 "resolver_coverage": "",
                 "resolver_coverage_score": None,
             },
+            "parser_job": None,
             "ops": {
                 "status": "new",
                 "notes": "",

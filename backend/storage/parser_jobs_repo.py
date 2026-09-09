@@ -48,6 +48,13 @@ CLAIMABLE_STATUSES = (STATUS_QUEUED, STATUS_RETRY_SCHEDULED)
 
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_LEASE_SECONDS = 15 * 60
+SAFE_LAST_ERROR_SUMMARIES_BY_CODE = {
+    "DRIVE_READ_FAILED": ("Drive read failed",),
+    "PARSER_ENQUEUE_FAILED": ("Parser job enqueue failed",),
+    "PARSER_FAILED": ("Parser failed",),
+    "PARSER_TIMEOUT": ("Parser timed out", "Parser timed out; retry scheduled"),
+    "PARSER_VALIDATION_FAILED": ("Parser validation failed",),
+}
 
 _parser_jobs_write_lock = threading.Lock()
 
@@ -147,6 +154,43 @@ def get_parser_job_by_submission(submission_id: str) -> Optional[Dict[str, str]]
         and row.get("job_type", "") == JOB_TYPE_PARSE_RESUME
     ]
     return _canonicalize_matches(matches)
+
+
+def list_parser_jobs() -> List[Dict[str, str]]:
+    """
+    Return canonical logical parse_resume jobs for operational read models.
+
+    Duplicate physical rows for the same logical job are collapsed in the same
+    way as point reads so callers do not expose raw Sheets rows as queue state.
+    """
+    rows_by_logical_key: Dict[str, List[tuple[int, Dict[str, str]]]] = {}
+    for row_number, row in _load_parser_job_rows_with_sheet_row_numbers():
+        if row.get("job_type", "") != JOB_TYPE_PARSE_RESUME:
+            continue
+        submission_id = row.get("submission_id", "")
+        if not submission_id:
+            continue
+        rows_by_logical_key.setdefault(
+            logical_idempotency_key(submission_id, row.get("job_type", "")),
+            [],
+        ).append((row_number, row))
+
+    jobs = [
+        canonical
+        for canonical in (
+            _canonicalize_matches(matches)
+            for matches in rows_by_logical_key.values()
+        )
+        if canonical is not None
+    ]
+    jobs.sort(
+        key=lambda row: (
+            row.get("submission_id", ""),
+            _timestamp_sort_key(row.get("created_at", "")),
+            row.get("job_id", ""),
+        )
+    )
+    return jobs
 
 
 def list_claimable_jobs(
@@ -323,6 +367,11 @@ def update_job(job_id: str, fields: Dict[str, Any]) -> Optional[Dict[str, str]]:
         updated = dict(current)
         for field, value in fields.items():
             updated[field] = str(value).strip() if value is not None else ""
+        if "last_error_code" in fields or "last_error_summary" in fields:
+            updated["last_error_summary"] = _validate_safe_last_error_summary(
+                updated.get("last_error_code", ""),
+                updated.get("last_error_summary", ""),
+            )
         if "updated_at" not in fields:
             updated["updated_at"] = _local_timestamp()
         _update_job_row(sheet_row_number, updated)
@@ -481,6 +530,21 @@ def _validate_int(field_name: str, value: Any, *, minimum: int) -> int:
     if parsed < minimum:
         raise ValueError(f"{field_name} must be >= {minimum}")
     return parsed
+
+
+def _validate_safe_last_error_summary(error_code: Any, summary: Any) -> str:
+    normalized_summary = " ".join(str(summary or "").strip().split())
+    if not normalized_summary:
+        return ""
+
+    normalized_code = str(error_code or "").strip().upper()
+    allowed_summaries = SAFE_LAST_ERROR_SUMMARIES_BY_CODE.get(normalized_code)
+    if allowed_summaries is None or normalized_summary not in allowed_summaries:
+        raise ValueError(
+            "last_error_summary must be one of the coarse parser-job summaries "
+            "allowed for last_error_code"
+        )
+    return normalized_summary
 
 
 def _parse_nonnegative_int(value: Any) -> Optional[int]:

@@ -70,6 +70,7 @@ function createSubmission(
       resolver_coverage: 'complete',
       resolver_coverage_score: 1
     },
+    parser_job: null,
     ops: {
       status: 'new',
       notes: '',

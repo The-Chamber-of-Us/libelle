@@ -165,6 +165,40 @@ def test_duplicate_logical_jobs_resolve_to_earliest_with_diagnostics(monkeypatch
     assert returned["_duplicate_job_ids"] == "job_later"
 
 
+def test_list_parser_jobs_returns_canonical_logical_jobs(monkeypatch) -> None:
+    later_duplicate = _job(
+        job_id="job_later",
+        submission_id="sub_001",
+        created_at="05-26-2026 11:00:00 UTC",
+    )
+    earlier_duplicate = _job(
+        job_id="job_earlier",
+        submission_id="sub_001",
+        created_at="05-26-2026 09:00:00 UTC",
+    )
+    second_submission = _job(job_id="job_002", submission_id="sub_002")
+    ignored_job_type = _job(
+        job_id="job_ignored",
+        submission_id="sub_003",
+        job_type="other",
+    )
+    fake_sheet = _FakeSheet(
+        [
+            _sheet_row(later_duplicate),
+            _sheet_row(second_submission),
+            _sheet_row(ignored_job_type),
+            _sheet_row(earlier_duplicate),
+        ]
+    )
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    jobs = parser_jobs_repo.list_parser_jobs()
+
+    assert [job["job_id"] for job in jobs] == ["job_earlier", "job_002"]
+    assert jobs[0]["_duplicate_count"] == "1"
+    assert jobs[0]["_duplicate_job_ids"] == "job_later"
+
+
 def test_list_claimable_jobs_filters_by_status_and_available_at(monkeypatch) -> None:
     fake_sheet = _FakeSheet(
         [
@@ -401,3 +435,60 @@ def test_update_job_changes_mutable_state_and_preserves_identity(monkeypatch) ->
     assert updated["last_error_code"] == "PARSER_TIMEOUT"
     assert updated["last_error_summary"] == "Parser timed out"
     assert updated["updated_at"] == "05-26-2026 11:00:00 UTC"
+
+
+def test_update_job_normalizes_allowed_safe_error_summary(monkeypatch) -> None:
+    fake_sheet = _FakeSheet([_sheet_row(_job())])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    updated = parser_jobs_repo.update_job(
+        "job_001",
+        {
+            "last_error_code": "PARSER_TIMEOUT",
+            "last_error_summary": " Parser timed out\n",
+        },
+    )
+
+    assert updated["last_error_summary"] == "Parser timed out"
+
+
+@pytest.mark.parametrize(
+    "unsafe_summary",
+    [
+        "ValueError: candidate@example.org could not be parsed",
+        "Traceback (most recent call last): Parser failed",
+        "Failed reading https://drive.google.com/file/d/secret",
+        "Parser failed for resume text: Python, React, phone 555-0100",
+        "Some arbitrary exception text",
+    ],
+)
+def test_update_job_rejects_unsafe_last_error_summary(monkeypatch, unsafe_summary) -> None:
+    fake_sheet = _FakeSheet([_sheet_row(_job())])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    with pytest.raises(ValueError, match="last_error_summary must be one of"):
+        parser_jobs_repo.update_job(
+            "job_001",
+            {
+                "last_error_code": "PARSER_FAILED",
+                "last_error_summary": unsafe_summary,
+            },
+        )
+
+    assert fake_sheet.values_api.update_calls == []
+
+
+def test_update_job_rejects_summary_for_unknown_error_code(monkeypatch) -> None:
+    fake_sheet = _FakeSheet([_sheet_row(_job())])
+    monkeypatch.setattr(parser_jobs_repo, "_get_sheet", lambda: fake_sheet)
+
+    with pytest.raises(ValueError, match="last_error_summary must be one of"):
+        parser_jobs_repo.update_job(
+            "job_001",
+            {
+                "last_error_code": "NEW_FAILURE_MODE",
+                "last_error_summary": "Parser failed",
+            },
+        )
+
+    assert fake_sheet.values_api.update_calls == []
