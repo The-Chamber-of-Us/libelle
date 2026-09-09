@@ -111,6 +111,11 @@ def assemble_snapshot_records(
             authoritative_parser_run_id=(
                 parser_job.get("authoritative_parser_run_id", "") if parser_job else ""
             ),
+            require_authoritative_parser_run_id=(
+                _normalized_text(parser_job.get("status")) == "succeeded"
+                if parser_job
+                else False
+            ),
         )
         errors = _compose_errors_layer(submission_id, error_rows)
 
@@ -139,6 +144,7 @@ def assemble_snapshot_records(
                 "parser_job": _compose_parser_job_layer(
                     submission_id,
                     parser_job,
+                    selected_parser_row,
                     observed_at,
                 ),
                 "ops": compose_current_ops_state(submission_id, [dict(row) for row in ops_rows]),
@@ -205,6 +211,8 @@ def _parser_state_from_snapshot(
     if explicit_state:
         return explicit_state
 
+    if _parser_job_has_unresolvable_success_authority(parser_job, parser_row):
+        return "malformed"
     if _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
         return ParserState.SKIPPED_NO_RESUME.value
     if parser_row:
@@ -258,8 +266,10 @@ def _compose_parsed_layer(
     }
 
     if not parser_row:
-        if _latest_error_code(errors) == "PARSER_FAILED" or _parser_job_is_terminal_failure(
-            parser_job
+        if (
+            _latest_error_code(errors) == "PARSER_FAILED"
+            or _parser_job_is_terminal_failure(parser_job)
+            or _parser_job_has_unresolvable_success_authority(parser_job, parser_row)
         ):
             state["parser_result_state"] = "failed"
         elif _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value:
@@ -302,6 +312,7 @@ def _compose_resolved_layer(
         if (
             _latest_error_code(errors or {}) == "PARSER_FAILED"
             or _parser_job_is_terminal_failure(parser_job)
+            or _parser_job_has_unresolvable_success_authority(parser_job, parser_row)
             or _resume_state_from_submission(submission) == ResumeState.NONE_PROVIDED.value
         ):
             state["resolver_result_state"] = "unavailable_upstream"
@@ -328,6 +339,7 @@ def _compose_resolved_layer(
 def _compose_parser_job_layer(
     submission_id: str,
     job: Optional[ParserJobRow],
+    selected_parser_row: Optional[ParserResultRow],
     now: datetime,
 ) -> Optional[Dict[str, Any]]:
     if job is None:
@@ -337,18 +349,21 @@ def _compose_parser_job_layer(
     attempt_count = _nonnegative_int_or_none(job.get("attempt_count"))
     max_attempts = _positive_int_or_none(job.get("max_attempts"))
     is_stale = _is_stale_parser_job(job, now)
+    parser_run_id, parser_run_id_is_valid = _operational_parser_run_id(job)
     return {
         "submission_id": submission_id,
         "parser_job_status": status,
         "attempt_count": attempt_count,
         "max_attempts": max_attempts,
-        "parser_run_id": _operational_parser_run_id(job),
+        "parser_run_id": parser_run_id,
         "is_stale": is_stale,
         "parser_job_state_quality": _parser_job_state_quality(
             status_is_valid,
             attempt_count,
             max_attempts,
             is_stale,
+            parser_run_id_is_valid,
+            _succeeded_authority_resolves(status, selected_parser_row),
         ),
         "last_error_code": _safe_error_code(job.get("last_error_code")),
         "last_error_summary": _safe_error_summary(job.get("last_error_summary")),
@@ -368,13 +383,17 @@ def _index_parser_jobs(parser_job_rows: Sequence[ParserJobRow]) -> Dict[str, Par
     return indexed
 
 
-def _operational_parser_run_id(job: ParserJobRow) -> str:
+def _operational_parser_run_id(job: ParserJobRow) -> tuple[str, bool]:
     authoritative_parser_run_id = _value_or_blank(
         job.get("authoritative_parser_run_id", "")
     )
     if authoritative_parser_run_id:
-        return authoritative_parser_run_id
-    return _value_or_blank(job.get("last_parser_run_id", ""))
+        return authoritative_parser_run_id, True
+
+    if _normalized_text(job.get("status")) == "succeeded":
+        return "", False
+
+    return _value_or_blank(job.get("last_parser_run_id", "")), True
 
 
 def _is_stale_parser_job(job: ParserJobRow, now: datetime) -> Optional[bool]:
@@ -397,6 +416,17 @@ def _parser_job_is_terminal_failure(job: Optional[ParserJobRow]) -> bool:
     return _normalized_text(job.get("status")) in {"failed", "enqueue_failed"}
 
 
+def _parser_job_has_unresolvable_success_authority(
+    job: Optional[ParserJobRow],
+    parser_row: Optional[ParserResultRow],
+) -> bool:
+    if job is None or _normalized_text(job.get("status")) != "succeeded":
+        return False
+    if not _value_or_blank(job.get("authoritative_parser_run_id", "")):
+        return True
+    return parser_row is None
+
+
 def _safe_parser_job_status(value: Any) -> tuple[str, bool]:
     from storage.parser_jobs_repo import VALID_JOB_STATUSES
 
@@ -411,12 +441,23 @@ def _parser_job_state_quality(
     attempt_count: Optional[int],
     max_attempts: Optional[int],
     is_stale: Optional[bool],
+    parser_run_id_is_valid: bool,
+    succeeded_authority_resolves: bool,
 ) -> str:
-    if not status_is_valid:
+    if not status_is_valid or not parser_run_id_is_valid or not succeeded_authority_resolves:
         return "malformed"
     if attempt_count is None or max_attempts is None or is_stale is None:
         return "malformed"
     return "valid"
+
+
+def _succeeded_authority_resolves(
+    parser_job_status: str,
+    selected_parser_row: Optional[ParserResultRow],
+) -> bool:
+    if parser_job_status != "succeeded":
+        return True
+    return selected_parser_row is not None
 
 
 def _parse_timestamp(value: Any) -> Optional[datetime]:

@@ -745,3 +745,76 @@ def test_assemble_snapshot_records_marks_unknown_for_invalid_parser_job_status()
     parser_job = records[0]["parser_job"]
     assert parser_job["parser_job_status"] == "unknown"
     assert parser_job["parser_job_state_quality"] == "malformed"
+
+
+def test_assemble_snapshot_records_fails_closed_for_succeeded_job_without_authority() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [
+            {
+                "submission_id": "sub_001",
+                "parser_run_id": "run-A",
+                "created_at": "2026-04-20T10:00:00",
+                "parsed_skills_raw": '["run A"]',
+                "parsed_location_raw": "Run A City",
+            },
+            {
+                "submission_id": "sub_001",
+                "parser_run_id": "run-B",
+                "created_at": "2026-04-20T11:00:00",
+                "parsed_skills_raw": '["run B"]',
+                "parsed_location_raw": "Run B City",
+            },
+        ],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "succeeded",
+                "attempt_count": "1",
+                "max_attempts": "3",
+                "last_parser_run_id": "run-A",
+                "authoritative_parser_run_id": "",
+            }
+        ],
+    )
+
+    assert records[0]["submission_health_state"] == SubmissionHealthState.BROKEN_PIPELINE.value
+    assert records[0]["parsed"]["parser_result_state"] == "failed"
+    assert records[0]["parsed"]["parser_run_id"] == ""
+    assert records[0]["parser_job"]["parser_run_id"] == ""
+    assert records[0]["parser_job"]["parser_job_state_quality"] == "malformed"
+
+
+def test_assemble_snapshot_records_fails_closed_for_missing_authoritative_parser_result() -> None:
+    records = assemble_snapshot_records(
+        {"sub_001": {"submission_id": "sub_001", "resume_status": "uploaded"}},
+        [
+            {
+                "submission_id": "sub_001",
+                "parser_run_id": "run-newer",
+                "created_at": "2026-04-20T11:00:00",
+                "parsed_skills_raw": '["newer"]',
+                "parsed_location_raw": "Newer City",
+            }
+        ],
+        [],
+        [],
+        [
+            {
+                "submission_id": "sub_001",
+                "status": "succeeded",
+                "attempt_count": "1",
+                "max_attempts": "3",
+                "last_parser_run_id": "run-current",
+                "authoritative_parser_run_id": "run-missing",
+            }
+        ],
+    )
+
+    assert records[0]["submission_health_state"] == SubmissionHealthState.BROKEN_PIPELINE.value
+    assert records[0]["parsed"]["parser_result_state"] == "failed"
+    assert records[0]["parsed"]["parser_run_id"] == ""
+    assert records[0]["parser_job"]["parser_run_id"] == "run-missing"
+    assert records[0]["parser_job"]["parser_job_state_quality"] == "malformed"

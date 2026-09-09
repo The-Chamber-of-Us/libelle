@@ -48,6 +48,13 @@ CLAIMABLE_STATUSES = (STATUS_QUEUED, STATUS_RETRY_SCHEDULED)
 
 DEFAULT_MAX_ATTEMPTS = 3
 DEFAULT_LEASE_SECONDS = 15 * 60
+SAFE_LAST_ERROR_SUMMARIES_BY_CODE = {
+    "DRIVE_READ_FAILED": ("Drive read failed",),
+    "PARSER_ENQUEUE_FAILED": ("Parser job enqueue failed",),
+    "PARSER_FAILED": ("Parser failed",),
+    "PARSER_TIMEOUT": ("Parser timed out", "Parser timed out; retry scheduled"),
+    "PARSER_VALIDATION_FAILED": ("Parser validation failed",),
+}
 
 _parser_jobs_write_lock = threading.Lock()
 
@@ -360,6 +367,11 @@ def update_job(job_id: str, fields: Dict[str, Any]) -> Optional[Dict[str, str]]:
         updated = dict(current)
         for field, value in fields.items():
             updated[field] = str(value).strip() if value is not None else ""
+        if "last_error_code" in fields or "last_error_summary" in fields:
+            updated["last_error_summary"] = _validate_safe_last_error_summary(
+                updated.get("last_error_code", ""),
+                updated.get("last_error_summary", ""),
+            )
         if "updated_at" not in fields:
             updated["updated_at"] = _local_timestamp()
         _update_job_row(sheet_row_number, updated)
@@ -518,6 +530,21 @@ def _validate_int(field_name: str, value: Any, *, minimum: int) -> int:
     if parsed < minimum:
         raise ValueError(f"{field_name} must be >= {minimum}")
     return parsed
+
+
+def _validate_safe_last_error_summary(error_code: Any, summary: Any) -> str:
+    normalized_summary = " ".join(str(summary or "").strip().split())
+    if not normalized_summary:
+        return ""
+
+    normalized_code = str(error_code or "").strip().upper()
+    allowed_summaries = SAFE_LAST_ERROR_SUMMARIES_BY_CODE.get(normalized_code)
+    if allowed_summaries is None or normalized_summary not in allowed_summaries:
+        raise ValueError(
+            "last_error_summary must be one of the coarse parser-job summaries "
+            "allowed for last_error_code"
+        )
+    return normalized_summary
 
 
 def _parse_nonnegative_int(value: Any) -> Optional[int]:

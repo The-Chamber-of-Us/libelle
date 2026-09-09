@@ -92,6 +92,7 @@ def select_parser_result(
     parser_rows: List[ParserResultRow],
     *,
     authoritative_parser_run_id: Any = "",
+    require_authoritative_parser_run_id: bool = False,
 ) -> Optional[ParserResultRow]:
     """
     Select the parser_results row that should back reviewer-facing snapshot data.
@@ -101,6 +102,9 @@ def select_parser_result(
     job state continue to use latest-result selection.
     """
     authoritative_id = str(authoritative_parser_run_id or "").strip()
+    if require_authoritative_parser_run_id and not authoritative_id:
+        return None
+
     if authoritative_id:
         for row in parser_rows:
             if str(row.get("parser_run_id", "")).strip() == authoritative_id:

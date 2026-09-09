@@ -108,3 +108,13 @@ def test_select_parser_result_returns_none_for_missing_authoritative_run_id() ->
     )
 
     assert selected is None
+
+
+def test_select_parser_result_does_not_fallback_when_authority_is_required() -> None:
+    selected = select_parser_result(
+        [{"submission_id": "sub_001", "parser_run_id": "run-newer"}],
+        authoritative_parser_run_id="",
+        require_authoritative_parser_run_id=True,
+    )
+
+    assert selected is None
