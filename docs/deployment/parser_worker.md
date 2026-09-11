@@ -8,10 +8,10 @@ one service does not restart the other. Use one active worker per environment.
 
 The release candidate must include #363–#367, in particular
 `backend/services/parser_worker.py` from #365 and its storage/schema changes.
-At the time this service configuration was added, that dependency existed on
-`add-polling-parser-worker` but was absent from `main`. This configuration does
-not implement or replace that dependency. Do not enable the service on a release
-without it: the launcher exits with `startup_or_runtime_failed` and systemd retries.
+#365 is included in `origin/main` at `329b9d3` and has been merged into this
+branch. This configuration uses that implementation. Do not enable the service
+on an older release without it: the launcher exits with
+`startup_or_runtime_failed` and systemd retries.
 
 The launcher calls the existing `ParserWorker.run_once()` with the existing
 configuration defaults. It does not change claims, retries, leases, reconciliation,
@@ -27,8 +27,11 @@ to the v0.4 candidate; they do not select a schema or environment automatically.
 The backend `.env` symlink should point to this same file. Systemd loads it before
 Python starts; backend dotenv loading does not override exported values.
 
-Keep the environment file root-owned and mode 0600 (systemd reads it). Keep secret
-files outside the checkout, readable only by the service user/root. The OAuth token
+Keep the environment file root-owned, group `tcus-admin`, and mode 0640. Both
+systemd and backend dotenv loading must be able to read it: a root-only 0600
+file behind the backend `.env` symlink causes startup to fail even when systemd
+has already exported the variables. Keep secret files outside the checkout,
+readable only by the service user/root. The OAuth token
 must be writable by the service user because Google refreshes it. Do not print
 secret files or `systemctl show ... -p Environment` in release evidence.
 

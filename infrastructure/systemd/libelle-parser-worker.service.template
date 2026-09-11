@@ -1,0 +1,31 @@
+[Unit]
+Description=Libelle staging durable parser worker (single active worker)
+Wants=network-online.target
+After=network-online.target
+# Retry even after a prolonged configuration/network outage.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=tcus-admin
+Group=tcus-admin
+WorkingDirectory=/opt/libelle-v03-staging/backend
+EnvironmentFile=/etc/libelle/libelle-v03-staging.env
+Environment=PYTHONUNBUFFERED=1
+# Persistent host-wide lock directory, shared even if this unit is copied.
+StateDirectory=libelle-parser-worker
+StateDirectoryMode=0700
+UMask=0077
+ExecStart=/opt/libelle-v03-staging/backend/.venv/bin/python /opt/libelle-v03-staging/scripts/run_parser_worker_service.py
+Restart=always
+RestartSec=5
+KillMode=control-group
+# Allow an in-flight attempt to finish; forced stops recover via the existing lease.
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=libelle-parser-worker
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
