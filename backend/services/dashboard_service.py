@@ -238,12 +238,12 @@ def _resolver_state_from_snapshot(
     parser_state = _parser_state_from_snapshot(submission, parser_row, errors, parser_job)
     if resume_state == ResumeState.NONE_PROVIDED.value:
         return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
+    if parser_row and _has_resolver_output(parser_row):
+        return ResolverState.SUCCEEDED.value
     if _latest_error_code(errors) == "RESOLVER_FAILED":
         return ResolverState.FAILED.value
     if parser_state == ParserState.FAILED.value:
         return ResolverState.SKIPPED_NO_PARSER_OUTPUT.value
-    if parser_row and _has_resolver_output(parser_row):
-        return ResolverState.SUCCEEDED.value
     return ResolverState.NOT_STARTED.value
 
 
@@ -304,7 +304,9 @@ def _compose_resolved_layer(
         "resolver_coverage_score": None,
     }
 
-    if _latest_error_code(errors or {}) == "RESOLVER_FAILED":
+    if (
+        not parser_row or not _has_resolver_output(parser_row)
+    ) and _latest_error_code(errors or {}) == "RESOLVER_FAILED":
         state["resolver_result_state"] = "failed"
         return state
 
