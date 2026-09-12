@@ -446,6 +446,78 @@ def _compute_prf(tp, fp, fn) -> Tuple[float, float, float]:
     f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
     return round(precision, 3), round(recall, 3), round(f1, 3)
 
+# ---------------------------------------------------------------------------
+# Failure signal heuristics
+# ---------------------------------------------------------------------------
+
+LOW_F1_THRESHOLD = 0.3
+HIGH_TOTAL_ERROR_THRESHOLD = 5
+
+
+def is_fn_heavy(row: Dict[str, Any]) -> bool:
+    return row["fn_count"] > row["fp_count"] and row["fn_count"] > 0
+
+
+def is_fp_heavy(row: Dict[str, Any]) -> bool:
+    return row["fp_count"] > row["fn_count"] and row["fp_count"] > 0
+
+
+def has_zero_tp(row: Dict[str, Any]) -> bool:
+    return row["tp_count"] == 0 and row["fn_count"] > 0
+
+
+def total_error_count(row: Dict[str, Any]) -> int:
+    return row["fp_count"] + row["fn_count"]
+
+
+def is_high_total_error(row: Dict[str, Any], threshold: int = HIGH_TOTAL_ERROR_THRESHOLD) -> bool:
+    return total_error_count(row) >= threshold
+
+
+def is_low_f1(row: Dict[str, Any], threshold: float = LOW_F1_THRESHOLD) -> bool:
+    # Only meaningful if there was something to score against
+    has_signal = row["tp_count"] + row["fp_count"] + row["fn_count"] > 0
+    return has_signal and row["f1"] < threshold
+
+
+def possible_resolver_mismatch(skills_row: Optional[Dict[str, Any]], resolved_row: Optional[Dict[str, Any]]) -> bool:
+    """Compare the raw 'skills' row against the 'skills_resolved' row for the
+    same resume/parser. A meaningful f1 gap suggests the resolver/alias map,
+    not the parser itself, is driving the failure."""
+    if skills_row is None or resolved_row is None:
+        return False
+    return abs(skills_row["f1"] - resolved_row["f1"]) >= 0.15
+
+
+def compute_failure_signals(
+    row: Dict[str, Any],
+    sibling_row: Optional[Dict[str, Any]] = None,
+) -> List[str]:
+    """Return the list of failure-signal strings that apply to this row.
+    These are signals to guide inspection, not root-cause diagnoses."""
+    signals = []
+
+    if has_zero_tp(row):
+        signals.append("zero_tp_with_fn")
+    if is_fn_heavy(row):
+        signals.append("fn_heavy")
+    if is_fp_heavy(row):
+        signals.append("fp_heavy")
+    if is_low_f1(row):
+        signals.append("low_f1")
+    if is_high_total_error(row):
+        signals.append("high_total_error")
+
+    if row["field"] in ("skills", "skills_resolved") and possible_resolver_mismatch(
+        row if row["field"] == "skills" else sibling_row,
+        row if row["field"] == "skills_resolved" else sibling_row,
+    ):
+        signals.append("possible_resolver_canonicalization_mismatch")
+
+    if not signals:
+        signals.append("unclear")
+
+    return signals
 
 def write_examples_md(rows: List[Dict], out_dir: Path) -> Path:
     path = out_dir / "examples.md"
@@ -646,6 +718,66 @@ def write_summary_json(
         json.dump(serializable, f, indent=2)
 
     return path
+
+def write_failure_signals(rows: List[Dict[str, Any]], out_dir: Path) -> Tuple[Path, Path]:
+    """Companion report (not part of report.csv) surfacing lightweight
+    failure signals per resume/parser/field row. Signals are heuristic
+    hints for what to inspect next, not definitive root causes."""
+
+    # Build (resume, parser) -> {field: row} lookup so skills/skills_resolved
+    # rows can be compared against each other.
+    by_resume_parser: Dict[Tuple[str, str], Dict[str, Dict[str, Any]]] = defaultdict(dict)
+    for r in rows:
+        by_resume_parser[(r["resume"], r["parser"])][r["field"]] = r
+
+    signal_rows = []
+    for r in rows:
+        sibling_field = "skills_resolved" if r["field"] == "skills" else "skills"
+        sibling = by_resume_parser[(r["resume"], r["parser"])].get(sibling_field)
+        signals = compute_failure_signals(r, sibling_row=sibling)
+        signal_rows.append({
+            "resume": r["resume"],
+            "parser": r["parser"],
+            "field": r["field"],
+            "tp_count": r["tp_count"],
+            "fp_count": r["fp_count"],
+            "fn_count": r["fn_count"],
+            "precision": r["precision"],
+            "recall": r["recall"],
+            "f1": r["f1"],
+            "total_error_count": total_error_count(r),
+            "failure_signals": signals,
+        })
+
+    # --- JSON ---
+    json_path = out_dir / "failure_signals.json"
+    with open(json_path, "w") as f:
+        json.dump(signal_rows, f, indent=2)
+
+    # --- Markdown ---
+    md_path = out_dir / "failure_signals.md"
+    flagged = [r for r in signal_rows if r["failure_signals"] != ["unclear"]]
+    flagged_sorted = sorted(flagged, key=lambda r: r["total_error_count"], reverse=True)
+
+    lines = ["# Failure Signals\n"]
+    lines.append(
+        "Heuristic signals derived from existing report rows. These flag "
+        "cases worth inspecting first — they are not root-cause diagnoses.\n"
+    )
+    lines.append("| Resume | Parser | Field | TP | FP | FN | F1 | Signals |")
+    lines.append("|--------|--------|-------|----|----|----|----|---------|")
+    for r in flagged_sorted[:15]:
+        signals_str = ", ".join(r["failure_signals"])
+        lines.append(
+            f"| {r['resume']} | {r['parser']} | {r['field']} | "
+            f"{r['tp_count']} | {r['fp_count']} | {r['fn_count']} | "
+            f"{r['f1']:.3f} | {signals_str} |"
+        )
+
+    with open(md_path, "w") as f:
+        f.write("\n".join(lines))
+
+    return md_path, json_path
 
 # computing aggregate stats (SD and var included) - raw values
 def compute_aggregate_stats(rows: List[Dict[str, Any]]) -> Dict[Tuple[str, str], Dict[str, Any]]:
@@ -913,6 +1045,7 @@ def main() -> None:
     log_path = write_run_log(out_dir, args.parsers, args, errors, resolver_summary, alias_path)
     summary_path = write_summary_md(report_rows, stats, resolver_summary, out_dir, args)
     json_path = write_summary_json(stats, resolver_summary, out_dir, args)
+    failure_md_path, failure_json_path = write_failure_signals(report_rows, out_dir)
 
     print(f"\n✅ Run complete → {out_dir}")
     print(f"   report.csv   : {csv_path}")
@@ -920,6 +1053,8 @@ def main() -> None:
     print(f"   run_log.json : {log_path}")
     print(f"   summary.md   : {summary_path}")
     print(f"   summary.json : {json_path}")
+    print(f"   failure_signals.md  : {failure_md_path}")
+    print(f"   failure_signals.json: {failure_json_path}")
 
     # Print quick summary
     _print_summary(stats, resolver_summary)
