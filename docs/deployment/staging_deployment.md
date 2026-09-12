@@ -417,3 +417,13 @@ Future automation should consider:
 - rollback instructions
 
 Until then, manual deployment should follow this document.
+
+## v0.4 durable parser worker
+
+The v0.4 release also needs a separate `libelle-parser-worker.service`; restarting
+the backend alone does not run queued parsing. Follow the
+[parser worker staging/Pi runbook](parser_worker.md) before promoting v0.4.
+It covers #365 dependency readiness, staging credentials and schema, enabling the
+single worker, independent restarts, failure recovery, reboot, and rollback.
+Stop the worker before updating this shared checkout or Python environment, then
+restart it after the compatible release is installed. Preserve all durable rows.
