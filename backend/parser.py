@@ -96,8 +96,14 @@ def _is_skill_stop_header(line: str) -> bool:
     cleaned = _clean_heading(line)
     return bool(_SKILL_LOCAL_STOP_RE.match(cleaned)) or _is_section_header(line)
 
-def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_when_header: bool = True):
+def _collect_section_lines(
+    lines: List[str],
+    start_patterns: List[str],
+    stop_when_header: bool = True,
+    stop_header_fn=None,
+):
     start_re = re.compile('|'.join(start_patterns), re.IGNORECASE)
+    is_stop_header = stop_header_fn or _is_section_header
     collected = []
     capturing = False
     end_index = len(lines)
@@ -112,7 +118,7 @@ def _collect_section_lines(lines: List[str], start_patterns: List[str], stop_whe
             capturing = True
             continue
         if capturing:
-            if stop_when_header and _is_section_header(line):
+            if stop_when_header and is_stop_header(line):
                 end_index = i
                 break
             collected.append(line)
@@ -214,7 +220,11 @@ def _split_skill_line(line: str) -> List[str]:
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
     lines = _get_lines(text)
-    skills_lines, _ = _collect_section_lines(lines, list(SKILL_START_PATTERNS))
+    skills_lines, _ = _collect_section_lines(
+        lines,
+        list(SKILL_START_PATTERNS),
+        stop_header_fn=_is_skill_stop_header,
+    )
     cleaned = []
     for l in skills_lines:
         if re.match(r'^[^:]{1,40}:\s+\S', l):
