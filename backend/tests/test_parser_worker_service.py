@@ -89,6 +89,9 @@ launcher = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(launcher)
 launcher.LOCK_FILE = Path(sys.argv[2])
 sys.modules["config"] = types.ModuleType("config")
+validator = types.ModuleType("validator")
+validator.validate_sheet_schema = lambda: None
+sys.modules["validator"] = validator
 worker = types.ModuleType("services.parser_worker")
 worker.ParserWorkerConfig = lambda **kwargs: kwargs
 class Worker:
@@ -142,6 +145,8 @@ raise SystemExit(launcher.main())
 def test_launcher_constructs_real_worker_and_polls(monkeypatch, tmp_path, capsys):
     from services import parser_worker
 
+    import validator
+    monkeypatch.setattr(validator, "validate_sheet_schema", lambda: None)
     handlers = {}
     configs = []
     original_serve = service.serve
