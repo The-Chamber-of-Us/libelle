@@ -1,5 +1,8 @@
+import json
 import sys
 from pathlib import Path
+
+import pytest
 
 BACKEND_DIR = Path(__file__).parent.parent
 if str(BACKEND_DIR) not in sys.path:
@@ -18,6 +21,7 @@ from benchmark import (
     is_low_f1,
     possible_resolver_mismatch,
     compute_failure_signals,
+    write_failure_signals,
 )
 
 
@@ -88,12 +92,13 @@ def test_resolver_mismatch_false_when_no_sibling():
     assert possible_resolver_mismatch(skills_row, None) is False
 
 
-def test_compute_failure_signals_falls_back_to_unclear():
+@pytest.mark.parametrize("error_count", [0, 1])
+def test_compute_failure_signals_no_heuristic_signal_with_or_without_errors(error_count):
     row = {
-        "tp_count": 10, "fp_count": 0, "fn_count": 0,
-        "f1": 1.0, "field": "location",
+        "tp_count": 10, "fp_count": error_count, "fn_count": error_count,
+        "f1": 10 / (10 + error_count), "field": "location",
     }
-    assert compute_failure_signals(row) == ["unclear"]
+    assert compute_failure_signals(row) == ["no_heuristic_signal"]
 
 
 def test_compute_failure_signals_zero_tp_and_fn_heavy():
@@ -141,3 +146,46 @@ def test_compute_failure_signals_includes_high_total_error():
     signals = compute_failure_signals(row)
     assert "high_total_error" in signals
     assert "low_f1" in signals
+
+
+def report_row(resume, tp, fp, fn):
+    return {
+        "resume": resume, "parser": "libelle", "field": "skills",
+        "tp_count": tp, "fp_count": fp, "fn_count": fn,
+        "precision": tp / (tp + fp) if tp + fp else 0.0,
+        "recall": tp / (tp + fn) if tp + fn else 0.0,
+        "f1": 2 * tp / (2 * tp + fp + fn) if tp + fp + fn else 0.0,
+    }
+
+
+def test_failure_signals_markdown_includes_all_flagged_rows(tmp_path):
+    rows = [report_row(f"resume_{i}", 1, 5, 0) for i in range(16)]
+    # Lower error count puts this severe case beyond the former top-15 limit.
+    rows.insert(0, report_row("zero_tp_resume", 0, 0, 1))
+
+    md_path, _ = write_failure_signals(rows, tmp_path)
+    markdown = md_path.read_text()
+    table_rows = [line for line in markdown.splitlines() if "| libelle |" in line]
+
+    assert len(table_rows) == len(rows)
+    for row in rows:
+        assert f"| {row['resume']} |" in markdown
+    assert "| zero_tp_resume |" in table_rows[-1]
+    assert "zero_tp_with_fn" in table_rows[-1]
+
+
+def test_failure_signals_report_explains_no_heuristic_signal(tmp_path):
+    rows = [report_row("clean", 10, 0, 0), report_row("with_errors", 10, 1, 1)]
+
+    md_path, json_path = write_failure_signals(rows, tmp_path)
+    report = json.loads(json_path.read_text())
+    markdown = md_path.read_text()
+
+    assert [row["failure_signals"] for row in report] == [["no_heuristic_signal"]] * 2
+    assert [row["total_error_count"] for row in report] == [0, 2]
+    assert "no defined heuristic fired" in markdown
+    assert "may still contain errors" in markdown
+    assert "does not mean a row is healthy" in markdown
+    assert "| clean |" not in markdown
+    assert "| with_errors |" not in markdown
+    assert "unclear" not in json_path.read_text()

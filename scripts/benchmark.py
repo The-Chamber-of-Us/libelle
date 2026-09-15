@@ -497,7 +497,9 @@ def compute_failure_signals(
     sibling_row: Optional[Dict[str, Any]] = None,
 ) -> List[str]:
     """Return the list of failure-signal strings that apply to this row.
-    These are signals to guide inspection, not root-cause diagnoses."""
+    These are signals to guide inspection, not root-cause diagnoses.
+    no_heuristic_signal means no defined heuristic fired; errors may still exist.
+    """
     signals = []
 
     if has_zero_tp(row):
@@ -518,7 +520,7 @@ def compute_failure_signals(
         signals.append("possible_resolver_canonicalization_mismatch")
 
     if not signals:
-        signals.append("unclear")
+        signals.append("no_heuristic_signal")
 
     return signals
 
@@ -759,7 +761,7 @@ def write_failure_signals(rows: List[Dict[str, Any]], out_dir: Path) -> Tuple[Pa
 
     # --- Markdown ---
     md_path = out_dir / "failure_signals.md"
-    flagged = [r for r in signal_rows if r["failure_signals"] != ["unclear"]]
+    flagged = [r for r in signal_rows if r["failure_signals"] != ["no_heuristic_signal"]]
     flagged_sorted = sorted(flagged, key=lambda r: r["total_error_count"], reverse=True)
 
     lines = ["# Failure Signals\n"]
@@ -767,9 +769,15 @@ def write_failure_signals(rows: List[Dict[str, Any]], out_dir: Path) -> Tuple[Pa
         "Heuristic signals derived from existing report rows. These flag "
         "cases worth inspecting first — they are not root-cause diagnoses.\n"
     )
+    lines.append(
+        "All flagged rows are shown below, sorted by total error count. "
+        "Rows labeled `no_heuristic_signal` in failure_signals.json are omitted "
+        "from this table: no defined heuristic fired, but those rows may still "
+        "contain errors. This label does not mean a row is healthy.\n"
+    )
     lines.append("| Resume | Parser | Field | TP | FP | FN | F1 | Signals |")
     lines.append("|--------|--------|-------|----|----|----|----|---------|")
-    for r in flagged_sorted[:15]:
+    for r in flagged_sorted:
         signals_str = ", ".join(r["failure_signals"])
         lines.append(
             f"| {r['resume']} | {r['parser']} | {r['field']} | "
