@@ -149,6 +149,13 @@ def test_extract_skills_from_core_technologies_header():
     assert skills == ["react", "flask", "postgresql", "git"]
 
 
+def test_extract_skills_stops_at_soft_skills_header():
+    text = "Skills\nPython, SQL\nSoft Skills:\nAdaptability, Teamwork"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "sql"]
+
+
 def test_projects_is_not_treated_as_skills_section():
     text = "PROJECTS\nCourse Planner Web App\nBuilt a React and Flask prototype."
     skills, confidence = extract_skills(text)
