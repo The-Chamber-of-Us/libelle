@@ -64,6 +64,8 @@ def main() -> int:
                 with contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
                     import config  # noqa: F401 - load the backend dotenv convention first
                     identity, poll, lease = settings()
+                    from validator import validate_sheet_schema
+                    validate_sheet_schema()
                     from services.parser_worker import ParserWorker, ParserWorkerConfig
                     worker = ParserWorker(ParserWorkerConfig(
                         worker_id=identity,

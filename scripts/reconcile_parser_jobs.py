@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import os
 import sys
 from pathlib import Path
 
@@ -11,8 +13,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = REPO_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
-
-from services.parser_job_reconciliation import reconcile_missing_parser_jobs  # noqa: E402
 
 
 def main() -> int:
@@ -25,6 +25,17 @@ def main() -> int:
         help="Exit non-zero when any eligible submission could not be recovered.",
     )
     args = parser.parse_args()
+
+    try:
+        # Imports and schema access may emit sensitive configuration diagnostics.
+        with open(os.devnull, "w") as sink:
+            with contextlib.redirect_stdout(sink), contextlib.redirect_stderr(sink):
+                from validator import validate_sheet_schema
+                validate_sheet_schema()
+                from services.parser_job_reconciliation import reconcile_missing_parser_jobs
+    except Exception:
+        print("[PARSER_RECONCILE] Schema startup failed")
+        return 1
 
     summary = reconcile_missing_parser_jobs()
     print(
