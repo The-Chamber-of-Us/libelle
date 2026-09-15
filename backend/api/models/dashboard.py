@@ -63,6 +63,30 @@ class SnapshotResolvedData(SnapshotModel):
     resolver_coverage_score: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
+class SnapshotParserJobData(SnapshotModel):
+    submission_id: str
+    parser_job_status: Literal[
+        "queued",
+        "running",
+        "retry_scheduled",
+        "succeeded",
+        "failed",
+        "enqueue_failed",
+        "unknown",
+    ]
+    attempt_count: int | None = Field(default=None, ge=0)
+    max_attempts: int | None = Field(default=None, ge=1)
+    parser_run_id: str
+    is_stale: bool | None
+    parser_job_state_quality: Literal["valid", "malformed"]
+    last_error_code: str | None = None
+    last_error_summary: str | None = None
+    available_at: str
+    parser_started_at: str
+    created_at: str
+    updated_at: str
+
+
 class SnapshotOpsData(SnapshotModel):
     status: Literal[VALID_OPS_STATUSES]
     notes: str
@@ -138,5 +162,6 @@ class ReviewerSubmissionSnapshot(SnapshotModel):
     raw: SnapshotRawData
     parsed: SnapshotParsedData
     resolved: SnapshotResolvedData
+    parser_job: SnapshotParserJobData | None = None
     ops: SnapshotOpsData
     errors: SnapshotErrorsData

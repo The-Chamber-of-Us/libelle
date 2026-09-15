@@ -18,7 +18,6 @@ PARSER_RESULTS_SHEET_NAME = "parser_results"
 OPS_SHEET_NAME = "ops"
 ERRORS_SHEET_NAME = "errors"
 OPS_EVENTS_SHEET_NAME = "ops_events"
-
 _sheet_build_lock = threading.Lock()
 _ops_write_lock = threading.Lock()
 
@@ -342,6 +341,7 @@ def append_error_row(
     error_code: str,
     error_summary: str,
     error_details: str = "",
+    parser_run_id: str = "",
 ) -> ErrorEventV1:
     """Append one runtime failure event to the errors tab."""
     normalized_submission_id = str(submission_id).strip()
@@ -354,6 +354,7 @@ def append_error_row(
         error_code=error_code,
         error_summary=error_summary,
         error_details=error_details,
+        parser_run_id=parser_run_id,
     )
     error_row = build_row(ERRORS_SHEET_NAME, event)
 
@@ -370,6 +371,82 @@ def append_error_row(
         f"stage={stage}, error_code={error_code}"
     )
     return event
+
+
+def parser_result_exists(*, submission_id: str, parser_run_id: str) -> bool:
+    """Return whether a logical parser result already exists."""
+    normalized_submission_id = str(submission_id).strip()
+    normalized_parser_run_id = str(parser_run_id).strip()
+    if not normalized_submission_id or not normalized_parser_run_id:
+        return False
+
+    for row in load_parser_result_rows():
+        if (
+            row.get("submission_id", "").strip() == normalized_submission_id
+            and row.get("parser_run_id", "").strip() == normalized_parser_run_id
+        ):
+            return True
+
+    return False
+
+
+def persist_parser_result_if_missing(
+    *, submission_id: str, parser_run_id: str, parsed: Dict[str, Any]
+) -> None:
+    """
+    Persist one logical parser result, keyed by (submission_id, parser_run_id).
+
+    Sheets cannot enforce uniqueness, so this is a repository-level idempotency
+    guard used by the worker before appending.
+    """
+    if parser_result_exists(
+        submission_id=submission_id,
+        parser_run_id=parser_run_id,
+    ):
+        return
+
+    parsed_with_run_id = dict(parsed)
+    parsed_with_run_id["parser_run_id"] = parser_run_id
+    update_resume_in_sheet(submission_id, parsed_with_run_id)
+
+
+def persist_resolver_output_for_parser_result(
+    *, submission_id: str, parser_run_id: str, parsed: Dict[str, Any]
+) -> bool:
+    """Fill resolver-owned fields on the logical parser result row if present."""
+    normalized_submission_id = str(submission_id).strip()
+    normalized_parser_run_id = str(parser_run_id).strip()
+    if not normalized_submission_id or not normalized_parser_run_id:
+        return False
+
+    match = _find_parser_result_with_row_number(
+        submission_id=normalized_submission_id,
+        parser_run_id=normalized_parser_run_id,
+    )
+    if match is None:
+        return False
+
+    sheet_row_number, current = match
+    updated = dict(current)
+    updated.update(
+        {
+            "resolver_version": parsed.get("resolver_version", ""),
+            "aliases_version": parsed.get("aliases_version", ""),
+            "resolved_skill_ids": _json_string(parsed.get("resolved_skill_ids", [])),
+            "unknown_skills": _json_string(parsed.get("unknown_skills", [])),
+            "resolver_coverage": parsed.get("resolver_coverage", ""),
+        }
+    )
+
+    parser_result_row = build_row(PARSER_RESULTS_SHEET_NAME, updated)
+    end_column = chr(ord("A") + len(get_headers(PARSER_RESULTS_SHEET_NAME)) - 1)
+    _get_sheet().values().update(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{PARSER_RESULTS_SHEET_NAME}!A{sheet_row_number}:{end_column}{sheet_row_number}",
+        valueInputOption="RAW",
+        body={"values": [parser_result_row]},
+    ).execute()
+    return True
 
 
 def _load_sheet_rows(tab_name: str) -> List[Dict[str, str]]:
@@ -422,6 +499,32 @@ def _load_ops_rows_with_sheet_row_numbers() -> List[tuple[int, Dict[str, str]]]:
         records.append((sheet_row_number, row_dict))
 
     return records
+
+
+def _find_parser_result_with_row_number(
+    *, submission_id: str, parser_run_id: str
+) -> Optional[tuple[int, Dict[str, str]]]:
+    headers = get_headers(PARSER_RESULTS_SHEET_NAME)
+
+    response = _get_sheet().values().get(
+        spreadsheetId=GOOGLE_SHEET_ID,
+        range=f"{PARSER_RESULTS_SHEET_NAME}!A2:ZZ",
+    ).execute()
+
+    rows = response.get("values", [])
+    for sheet_row_number, raw_row in enumerate(rows, start=2):
+        padded_row = list(raw_row) + [""] * (len(headers) - len(raw_row))
+        row_dict = {
+            header: str(value).strip() if value is not None else ""
+            for header, value in zip(headers, padded_row)
+        }
+        if (
+            row_dict.get("submission_id", "").strip() == submission_id
+            and row_dict.get("parser_run_id", "").strip() == parser_run_id
+        ):
+            return sheet_row_number, row_dict
+
+    return None
 
 
 # ---------- Helpers ----------

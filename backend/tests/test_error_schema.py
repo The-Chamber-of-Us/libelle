@@ -38,6 +38,7 @@ def test_build_error_event_returns_required_prd_keys() -> None:
 
     assert event == {
         "submission_id": "sub_123",
+        "parser_run_id": "",
         "created_at": "2026-04-21T13:45:00Z",
         "stage": "upload",
         "error_code": "PDF_READ_FAILED",
@@ -90,6 +91,7 @@ def test_append_error_row_writes_schema_aligned_errors_row(monkeypatch) -> None:
         "build_error_event",
         lambda **kwargs: {
             **kwargs,
+            "parser_run_id": kwargs.get("parser_run_id", ""),
             "created_at": "2026-04-21T13:45:00Z",
         },
     )
@@ -104,6 +106,7 @@ def test_append_error_row_writes_schema_aligned_errors_row(monkeypatch) -> None:
 
     assert event == {
         "submission_id": "sub_123",
+        "parser_run_id": "",
         "stage": "resolver",
         "error_code": "RESOLVER_FAILED",
         "error_summary": "Resolver failed",
@@ -120,6 +123,7 @@ def test_append_error_row_writes_schema_aligned_errors_row(monkeypatch) -> None:
                 "values": [
                     [
                         "sub_123",
+                        "",
                         "2026-04-21T13:45:00Z",
                         "resolver",
                         "RESOLVER_FAILED",

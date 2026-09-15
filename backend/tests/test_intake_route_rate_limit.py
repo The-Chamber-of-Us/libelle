@@ -176,6 +176,7 @@ def test_submission_without_resume_succeeds_without_parser_job(monkeypatch):
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "missing",
+            "parser_job_status": "not_applicable",
         }
 
     monkeypatch.setattr(intake, "finalize_submission", fake_finalize)
@@ -267,6 +268,7 @@ def test_failed_resume_upload_succeeds_without_parser_job(monkeypatch):
             "pre_text": "",
             "resume_filename": "",
             "resume_status": "failed",
+            "parser_job_status": "not_applicable",
         },
     )
     monkeypatch.setattr(

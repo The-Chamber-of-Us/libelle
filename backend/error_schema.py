@@ -6,6 +6,7 @@ from typing import TypedDict
 
 class ErrorEventV1(TypedDict):
     submission_id: str
+    parser_run_id: str
     created_at: str
     stage: str
     error_code: str
@@ -29,6 +30,7 @@ def build_error_event(
     error_code: str,
     error_summary: str,
     error_details: str = "",
+    parser_run_id: str = "",
     created_at: str | None = None,
 ) -> ErrorEventV1:
     """
@@ -52,6 +54,7 @@ def build_error_event(
     """
     return {
         "submission_id": submission_id,
+        "parser_run_id": parser_run_id or "",
         "created_at": created_at or _utc_timestamp(),
         "stage": stage,
         "error_code": error_code,
