@@ -104,6 +104,46 @@ def test_parser_output_present_alongside_fatal_parser_error_prefers_selected_out
     assert record["errors"]["has_error"] is True
 
 
+def test_authoritative_resolver_success_wins_over_historical_failure() -> None:
+    submissions = {"sub_001": _submission("sub_001")}
+    failed_row = _parser_row("sub_001", with_resolver=False)
+    successful_row = _parser_row("sub_001")
+    successful_row.update(
+        {
+            "parser_run_id": "run-2",
+            "created_at": "2026-07-01T12:00:00",
+        }
+    )
+    error_rows = [_error_row("sub_001", "resolver", "RESOLVER_FAILED")]
+    parser_job_rows = [
+        {
+            "submission_id": "sub_001",
+            "status": "succeeded",
+            "attempt_count": "2",
+            "max_attempts": "3",
+            "last_parser_run_id": "run-2",
+            "authoritative_parser_run_id": "run-2",
+        }
+    ]
+
+    records = assemble_snapshot_records(
+        submissions,
+        [failed_row, successful_row],
+        [],
+        error_rows,
+        parser_job_rows,
+    )
+
+    record = records[0]
+    assert record["submission_health_state"] == SubmissionHealthState.COMPLETE.value
+    assert record["parsed"]["parser_run_id"] == "run-2"
+    assert record["resolved"]["resolver_state"] == "resolved"
+    assert record["resolved"]["resolver_result_state"] == "available"
+    assert record["resolved"]["resolved_skill_ids"] == '["python"]'
+    assert record["errors"]["has_error"] is True
+    assert record["errors"]["latest_error_code"] == "RESOLVER_FAILED"
+
+
 def test_resolver_failure_preserves_parser_output_and_stays_visible() -> None:
     submissions = {"sub_001": _submission("sub_001")}
     parser_rows = [_parser_row("sub_001", with_resolver=False)]
