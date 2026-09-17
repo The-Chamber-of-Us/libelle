@@ -6,6 +6,8 @@ or degraded. Health must always come from derive_submission_health_state();
 degraded parser/resolver/error state must never hide a submission.
 """
 
+import pytest
+
 from core.state_contract import SubmissionHealthState
 from services.dashboard_service import assemble_snapshot_records
 
@@ -239,3 +241,43 @@ def test_unknown_resume_status_degrades_to_broken_pipeline_but_stays_listed() ->
     record = records[0]
     assert record["submission_health_state"] == SubmissionHealthState.BROKEN_PIPELINE.value
     assert record["raw"]["full_name"] == "Person sub_001"
+
+
+@pytest.mark.parametrize("placeholder", ["[]", " [ ] ", []])
+@pytest.mark.parametrize("failed", [True, False])
+def test_legacy_empty_resolver_lists_are_not_success(placeholder, failed):
+    row = _parser_row("sub_001", with_resolver=False)
+    row.update(resolved_skill_ids=placeholder, unknown_skills=placeholder)
+    errors = [_error_row("sub_001", "resolver", "RESOLVER_FAILED")] if failed else []
+    record = assemble_snapshot_records(
+        {"sub_001": _submission("sub_001")}, [row], [], errors,
+    )[0]
+    assert record["resolved"]["resolver_state"] == "not_run"
+    assert record["resolved"]["resolver_result_state"] == ("failed" if failed else "not_yet_run")
+    assert record["submission_health_state"] != SubmissionHealthState.COMPLETE.value
+    if failed:
+        assert record["submission_health_state"] == SubmissionHealthState.RESOLVER_FAILED.value
+
+
+@pytest.mark.parametrize("output", [
+    {"resolver_version": "resolver-v1"},
+    {"resolver_coverage": "0"},
+    {"resolver_coverage": 0},
+    {"unknown_skills": '["synthetic-unmatched-skill"]'},
+])
+def test_authoritative_zero_match_success_supersedes_historical_failure(output):
+    failed_row = _parser_row("sub_001", with_resolver=False)
+    failed_row.update(resolved_skill_ids="[]", unknown_skills="[]")
+    success = dict(failed_row, parser_run_id="run-2", **output)
+    jobs = [{"submission_id": "sub_001", "status": "succeeded",
+             "authoritative_parser_run_id": "run-2", "last_parser_run_id": "run-2",
+             "attempt_count": "2", "max_attempts": "3"}]
+    record = assemble_snapshot_records(
+        {"sub_001": _submission("sub_001")}, [failed_row, success], [],
+        [_error_row("sub_001", "resolver", "RESOLVER_FAILED")], jobs,
+    )[0]
+    assert record["parsed"]["parser_run_id"] == "run-2"
+    assert record["resolved"]["resolver_state"] == "zero_matches"
+    assert record["resolved"]["resolver_result_state"] == "empty_success"
+    assert record["submission_health_state"] == SubmissionHealthState.COMPLETE.value
+    assert record["errors"]["latest_error_code"] == "RESOLVER_FAILED"

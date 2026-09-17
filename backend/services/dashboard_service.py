@@ -537,7 +537,17 @@ def _compose_errors_layer(
 
 
 def _has_resolver_output(parser_row: Mapping[str, Any]) -> bool:
-    return any(_value_or_blank(parser_row.get(field, "")) != "" for field in RESOLVED_FIELDS)
+    # Older parser-only rows contain "[]" placeholders. Empty lists alone do
+    # not prove Resolver ran; completed zero-match output also has Resolver
+    # metadata or coverage (including zero). Keep successful output precedence.
+    return (
+        any(
+            _value_or_blank(parser_row.get(field, "")) != ""
+            for field in ("resolver_version", "aliases_version", "resolver_coverage")
+        )
+        or _has_resolved_skill_matches(parser_row.get("resolved_skill_ids"))
+        or _has_resolved_skill_matches(parser_row.get("unknown_skills"))
+    )
 
 
 def _has_any_output(parser_row: Mapping[str, Any], fields: Sequence[str]) -> bool:
