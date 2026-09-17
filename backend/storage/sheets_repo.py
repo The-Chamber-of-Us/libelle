@@ -659,8 +659,10 @@ def update_resume_in_sheet(submission_id: str, parsed: Dict[str, Any]) -> None:
         "parser_confidence": parser_confidence,
         "resolver_version": parsed.get("resolver_version", ""),
         "aliases_version": parsed.get("aliases_version", ""),
-        "resolved_skill_ids": _json_string(parsed.get("resolved_skill_ids", [])),
-        "unknown_skills": _json_string(parsed.get("unknown_skills", [])),
+        # Absent Resolver output is not a successful empty result. Explicit []
+        # from completed enrichment is still serialized as a JSON list.
+        "resolved_skill_ids": _json_string(parsed.get("resolved_skill_ids")),
+        "unknown_skills": _json_string(parsed.get("unknown_skills")),
         "resolver_coverage": parsed.get("resolver_coverage", ""),
     }
 
