@@ -306,6 +306,6 @@ backend/.venv/bin/python -m pytest backend/tests/test_skill_section_projection.p
   text. It changes the scope interpretation, not the recorded code trace or test
   results. This documentation-only reconciliation does not validate unimplemented
   v0.5 features or satisfy their release gates.
-- At the posting attempt, GitHub CLI was unauthenticated, so this comment has not
-  been posted and #387 has not been closed. Posting remains outstanding; no
-  follow-up implementation has been performed.
+- The investigation findings have been posted as a comment on
+  [#387](https://github.com/The-Chamber-of-Us/libelle/issues/387), satisfying the
+  issue-comment deliverable. No follow-up implementation has been performed.
