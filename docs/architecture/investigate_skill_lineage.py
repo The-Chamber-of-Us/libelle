@@ -8,12 +8,17 @@ backend development dependencies and existing synthetic Sheet test helper.
 import contextlib
 import io
 import json
+import os
 import sys
 from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "backend"))
+
+# Satisfy the repository's import-time configuration check without live setup.
+# All Sheets operations below use the synthetic Sheet transport.
+os.environ.setdefault("GOOGLE_SHEET_ID", "offline-skill-lineage-test-sheet")
 
 # Configuration imports can print diagnostics; do not include them in evidence.
 with contextlib.redirect_stdout(io.StringIO()):

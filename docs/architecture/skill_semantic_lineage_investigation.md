@@ -43,17 +43,25 @@ submissions + Drive PDF → parser_jobs → ParserWorker._execute_attempt
   → assemble_snapshot_records → GET /snapshot
 ```
 
-There is also a materially different path:
+`ParserWorker` is the active intake/deployment path on the investigated `main`
+revision, instantiated by `backend/parser_worker.py` and
+`scripts/run_parser_worker_service.py`.
+
+The repository also contains a materially different parsing operation exercised
+by benchmarks/tests:
 
 ```text
-parser_service.parse_and_update / benchmark
+benchmark / tests
   → parse_resume_pdf → extract_pdf_text_from_bytes
   → project_skill_sections → _parse_resume_with_skill_text
 ```
 
-`parse_and_update` enriches and appends a result; the durable worker persists
-parser output first and fills resolver fields later. Intake currently enqueues
-the worker, so tracing only `parse_and_update` would miss the live code path.
+`parser_service.parse_and_update` also calls `parse_resume_pdf`, but has no
+non-test caller in this revision. It enriches and appends a result; the durable
+worker persists parser output first and fills resolver fields later. These are
+not two equivalent active production paths. Here, “canonical PDF parser” names
+the existing `parse_resume_pdf` operation, not the deployed worker's entrypoint.
+Tracing only `parse_and_update` would miss the live intake/deployment path.
 
 Code anchors at the investigated revision:
 
@@ -261,6 +269,12 @@ projection failure below. Neither justifies inventing a provenance framework.
 
 Run from repository root:
 
+Prerequisite: install `backend/requirements.txt` and
+`backend/requirements-dev.txt` in `backend/.venv`. The probe establishes the inert
+`GOOGLE_SHEET_ID=offline-skill-lineage-test-sheet` default before importing backend
+modules, so no `.env`, Google credentials or live Sheet is required. An existing
+environment value is left unchanged; Sheets operations still use synthetic I/O.
+
 ```sh
 backend/.venv/bin/python docs/architecture/investigate_skill_lineage.py > /tmp/issue-387-traces.json
 backend/.venv/bin/python -m pytest backend/tests/test_skill_section_projection.py backend/tests/test_layout_regression_corpus.py backend/tests/test_parser_service.py backend/tests/test_parser_worker.py backend/tests/test_sheets_persistence_boundary.py backend/tests/test_dashboard_parser_results.py backend/tests/test_dashboard_route.py backend/tests/test_ops_write_service.py -q
@@ -270,6 +284,11 @@ backend/.venv/bin/python -m pytest backend/tests/test_skill_section_projection.p
   unknown API round-trip, raw-layer separation, and unchanged parser rows after
   an ops write. Output includes extraction/projection, both parser results,
   Resolver input/output, pre/post-resolver rows, ops events and API representation.
+- Review follow-up: **12 cases completed with `GOOGLE_SHEET_ID` unset and dotenv
+  loading disabled**, using
+  `env -u GOOGLE_SHEET_ID PYTHON_DOTENV_DISABLED=1 backend/.venv/bin/python docs/architecture/investigate_skill_lineage.py`.
+  No live Google setup was needed. The unrelated known test failure below was
+  not changed by this follow-up.
 - Existing focused suite: **105 passed, 1 failed, 10 warnings**. Failure:
   `test_durable_path_preserves_owned_state_and_selects_authority[True]` expects
   `resolver_state='not_run'`, but receives `'zero_matches'`. Reproduced alone
