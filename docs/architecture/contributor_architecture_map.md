@@ -1,246 +1,197 @@
 # Contributor Architecture Map
 
-Issue #311. Read this first. It explains Libelle's system model — how
-volunteer intake data moves through the system, which components own which
-state, and what you must not accidentally violate — in one place, so you can
-work on individual issues safely without reconstructing the architecture from
-old PRs and Slack threads.
+**Current architecture — start here.** This is the canonical overview of
+Libelle’s implemented v0.4 architecture, reconciled in #388. It describes the
+repository implementation, not a claim that deployment acceptance is complete.
+Detailed rules belong to the [contracts below](#deeper-contracts-and-implementation).
+Earlier overviews and proposals are [historical context](../README.md#historical-architecture--retained-for-context).
 
-Target reading time: ~30 minutes including the linked contracts.
+## System boundaries
 
-## 1. What Libelle is
+Libelle preserves volunteer intake, derives parser and Resolver output, and
+composes those sources for internal reviewer workflow. Raw input, extraction,
+normalization, current operational state, and event history have separate owners.
 
-Libelle is a trusted volunteer intake and reviewer workflow system for
-nonprofit projects. At a high level:
-
-> A volunteer submits interest and optionally a resume → the system preserves
-> the raw evidence → the parser and resolver derive structured signals →
-> `/snapshot` assembles reviewer-facing records → a reviewer takes ops
-> actions → history and errors remain traceable.
-
-The point is not just moving data from a form into a dashboard. The point is
-preserving enough context, ownership, and failure visibility that reviewers
-can **trust what they are seeing**: where a value came from, whether it is
-raw or derived, whether the pipeline partially failed, and who changed
-reviewer state.
-
-## 2. Core data flow (current v0.4 system)
-
-```text
-Volunteer
-  ↓
-Public intake form            (frontend/src/components/intake/IntakeForm.tsx)
-  ↓
-Submission record             (submissions tab — append-only, immutable)
-  ↓
-Resume upload → Google Drive  (`submission_id`-prefixed filename)
-  ↓
-Parser pipeline               (backend/parser.py, async background task)
-  ↓
-Parser results                (parser_results tab — append-only per run)
-  ↓
-Resolver                      (backend/resolver/ — normalizes parser output)
-  ↓
-Resolved / canonical fields   (resolver-owned columns of parser_results)
-  ↓
-GET /snapshot                 (backend/services/dashboard_service.py)
-  ↓
-Reviewer dashboard            (frontend Inbox / ParserResults / Ops / Errors)
-  ↓
-Ops status / notes            (ops tab, via POST /ops/update)
-  ↓
-Ops events / errors           (ops_events + errors tabs — append-only)
-```
-
-Storage is a 4-tab Google Sheet (`submissions`, `parser_results`, `ops`,
-`errors`, plus the optional `ops_events`) defined in
-`backend/sheet_schema.py`, with resume files in Google Drive. Startup
-validation (`backend/validator.py`) refuses to boot against a sheet whose
-tabs or headers drift from the repo-owned schema.
-
-## 3. Direction of travel (future-facing)
-
-The current system is the first half of a longer arc:
-
-```text
-Intake → Identity Layer → Document Understanding → Normalization
-       → Canonical Representation → Reviewer Workflow → Matching → Audit History
-```
-
-A shallow resume tool would go `Resume → extracted JSON → matching`.
-Libelle deliberately does not, because matching built directly on raw parser
-strings inherits every extraction error invisibly. The intended model is:
-
-> volunteer intent → stable identity → evidence preservation →
-> interpretation → reviewer trust → matching
-
-**Matching sits on top of trustworthy records.** If the system cannot explain
-where a value came from, whether it is raw or derived, and whether the
-pipeline partially failed, matching on it would launder uncertainty into
-false confidence. Parser and resolver behavior exists today; a fuller
-canonical representation and the matching layer are direction-of-travel —
-do not assume they exist when reading issues that mention them.
-
-## 4. Submission identity: `submission_id`
-
-`submission_id` is a UUIDv4 generated at intake. It is the **canonical
-internal key** — everything attaches to it:
-
-- the raw `submissions` row
-- the Drive resume file (`submission_id`-prefixed filename plus stored `drive_file_id`)
-- every `parser_results` row
-- resolver output
-- the current `ops` row
-- `errors` rows
-- `ops_events` history rows
-- intake and parser log lines
-
-Names change, emails change, files get renamed. None of them are safe join
-keys, and none of them are unique. When composing data across tabs, **join by
-`submission_id` only** — `/snapshot` does exactly this and nothing else.
-
-## 5. A submission's lifecycle
-
-Libelle is not one synchronous operation; it is a pipeline whose stages
-succeed, fail, or run at different times. Through time:
-
-1. A volunteer submits the public form.
-2. The backend generates a `submission_id` and returns it in the API
-   response.
-3. If a resume is included, the file is uploaded to Drive under the
-   `submission_id`-prefixed filename, stored `drive_file_id`, and the outcome
-   (`uploaded`/`failed`/`missing`)
-   is finalized.
-4. The raw submission row is **appended** to `submissions` — and is now
-   immutable.
-5. The background parser task runs (carrying the same `submission_id`) and
-   **appends** a `parser_results` row.
-6. The resolver normalizes the parser output into the resolver-owned columns
-   of that row.
-7. `GET /snapshot` assembles a reviewer-facing record from whatever sources
-   exist right now.
-8. A reviewer updates status or notes through the dashboard
-   (`POST /ops/update`); `ops` stores the latest reviewer state, and
-   `ops_events` appends per-field history when the tab exists.
-9. Any stage that degrades appends failure evidence to `errors`.
-
-Because stages are independent, a record can be in many legitimate states:
-complete, no resume provided, parser pending, parser failed, resolver failed,
-partial success, awaiting reviewer action, reviewed, or broken/contradictory.
-This is why the **state contract** exists: each subsystem has its own state
-domain (`ResumeState`, `ParserState`, `ResolverState`, `ReviewStatus`), and
-the reviewer-facing `SubmissionHealthState` is *derived* from their
-composition by `derive_submission_health_state()` in
-`backend/core/state_contract.py` — never stored, never guessed by the
-frontend. Degraded records stay reviewer-visible; a parser failure is
-information, not a reason to hide a volunteer.
-
-## 6. State and ownership model
-
-| Component | Owns |
+| Boundary | Owner and persistence |
 | --- | --- |
-| Intake | Raw volunteer-submitted data (`submissions`, append-only) |
-| Drive upload | Resume file reference and upload state |
-| Parser | Extracted resume fields (`parser_results`, parser columns) |
-| Resolver | Canonical/normalized interpretation (resolver columns) |
-| Ops | Reviewer workflow status and notes (`ops`, current state) |
-| Errors | Failure evidence (`errors`, append-only) |
-| Ops events | Append-only reviewer action history (`ops_events`) |
-| `/snapshot` | Derived reviewer read model (never persisted) |
+| Raw intake | `submissions`: immutable after append, including final resume upload outcome and file reference. |
+| Resume artifact | Google Drive: uploaded PDF, referenced by the submission. |
+| Parser execution | `parser_jobs`: mutable durable job state, claims, attempts, leases, and result authority. |
+| Parser extraction | `parser_results`: derived output for a logical `(submission_id, parser_run_id)` result. |
+| Resolver normalization | Resolver-owned columns on that same result; enrichment preserves parser-owned fields. |
+| Reviewer workflow | `ops`: current status, notes, tags, contact tracking, and attribution. |
+| Failure evidence | `errors`: append-only failure records, with attempt identity when available. |
+| Reviewer history | Optional `ops_events`: append-only, best-effort per-field change history. |
+| Reviewer read model | `/snapshot`: composed at read time, never a persisted source of truth. |
 
-The key lesson: **one subsystem must not silently rewrite another
-subsystem's truth.** Parser output never overwrites what the volunteer
-typed; resolver output never erases what the parser extracted; reviewer
-actions never alter raw, parsed, or resolved values. The exact field-by-field
-rules live in the field ownership contract (linked below), with matching
-constants in `backend/core/state_contract.py`.
+The [schema](../../backend/sheet_schema.py) defines five required Sheets tabs:
+`submissions`, `parser_results`, `parser_jobs`, `ops`, and `errors`, plus optional
+`ops_events`. Startup validates required tabs and headers, including optional-tab
+headers when present. The frontend accesses backend APIs, not Google APIs directly.
 
-## 7. Parser → resolver → canonical representation
-
-Libelle intentionally separates document extraction from normalization from
-(future) matching:
+## Intake through reviewer workflow
 
 ```text
-Resume text
-  ↓
-Parser        — "What does the document literally say?"     (evidence)
-  ↓
-Resolver      — "What does this mean in normalized terms?"  (interpretation)
-  ↓
-Canonical     — "What concepts does this map to?"           (future-facing)
-  ↓
-Matching                                                     (future-facing)
+Public form → POST /api/upload
+  → validate input and finalize optional Drive upload outcome
+  → append immutable submissions row
+      ├─ missing/failed resume → no parser job
+      └─ uploaded resume → create durable parser job → return intake acknowledgement
+                            ↓
+                    independent polling worker
+                            ↓
+                    claim + attempt/run ID + lease
+                            ↓
+                    download PDF → extract text → parse
+                            ↓
+                    persist parser-owned result
+                            ↓
+                    Resolver → enrich the same attempt result
+                            ↓
+                    finalize authoritative parser success
+
+submissions + parser_jobs + selected parser_results + ops + errors
+                            ↓
+                        GET /snapshot
+                            ↓
+                     reviewer dashboard
+                            ↓
+                 POST /ops/update → current ops state
+                                  → best-effort ops_events append
 ```
 
-Example: a resume says *"Built React dashboards using PostgreSQL."*
+`finalize_submission()` resolves the upload outcome before appending the raw
+submission. It creates work only after persisting `resume_status=uploaded`.
+Intake acknowledgement means intake persistence and the enqueue outcome, not
+parser completion. The public intake path no longer owns parser execution through
+FastAPI `BackgroundTasks`.
 
-- The parser extracts the literal evidence: `React`, `PostgreSQL`
-  (`parsed_skills_raw`).
-- The resolver normalizes to known skill IDs (`resolved_skill_ids`), keeps
-  anything it can't map in `unknown_skills`, and reports
-  `resolver_coverage`.
-- A future canonical layer could map these to concepts like *frontend
-  engineering* or *database-backed application work* for matching against
-  opportunity needs.
+Submission persistence and enqueue are separate Sheets writes. If enqueue fails,
+intake returns `parser_job_status=enqueue_failed` and attempts to append
+`PARSER_ENQUEUE_FAILED` evidence. Even if error logging also fails, the persisted
+uploaded submission remains evidence for recovery.
 
-Parser output is **evidence**, resolver output is **interpretation**, and
-canonical representation is what matching should eventually depend on.
-Keeping the layers distinct is what lets Libelle preserve uncertainty
-(low confidence stays visible, unresolved skills stay listed) and improve
-each layer independently.
+## Logical jobs, physical rows, and attempts
 
-## 8. Why `/snapshot` exists — and why it is not a database
+`submission_id` is the cross-system correlation key. Join sources by this ID,
+never by name, email, filename, or row position.
 
-`/snapshot` is a **derived read model**. It combines submissions, resume
-state, parser output, resolver output, ops state, and error summaries into
-one reviewer-facing record per submission, each layer labeled by source
-(`raw`, `parsed`, `resolved`, `ops`, `errors`) plus the derived
-`submission_health_state`.
+The logical parser-job key is `parse_resume:{submission_id}`, derived from job
+type and submission identity. It is distinct from the physical `job_id` used to
+address the persisted job. Intake supplies the logical key as its `job_id`;
+reconciliation can omit `job_id`, causing the repository to generate a UUID.
+Both paths find existing work by logical identity, not by assuming those IDs match.
 
-- Sheets and Drive hold the source records and artifacts.
-- Parser/resolver output is derived evidence and interpretation.
-- `ops` holds current reviewer workflow state; `ops_events` holds history.
-- `errors` holds failure evidence.
-- `/snapshot` assembles the current view from those sources — it is the
-  system's *current assembled understanding* of a submission, not storage.
+The worker creates a fresh `parser_run_id` for each claimed attempt. Claiming
+increments the attempt count and records worker ownership and a bounded lease.
+Retries retain the logical job and receive a new run ID. `last_parser_run_id`
+identifies the latest attempt; `authoritative_parser_run_id` identifies the
+successful result selected for reviewer reads.
 
-Nothing writes `/snapshot` output back to any tab. The dashboard displays
-what the backend derived; it does not invent its own trust logic, recompute
-health, or reinterpret source boundaries. The assembly rules (which source
-wins, what happens when sources conflict or are missing) are specified in
-the system-of-record precedence contract linked below.
+The worker rechecks lease and attempt ownership before subsequent durable side
+effects. Expired running jobs with attempts remaining can be reclaimed. Parser
+or result-persistence failures schedule a retry or become terminal when the
+attempt budget is exhausted. A job row stores current execution state; it is not
+an append-only history of every claim or transition.
 
-## 9. Contributor guardrails
+Sheets has no atomic compare-and-swap claim or uniqueness constraint. The supported
+configuration is **one active polling worker per environment**. Repository
+idempotency checks and lease rereads do not establish distributed fencing or
+exactly-once execution. The [worker runbook](../deployment/parser_worker.md)
+owns service configuration, local lock limitations, and live acceptance checks.
 
-Common mistakes that violate the contracts:
+## Parser output and Resolver enrichment
 
-- **Do not** join records by email, name, or filename — `submission_id` only.
-- **Do not** overwrite raw submitted values with parser/resolver output.
-- **Do not** let parser/resolver failures or error rows hide submissions.
-- **Do not** duplicate the health-state matrix in the frontend or in the
-  snapshot assembler — call `derive_submission_health_state()`.
-- **Do not** trust reviewer actor identity from client payloads; the backend
-  derives it (`backend/api/internal_actor.py`).
-- **Do not** treat `/snapshot` as canonical storage or write it back.
-- **Do not** make event history block current reviewer writeback —
-  `ops_events` appends are deliberately best-effort.
-- **Do not** collapse raw, parsed, resolved, ops, and errors into one
-  ambiguous field.
-- **Do not** make the UI look cleaner by hiding uncertainty or degraded
-  pipeline state — honesty about degradation is a feature.
-- **Do not** assume matching can happen directly from raw parser strings
-  without normalization and source awareness.
+The worker downloads the PDF using the durable file reference, extracts text,
+and calls `parse_resume`. It persists parser-owned output before running
+Resolver V1. `persist_parser_result_if_missing()` guards logical result identity
+`(submission_id, parser_run_id)` before appending; physical uniqueness is not
+transactionally enforced by Sheets.
 
-When adding a new field, decide who produces its value and place it with
-that owner — the field ownership contract has a decision guide.
+Resolver normalizes extraction into fields such as `resolved_skill_ids`,
+`unknown_skills`, and `resolver_coverage`. Its enrichment updates resolver-owned
+columns on the same attempt’s row. Thus new parser runs append results, while
+resolver enrichment can update an existing result without changing raw intake
+or parser-owned fields.
 
-## 10. Deeper contracts
+Resolver failure preserves successful parser output. The worker attempts to
+record resolver-stage failure evidence and can still finalize the parser job as
+`succeeded`; that status does not assert Resolver success. Missing Resolver
+output, failed Resolver execution, and successful zero matches remain distinct
+read-model cases. Legacy `"[]"` placeholders alone do not prove Resolver ran;
+see the [snapshot API](../api-spec.md#get-snapshot) for exact result-state semantics.
 
-- [State transition contract](state_contract.md) — state domains, transition
-  validators, the health-state matrix, invariants (#279).
-- [Field ownership contract](field_ownership_contract.md) — field-by-field
-  ownership for every tab, overwrite rules, where new fields belong (#296).
-- [System-of-record precedence](system_of_record_precedence.md) — which
-  source wins when sources disagree; `/snapshot` assembly rules (#295).
-- [Ops event history](ops_event_history.md) — the append-only `ops_events`
-  tab and its best-effort write semantics (#290).
+## Result authority and snapshot composition
+
+The worker finalizes `authoritative_parser_run_id` after parser output persistence
+and ownership checks. Snapshot composition starts from submissions so missing
+or failed derived data does not remove an intake record.
+
+If an authority ID exists, selection uses that attempt’s result and does not
+substitute another result when the ID cannot be resolved. A `succeeded` job
+requires authority: blank or unresolvable authority produces malformed job
+state and no selected parser result. When authority is absent and not required,
+the current selector falls back to latest `created_at`, then `parser_run_id`.
+That fallback includes legacy submissions without jobs and non-succeeded jobs
+without authority. Results from different attempts are not merged.
+
+`/snapshot` assembles separate `raw`, `parsed`, `resolved`, `parser_job`, `ops`,
+and `errors` domains. The backend calls `derive_submission_health_state()` for
+reviewer-facing health. The frontend displays that derivation rather than
+reimplementing the health matrix. Snapshot output is never written back to Sheets.
+
+Parser-job projections preserve unknown/malformed operational values rather than
+invent valid attempt counts or healthy success authority. Staleness is a read-time
+projection and does not reclaim a job. The safe projection excludes Drive IDs,
+filenames, worker identity, and lease internals. Exact fields and failure semantics
+belong to the [API reference](../api-spec.md#get-snapshot); selection belongs to
+[system-of-record precedence](system_of_record_precedence.md).
+
+## Recovery and operational history
+
+`reconcile_missing_parser_jobs()` is a separate maintenance operation. It creates
+missing logical jobs for uploaded submissions with no existing job and no parser
+result. The current implementation treats any parser-result row for a submission
+as successful-result evidence for this skip check. Reconciliation does not parse,
+rewrite submissions/results, or reset existing jobs. The worker service does not
+install a reconciliation timer.
+
+Reviewer writeback changes current `ops` state using backend-derived attribution.
+It does not change raw, parsed, or resolved values. `ops_events` records per-field
+changes when its optional tab and writes are available. Missing or failed event
+appends do not block current ops writes; snapshot reads current `ops`, not a replay
+of event history. `errors` holds separate failure evidence. Cross-tab writes are
+not transactional, so neither event stream guarantees a complete audit trail.
+
+## Contributor guardrails
+
+- Preserve raw intake; display extraction and normalization alongside it.
+- Use the canonical job repository for logical identity, claims, and updates.
+- Keep attempt identity distinct from submission and physical job identity.
+- Do not infer Resolver completion from empty list strings or parser-job success.
+- Do not replace missing success authority with the latest convenient result.
+- Keep snapshot composition free of persistence and job-recovery side effects.
+- Keep reviewer workflow separate from parser/Resolver output and event history.
+- Verify implementation and live deployment separately; repository tests do not
+  establish restart, reboot, isolation, or cross-host worker exclusivity.
+
+This overview introduces no future Person, Evidence, Capability, matching, or
+Pathfinder domain architecture.
+
+## Deeper contracts and implementation
+
+- [Engineering principles](engineering_principles.md): contributor standards.
+- [State contract](state_contract.md): pure state domains and health derivation.
+- [Field ownership](field_ownership_contract.md): writers and persistence boundaries.
+- [System-of-record precedence](system_of_record_precedence.md): authoritative reads.
+- [Snapshot API](../api-spec.md#get-snapshot): response fields and availability states.
+- [Ops event history](ops_event_history.md): current state versus best-effort history.
+- [Worker runbook](../deployment/parser_worker.md): deployment and operational checks.
+
+Implementation anchors: [intake](../../backend/services/intake_service.py),
+[job repository](../../backend/storage/parser_jobs_repo.py),
+[worker](../../backend/services/parser_worker.py),
+[reconciliation](../../backend/services/parser_job_reconciliation.py),
+[result persistence and ops events](../../backend/storage/sheets_repo.py),
+[result selection](../../backend/services/dashboard_parser_results.py), and
+[snapshot composition](../../backend/services/dashboard_service.py).

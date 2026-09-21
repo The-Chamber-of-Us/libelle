@@ -1,5 +1,10 @@
 # Libelle System Architecture
 
+> **Historical architecture — retained for context.** Historical architecture overview.
+> The original text below is preserved; descriptions of “current” behavior and
+> proposed guarantees refer to that earlier version, not today’s implementation.
+> **[Current architecture — start here](architecture/contributor_architecture_map.md).**
+
 This document describes how Libelle is structured and how its core components work together.
 It is focused on software architecture. Hardware and node deployment live in docs/deployment.md.
 

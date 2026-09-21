@@ -1,26 +1,28 @@
 # Libelle Documentation
 
-This folder will contain:
+**[Current architecture — start here](architecture/contributor_architecture_map.md).**
+The Contributor Architecture Map describes the implemented intake, durable parser,
+Resolver, snapshot, and reviewer workflow boundaries.
 
-- System architecture overviews
-- Parser design and logic
-- Volunteer onboarding guides
-- API design references
-- Data model notes
+## Current architecture and contracts
 
-If you’re new here, start with the root README, then read the
-[Contributor Architecture Map](architecture/contributor_architecture_map.md)
-for the system model: how data flows, which components own which state, and
-what contributors must not accidentally violate.
-
-## Architecture
-
-- [Contributor Architecture Map](architecture/contributor_architecture_map.md)
+- [Contributor Architecture Map](architecture/contributor_architecture_map.md) — canonical current overview.
 - [Libelle Engineering Principles](architecture/engineering_principles.md)
 - [State Transition Contract](architecture/state_contract.md)
 - [System-of-Record Precedence Rules](architecture/system_of_record_precedence.md)
 - [Field Ownership Contract](architecture/field_ownership_contract.md)
 - [Ops Event History](architecture/ops_event_history.md)
+- [Snapshot API](api-spec.md#get-snapshot)
+- [Parser worker operations](deployment/parser_worker.md)
+
+## Historical architecture — retained for context
+
+These documents preserve earlier descriptions and design proposals. Use the
+current architecture map for implementation guidance.
+
+- [Earlier system architecture](architecture.md)
+- [v0.1 data flow](data-flow.md)
+- [Original asynchronous parser execution proposal](architecture/async_parser_execution.md)
 
 ## Local Development
 

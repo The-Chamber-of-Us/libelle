@@ -4,10 +4,12 @@ Issue 279 introduces a backend-owned contract for interpreting submission state 
 intake, resume upload, parser jobs, resolver output, snapshot materialization, reviewer
 operations, and audit/error records.
 
-This first pass is intentionally design-first. It defines the contract shape, pure
-validators, the derived reviewer-facing health state, and unit tests for the state matrix.
-It does not yet wire the contract into the live snapshot, dashboard, intake, parser, or
-resolver paths.
+This contract defines pure validators, reviewer-facing health derivation, and the state
+matrix. Snapshot health derivation is now wired: `backend/services/dashboard_service.py`
+calls `derive_submission_health_state()` when assembling `/snapshot`. This does not mean
+every transition helper or historical parser-job state mapping is used by runtime paths.
+Start with the [current architecture map](contributor_architecture_map.md) for execution
+boundaries; this document owns the pure state contract.
 
 ## Files
 
@@ -95,7 +97,7 @@ The contract exposes pure functions that depend only on record state:
 - `require_error_log_for_failure(failure_event)`
 
 These functions must not call Google Sheets, Google Drive, FastAPI, the parser, the resolver,
-or the network. Runtime services can call them later, but the contract itself stays pure.
+or the network. Runtime callers adopt individual helpers; the contract itself stays pure.
 Transition validators answer whether an operation is allowed given the current record state.
 They do not perform the operation themselves and should not mutate records.
 
@@ -116,10 +118,10 @@ interpretation occurs through the state contract rather than ad hoc application 
 
 ## Derived Health View
 
-Snapshot materialization should derive one reviewer-facing `SubmissionHealthState` from
+Snapshot materialization derives one reviewer-facing `SubmissionHealthState` from
 `ResumeState`, `ParserState`, and `ResolverState`.
 
-The first-pass matrix is:
+The health derivation matrix is:
 
 | ResumeState | ParserState | ResolverState | SubmissionHealthState |
 | --- | --- | --- | --- |
@@ -156,8 +158,16 @@ parser or resolver events.
 - Every state transition and derived health interpretation should be traceable to a single
   origin event: intake, file upload, parser, resolver, snapshot, ops, or audit/error logging.
 
-## Future Integration
+## Runtime integration boundary
 
-Later PRs can call this contract from the snapshot assembler and expose
-`SubmissionHealthState` through `/snapshot`. At that point, the frontend should display the
-backend-provided health state for badges and filters without recomputing the matrix.
+`backend/services/dashboard_service.py` maps persisted submission, selected parser result,
+error, and parser-job data into the state domains and calls
+`derive_submission_health_state()`. `/snapshot` exposes the resulting
+`submission_health_state`; the frontend should display it without recomputing the matrix.
+
+Durable job status, claim eligibility, lease ownership, retry scheduling, and result
+authority are implemented by the job repository, worker, and snapshot selection code.
+Their operational states are not interchangeable with the pure enums above. The historical
+async design's job-state table is not evidence that every mapping or transition helper is
+wired. See [precedence rules](system_of_record_precedence.md) and the
+[snapshot API](../api-spec.md#get-snapshot) for current read behavior.

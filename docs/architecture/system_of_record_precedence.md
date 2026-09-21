@@ -2,7 +2,7 @@
 
 Issue #295. This contract defines which Libelle data source wins when raw
 submission data, parser output, resolver output, reviewer ops state, errors,
-and future audit events disagree or are incomplete. It exists so `/snapshot`
+and audit events disagree or are incomplete. It exists so `/snapshot`
 can assemble reviewer-facing records deterministically, without ad hoc
 assumptions, in support of the v0.4 snapshot trust contract (#294) and the
 state transition contract (#279, `docs/architecture/state_contract.md`).
@@ -18,8 +18,9 @@ authoritative when assembling one record from many sources.
 | --- | --- | --- |
 | Raw volunteer-submitted data | `submissions` tab | Canonical evidence of volunteer intent. Never overwritten or replaced by parser, resolver, or ops values. |
 | Resume file reference | `submissions.drive_file_id` / `resume_status` | The file is tied to `submission_id` through the immutable intake row; never inferred from email, name, filename, or client-provided Drive paths. `resume_filename` is display-only. |
-| Parser output | `parser_results` tab (latest row per `submission_id`) | Derived enrichment. Displayed alongside — never instead of — raw submitted values. |
-| Resolver output | resolver-owned columns of the latest `parser_results` row | Derived normalization. Unresolved values stay visible in `unknown_skills`; resolver output never hides raw parser output. |
+| Parser execution | `parser_jobs` tab | Current job/attempt/lease state and explicit successful-result authority; not an append-only execution log. |
+| Parser output | Selected `parser_results` row per `submission_id` | Follow explicit authority; require it for succeeded jobs. Latest-result fallback is allowed only as described below. Display alongside raw submitted values. |
+| Resolver output | resolver-owned columns of the selected `parser_results` row | Derived normalization. Unresolved values stay visible in `unknown_skills`; resolver output never hides raw parser output. |
 | Reviewer workflow status | `ops` tab | Current reviewer-owned workflow state, one row per `submission_id`. |
 | Reviewer notes | `ops` tab (current text); `ops_events` tab (best-effort authorship/history) | The current `ops` row shows latest state; append-only events provide non-transactional history when event writes succeed. |
 | Errors/failures | `errors` tab | Failure evidence tied to `submission_id`. Informs health state; never removes a submission from view. |
@@ -34,9 +35,16 @@ immutable after append.
 
 **2. Who owns parser-derived fields?** The `parser_results` tab, parser-owned
 columns (`parser_run_id`, `parser_version`, `parsed_skills_raw`,
-`parsed_location_raw`, `parser_confidence`). Rows are append-only per run;
-"current" parser output means the latest row selected by `created_at` with
-`parser_run_id` as tie-breaker (`services/dashboard_parser_results.py`).
+`parsed_location_raw`, `parser_confidence`). New runs append separate results;
+Resolver enrichment updates only its own columns on the same attempt row.
+`services/dashboard_parser_results.py::select_parser_result` follows
+`parser_jobs.authoritative_parser_run_id` when supplied. An unresolvable ID
+returns no selected result, not a different attempt. A succeeded job requires
+this ID, so blank authority also fails closed. Only when authority is absent
+and not required does selection use latest `created_at`, then `parser_run_id`.
+This includes legacy submissions without jobs and non-succeeded jobs without
+authority. Job logical identity is `parse_resume:{submission_id}`, distinct
+from the physical `job_id`, which can be generated during reconciliation.
 
 **3. Who owns resolver-normalized fields?** The resolver-owned columns of the
 same `parser_results` row (`resolver_version`, `aliases_version`,
@@ -76,13 +84,21 @@ state, which is why the writeback path upserts on first save.
 **8. What should `/snapshot` display when sources are partial or degraded?**
 Every source it has, each labeled by origin, plus a derived
 `SubmissionHealthState` that is honest about degradation. Missing derived
-data is shown as missing (empty resolver fields mean "not run" or "could not
-resolve", never fabricated defaults). A submission with only a `submissions`
+data is shown as missing. Explicit result states distinguish absent, failed,
+and successful empty Resolver output; legacy empty arrays alone do not prove
+that Resolver ran. A submission with only a `submissions`
 row is still a complete, displayable record.
 
 The top-level snapshot domains (`raw`, `parsed`, `resolved`, `ops`, and
 `errors`) are always present and are never `null`. Stage availability is
-represented with explicit nested state fields rather than by omitting domains:
+represented with explicit nested state fields rather than by omitting domains.
+`parser_job` is also always present but is `null` when no job exists. Its safe
+projection preserves unknown/malformed status, counts, and lease-derived staleness;
+a succeeded job with missing or unresolvable authority is malformed and cannot
+supply healthy-looking parser success. See the [API](../api-spec.md#get-snapshot)
+for fields and the precise scope of `error_state="unavailable"`.
+
+Result-state fields:
 
 | Domain | Explicit state field | States |
 | ------ | -------------------- | ------ |
@@ -105,16 +121,18 @@ payload fields; they should read the explicit state fields and
    other tab.
 2. Join other tabs by `submission_id` only. No email-based or positional
    joins.
-3. For `parser_results`, select the latest row per submission
-   (`created_at`, then `parser_run_id`). Older rows remain in the tab as
-   history but are not merged.
+3. Read canonical logical jobs through `list_parser_jobs()` and select parser
+   results by explicit authority as described in decision 2. Succeeded jobs
+   must not fall back when authority is blank or unresolvable. Latest-result
+   fallback applies only without required or supplied authority. Results from
+   different attempts remain separate and are not merged.
 4. Never let a derived source shadow a canonical one: parsed/resolved fields
    are presented as their own fields, not folded into submitted fields.
 5. Derive health via `derive_submission_health_state` rather than storing
    it. Snapshot output is never persisted back to Sheets.
-6. When sources contradict (e.g. ops row exists for a broken pipeline), the
-   record stays visible with the contradiction reflected in health state —
-   the snapshot assembler does not "fix" data.
+6. Pipeline contradictions remain visible through backend health derivation.
+   Reviewer workflow is a separate source: an ops row can legitimately coexist
+   with a degraded pipeline and does not repair parser or Resolver state.
 
 ## Out of scope
 

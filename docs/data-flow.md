@@ -1,5 +1,10 @@
 # Libelle Data Flow (v0.1)
 
+> **Historical architecture — retained for context.** Historical v0.1 data flow.
+> The original text below is preserved; descriptions of “current” behavior and
+> proposed guarantees refer to that earlier version, not today’s implementation.
+> **[Current architecture — start here](architecture/contributor_architecture_map.md).**
+
 This document describes how data moves through the Libelle system from the moment a volunteer submits the form to the moment their information is stored for internal use.
 
 It is intended for:
