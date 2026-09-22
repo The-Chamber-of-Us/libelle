@@ -5,11 +5,10 @@ import json
 from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import Flow
 
 from config import (
     GOOGLE_SERVICE_ACCOUNT_JSON, GOOGLE_CREDENTIALS,
-    GOOGLE_OAUTH_CLIENT, TOKEN_FILE,
+    TOKEN_FILE,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +54,7 @@ def load_oauth_creds(scopes: list):
             creds.refresh(Request())
         else:
             raise RuntimeError(
-                "Drive OAuth token missing/invalid. Visit /authorize in your browser to grant access, "
+                "Drive OAuth token missing/invalid. Run python bootstrap_google_oauth.py from backend to grant access, "
                 "then retry the request."
             )
 
@@ -63,12 +62,3 @@ def load_oauth_creds(scopes: list):
             token.write(creds.to_json())
 
     return creds
-
-
-def build_oauth_flow(redirect_uri: str) -> Flow:
-    """Create an OAuth flow for Drive authorization."""
-    return Flow.from_client_secrets_file(
-        GOOGLE_OAUTH_CLIENT,
-        scopes=DRIVE_SCOPES,
-        redirect_uri=redirect_uri,
-    )

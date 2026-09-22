@@ -27,7 +27,6 @@ DRIVE_ROOT_FOLDER_ID = os.getenv("DRIVE_ROOT_FOLDER_ID")
 
 # ---- App ----
 MAX_PDF_MB = _int_env("MAX_PDF_MB", "5")
-APP_REDIRECT_URI = os.getenv("APP_REDIRECT_URI", "http://127.0.0.1:8000/oauth2callback")
 
 _allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "")
 ALLOWED_ORIGINS = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]

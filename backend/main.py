@@ -5,7 +5,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routes import auth as auth_routes
 from api.routes import dashboard as dashboard_routes
 from api.routes import health as health_routes
 from api.routes import intake as intake_routes
@@ -78,6 +77,5 @@ async def request_validation_handler(request: Request, exc: RequestValidationErr
 # -----------------------------
 app.include_router(health_routes.router)
 app.include_router(intake_routes.router)
-app.include_router(auth_routes.router)
 app.include_router(dashboard_routes.router)
 app.include_router(resumes_routes.router)
