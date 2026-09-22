@@ -14,7 +14,7 @@ This document defines how the Libelle frontend and backend communicate. It is th
 * **Format:** Responses are JSON unless an endpoint explicitly documents a binary response.
 * **Client Auth:** Public volunteer intake endpoints are currently **open** (no user login required).
 * **Backend Auth:** The backend internally uses two Google authentication methods for infrastructure access:
-  * **Google Drive:** Uses OAuth user consent (bootstrapped via `/authorize` to create `token.json`).
+  * **Google Drive:** Uses OAuth user consent (bootstrapped via the operator CLI to create `token.json`).
   * **Google Sheets:** Google Sheets: Uses a service account credential, typically configured via GOOGLE_CREDENTIALS..
 * **Uploads:** File upload is handled via `multipart/form-data`.
 * **CORS:** Restricted to approved origins.
@@ -272,14 +272,13 @@ fetch(`/api/upload`, {
   body: formData
 });
 ```
-## Admin & Setup Endpoints
-These endpoints are used to bootstrap the backend's connection to Google Drive. **They are not for frontend user authentication.**
+## Administrative Google credential setup
 
-### `GET /authorize`
-Starts the Google OAuth consent flow for the backend service. Returns a JSON object with the authorization URL. Current implementation does not automatically redirect the browser.
-
-### `GET /oauth2callback`
-Receives the Google authorization code, exchanges it for a token, and saves `token.json` file to the server for persistent backend Drive access. This endpoint must match the redirect URI configured in the Google OAuth client.
+Google Drive credentials are provisioned with `python bootstrap_google_oauth.py`
+from `backend/`, using a temporary loopback-only callback listener. The application
+exposes neither `/authorize` nor `/oauth2callback` in any mode. See the
+[setup guide](local-dev-backend-google-setup.md#11-generate-tokenjson) for the operator
+workflow. This is backend infrastructure setup, not frontend user authentication.
 
 ## Roadmap (Future Endpoints)
 These are NOT implemented yet. For roadmap visibility only.

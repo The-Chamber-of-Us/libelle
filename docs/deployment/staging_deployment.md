@@ -166,13 +166,15 @@ http://127.0.0.1:8003
 
 Important backend routes must be proxied before the React single-page-app fallback route.
 
+Google OAuth bootstrap uses the [operator CLI](../local-dev-backend-google-setup.md#11-generate-tokenjson).
+Do not proxy its loopback listener. The retired `/authorize` and `/oauth2callback`
+paths must return 404.
+
 Known backend routes include:
 
 ```text
 /health
 /debug/config
-/authorize
-/oauth2callback
 /api/
 /docs
 /openapi.json

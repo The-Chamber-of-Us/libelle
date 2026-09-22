@@ -20,8 +20,8 @@ When you trigger the intake flow locally, the backend coordinates three actions:
 
 ### Important Auth Model
 Libelle uses two separate Google auth patterns:
-* **Google Drive:** Uses OAuth user consent (initiated via `GET /authorize` and completed via `GET /oauth2callback`) to create `token.json`.
-* **Google Sheets:** Uses a service account credential file. This does *not* use `/authorize`.
+* **Google Drive:** Uses OAuth user consent (bootstrapped by the operator CLI) to create `token.json`.
+* **Google Sheets:** Uses a service account credential file. This does not use Drive OAuth.
 
 ---
 
@@ -63,7 +63,7 @@ Hold on to your **Sheet ID** — you’ll paste it into your `.env` file later a
 ### 4A) Create OAuth Client ID (Drive)
 1. Navigate to APIs & Services → Credentials → **Create Credentials** → OAuth client ID.
 2. Application type: **Web application**.
-3. **CRITICAL STEP:** Add Authorized Redirect URI: `http://127.0.0.1:8000/oauth2callback`
+3. **CRITICAL STEP:** Add Authorized Redirect URI: `http://127.0.0.1:8765/oauth2callback`
    *(Warning: If this does not exactly match, the consent flow will fail).*
 4. Download the JSON and rename it to: `org_oauth_client.json`
 
@@ -109,7 +109,7 @@ pip install -r requirements.txt
 Still in `libelle/backend`, create your `.env` file (replace the PASTE values with your actual IDs):
 
 ```env
-# Drive OAuth (token created after /authorize)
+# Drive OAuth (token created by the bootstrap CLI)
 GOOGLE_OAUTH_CLIENT=org_oauth_client.json
 TOKEN_FILE=token.json
 DRIVE_ROOT_FOLDER_ID=PASTE_YOUR_FOLDER_ID
@@ -136,19 +136,39 @@ uvicorn main:app --reload --env-file .env
 ### 11) Generate `token.json`
 To authorize the backend to upload to Drive, you must generate a token:
 
-1. Open `http://127.0.0.1:8000/authorize` in your browser.
-2. The endpoint will return a JSON response containing an `auth_url`. *(It does not automatically redirect).*
-3. Copy the returned `auth_url` and paste it into your browser.
-4. Complete the Google consent flow.
-5. On success, the backend will save `token.json` to the path configured by `TOKEN_FILE`.
+Run from `backend/` in your activated Python environment:
 
-> **Important Clarification:** `/authorize` connects your backend to Google Drive via OAuth user auth. It does **not** grant Sheets access. Sheets writes work entirely through the service account credential configured via `GOOGLE_CREDENTIALS`.
+```bash
+python bootstrap_google_oauth.py
+```
+
+Open the printed Google consent URL in a browser on the same machine and complete
+consent within five minutes. The CLI temporarily listens only on `127.0.0.1:8765`,
+validates single-use OAuth state before exchanging the code, and atomically writes
+owner-only credentials to `TOKEN_FILE`. Failed or expired attempts preserve the
+existing file; restart the CLI to retry. The listener closes when the command ends.
+The application server does not need to be running.
+
+Use `--port` only with a matching Google OAuth client redirect URI. The CLI reads
+`GOOGLE_OAUTH_CLIENT` and `TOKEN_FILE` from the same configuration as the backend.
+Run it only from a trusted operator account. For a headless deployment, bootstrap
+on a trusted workstation using the intended environment's Google client and account,
+then securely provision the token to that environment's `TOKEN_FILE` with owner-only
+permissions and ownership matching the backend/worker service account. Keep tokens
+out of Git and logs. Do not proxy the loopback listener through nginx or a tunnel.
+Stop backend/worker processes during token replacement to avoid concurrent refresh
+writes, then restart them. Bootstrap credentials are not required on the production
+host for normal Drive access; it only needs the provisioned token.
+
+`/authorize` and `/oauth2callback` are absent from the application in every mode.
+Remove old public callback URIs from the Google client configuration. This workflow
+grants backend Drive access only; Sheets still uses `GOOGLE_CREDENTIALS`.
 
 ### 12) Token Expiry Warning (Testing Mode)
 If your Google OAuth consent screen in GCP is set to "Testing", your local `token.json` may stop working after about 7 days.
 
 * **What this looks like:** Drive operations suddenly fail with `invalid_grant` or 401 errors.
-* **Quick local fix:** Delete `token.json`, visit `GET /authorize` again, and complete the consent flow to regenerate it.
+* **Quick local fix:** Rerun `python bootstrap_google_oauth.py` and complete consent. Keep the existing token until replacement succeeds.
 
 ---
 
