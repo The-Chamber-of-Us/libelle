@@ -53,8 +53,8 @@ dedicated resolver output tab exists.
 
 **4. Who owns reviewer status and notes?** The `ops` tab, written only
 through the dashboard writeback path with backend-derived actor attribution
-(`updated_by`, `updated_at`). Status values are validated by the state
-contract. `ops_events` records append-only best-effort history for reviewer
+(`updated_by`, `updated_at`). Incoming status values are validated through
+`backend/ops_schema.py`, not the state-contract `validate_review_status()` helper. `ops_events` records append-only best-effort history for reviewer
 changes when available, but it is not the current-state source of truth and
 is not a transactional audit guarantee.
 
@@ -79,7 +79,10 @@ workflow truth and stands on its own; missing parser/resolver data degrades
 the derived health state (`pending_processing`, `partial_success`,
 `parser_failed`), not the reviewer workflow state. Absence of an ops row
 means "no reviewer action yet" and may be displayed as a default `new`
-state, which is why the writeback path upserts on first save.
+state, which is why the writeback path upserts on first save. The current
+snapshot formatter also normalizes invalid stored ops status to `new`, without
+repairing the stored row. A displayed `new` therefore does not prove that no
+reviewer action has occurred.
 
 **8. What should `/snapshot` display when sources are partial or degraded?**
 Every source it has, each labeled by origin, plus a derived

@@ -90,12 +90,15 @@ Only the safe [API projection](../api-spec.md#get-snapshot) belongs in `/snapsho
 
 One row per `submission_id`, holding the **current** workflow state. Mutable
 only through the dashboard writeback path (`/ops/update`), which validates
-status via the state contract.
+incoming status through `backend/ops_schema.py`, not the state-contract
+`validate_review_status()` helper. Snapshot composition defaults a missing ops
+row to `new` and also normalizes an invalid stored status to `new`. This is
+a read-model fallback; it does not repair the stored row.
 
 | Field | Ownership | Notes |
 | --- | --- | --- |
 | `submission_id` | Correlation key | |
-| `status` | Reviewer | Validated against `ReviewStatus`. |
+| `status` | Reviewer | Incoming values validated through `ops_schema`; invalid stored values project as `new`. |
 | `notes` | Reviewer | Human-authored operational notes. |
 | `tags` | Reviewer | |
 | `contact_tracking` | Reviewer | |

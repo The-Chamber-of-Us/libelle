@@ -169,7 +169,7 @@ Each snapshot record always includes these top-level domains:
 | `parsed` | Yes | No | Parser read model. Always present, even when the parser has not run or failed. |
 | `resolved` | Yes | No | Resolver read model. Always present, even when resolver output is unavailable. |
 | `parser_job` | Yes | Yes | Safe durable parser-job operational state, or `null` when no parser job exists for the submission. |
-| `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists. |
+| `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists; an invalid stored status is also normalized to `new` in the response, without updating storage. |
 | `errors` | Yes | No | Latest error summary. Always present; raw error details are not exposed. |
 
 Missing top-level domains are invalid. Current nested domains other than `parser_job` are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.

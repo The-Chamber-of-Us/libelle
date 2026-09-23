@@ -151,7 +151,9 @@ parser or resolver events.
 - No-resume submissions must remain reviewer-visible.
 - Parser and resolver failures must remain reviewer-visible.
 - Resolver failure must preserve valid parser output.
-- Fatal pipeline failures must create traceable error records.
+- Pipeline failure handlers attempt to append traceable error records. These writes
+  are best-effort: error logging itself can fail, so a fatal failure is not guaranteed
+  to have a persisted error record.
 - Resume access must require authentication and audit logging.
 - State transitions should be idempotent whenever practical so retried pipeline steps do not
   create inconsistent records.
@@ -164,6 +166,11 @@ parser or resolver events.
 error, and parser-job data into the state domains and calls
 `derive_submission_health_state()`. `/snapshot` exposes the resulting
 `submission_health_state`; the frontend should display it without recomputing the matrix.
+
+Incoming reviewer status is validated through `backend/ops_schema.py`, not this
+contract's `validate_review_status()` helper. Snapshot ops formatting also normalizes
+invalid stored status to `new`, as it defaults a missing ops row to `new`; it does
+not repair the stored row.
 
 Durable job status, claim eligibility, lease ownership, retry scheduling, and result
 authority are implemented by the job repository, worker, and snapshot selection code.

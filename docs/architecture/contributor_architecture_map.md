@@ -157,7 +157,11 @@ rewrite submissions/results, or reset existing jobs. The worker service does not
 install a reconciliation timer.
 
 Reviewer writeback changes current `ops` state using backend-derived attribution.
-It does not change raw, parsed, or resolved values. `ops_events` records per-field
+Incoming status is validated through `backend/ops_schema.py`, not the state-contract
+helper. Snapshot composition defaults a missing ops row to `new` and also
+normalizes an invalid stored status to `new`, without repairing storage. This
+reviewer-state fallback differs from the conservative parser-job projection above.
+Reviewer writeback does not change raw, parsed, or resolved values. `ops_events` records per-field
 changes when its optional tab and writes are available. Missing or failed event
 appends do not block current ops writes; snapshot reads current `ops`, not a replay
 of event history. `errors` holds separate failure evidence. Cross-tab writes are
