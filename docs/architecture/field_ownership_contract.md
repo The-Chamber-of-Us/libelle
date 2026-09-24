@@ -1,7 +1,7 @@
 # Field Ownership Contract
 
 Issue #296. This contract defines which pipeline stage owns each field in the
-v0.3/v0.4 4-tab schema, so parser and resolver improvements never overwrite,
+current Sheets schema, so parser and resolver improvements never overwrite,
 hide, or mislabel volunteer-submitted data.
 
 It turns the invariants introduced by the state transition contract (#279,
@@ -50,14 +50,17 @@ append time.
 
 ### `parser_results` tab — owners: parser pipeline and resolver pipeline
 
-Rows are **append-only per parser run**. Within a row, parser-extracted
-fields and resolver-normalized fields have different owners.
+New parser runs append separate derived results, keyed by
+`(submission_id, parser_run_id)`. The worker persists parser-owned output first;
+Resolver enrichment then updates resolver-owned columns on that same result row.
+Parser-extracted fields and raw intake are preserved. Repository idempotency
+checks are not a Sheets-enforced physical uniqueness constraint.
 
 | Field | Ownership | Notes |
 | --- | --- | --- |
 | `submission_id` | Correlation key | Copied from the submission; never reassigned. |
-| `parser_run_id` | Parser | Identifies the run; distinct from `submission_id`. |
-| `created_at` | Parser | Row append time; used to select the latest run. |
+| `parser_run_id` | Worker attempt boundary | Generated for each claim; distinct from submission and physical job identity. The legacy writer retains a defensive fallback. |
+| `created_at` | Parser | Row append time; used only when authority selection permits latest-result fallback. See [precedence](system_of_record_precedence.md). |
 | `parser_version` | Parser | |
 | `parsed_skills_raw` | Parser | Raw extraction evidence. Resolver must not rewrite it. |
 | `parsed_location_raw` | Parser | |
@@ -68,16 +71,34 @@ fields and resolver-normalized fields have different owners.
 | `unknown_skills` | Resolver | Unresolved values are preserved here, never dropped. |
 | `resolver_coverage` | Resolver | |
 
+### `parser_jobs` tab — owner: durable execution repository and worker
+
+Intake and reconciliation create work through `storage/parser_jobs_repo.py`.
+Logical uniqueness is `parse_resume:{submission_id}`; the physical `job_id`
+can differ (reconciliation-created rows can receive a generated UUID).
+The worker owns claim/lease fields, attempt counts, execution timestamps,
+`last_parser_run_id`, failure/retry state, and `authoritative_parser_run_id`.
+The job row is mutable operational state, not an append-only attempt history.
+
+The canonical field list is `PARSER_JOBS_HEADERS` in
+[the schema](../../backend/sheet_schema.py); validation and coarse error-summary
+write restrictions live in [the repository](../../backend/storage/parser_jobs_repo.py).
+These operational fields are separate from parser extraction ownership groups.
+Only the safe [API projection](../api-spec.md#get-snapshot) belongs in `/snapshot`.
+
 ### `ops` tab — owner: reviewer operations
 
 One row per `submission_id`, holding the **current** workflow state. Mutable
 only through the dashboard writeback path (`/ops/update`), which validates
-status via the state contract.
+incoming status through `backend/ops_schema.py`, not the state-contract
+`validate_review_status()` helper. Snapshot composition defaults a missing ops
+row to `new` and also normalizes an invalid stored status to `new`. This is
+a read-model fallback; it does not repair the stored row.
 
 | Field | Ownership | Notes |
 | --- | --- | --- |
 | `submission_id` | Correlation key | |
-| `status` | Reviewer | Validated against `ReviewStatus`. |
+| `status` | Reviewer | Incoming values validated through `ops_schema`; invalid stored values project as `new`. |
 | `notes` | Reviewer | Human-authored operational notes. |
 | `tags` | Reviewer | |
 | `contact_tracking` | Reviewer | |
@@ -91,7 +112,7 @@ pipeline stage or reviewer edits error rows after append.
 
 | Field | Ownership |
 | --- | --- |
-| `submission_id`, `created_at`, `stage`, `error_code`, `error_summary`, `error_details` | Audit/error logging |
+| `submission_id`, `parser_run_id`, `created_at`, `stage`, `error_code`, `error_summary`, `error_details` | Audit/error logging; attempt ID is populated when available. |
 
 ### Snapshot fields — owner: backend read model
 
@@ -107,14 +128,15 @@ and must never be written back into any tab.
    fields sit alongside parser fields in the same row; unresolved skills go
    to `unknown_skills` instead of being dropped.
 3. **Reviewer status/notes must not alter raw, parsed, or resolved values.**
-   Ops writes touch only the `ops` tab.
+   Current workflow writes target `ops`; accompanying best-effort history appends
+   target `ops_events`, never intake or parser results.
 4. **Nothing overwrites the `submissions` row after append.** This includes
    `drive_file_id`, `resume_filename`, and `resume_status`, which are final
    at append time.
 5. **Unknown, unresolved, and low-confidence values are represented
-   honestly.** Empty resolver fields mean "resolver has not run" or "could
-   not resolve", not "no data existed". Low `parser_confidence` values stay
-   visible to reviewers.
+   honestly.** Use explicit Resolver result states to distinguish absent,
+   failed, and successful empty output. Legacy `"[]"` placeholders alone do not
+   prove Resolver execution. Low `parser_confidence` remains visible.
 6. **Snapshot data is derived, never a source of truth.**
 
 `assert_no_raw_data_overwrite` in `backend/core/state_contract.py` enforces
@@ -131,15 +153,18 @@ When adding a field, ask who produces its value:
 - Normalized/classified from parser output → `parser_results`, resolver group
   (or a future resolver output tab).
 - Decided by a human reviewer → `ops`, reviewer group.
-- Records a failure or audit event → `errors` (append-only).
+- Records a failure → `errors` (append-only).
+- Records a reviewer field change → `ops_events` (append-only, best-effort).
+- Tracks parser execution, leases, retries, or authority → `parser_jobs`.
 - Computed for display from other tabs → snapshot read model; do not persist.
 
-Then add it to the matching tuple in `backend/core/state_contract.py` and the
-table above. The schema-alignment test will fail if the constants drift from
-`backend/sheet_schema.py`.
+Update the canonical schema and its owning repository. For fields represented by
+`backend/core/state_contract.py` ownership groups, also update the matching tuple
+and table above; the schema-alignment test checks those groups. Job and event
+fields have their own schema/repository boundaries.
 
 ## Out of scope
 
-Schema migration, frontend redesign, parser/resolver quality, and audit/event
-history (see the `ops_events` proposal in #290) are intentionally not covered
-here.
+Schema migration, frontend redesign, and parser/resolver quality are outside
+this contract. [Ops event history](ops_event_history.md) owns the implemented
+reviewer-history semantics.

@@ -1,5 +1,12 @@
 # Asynchronous Parser Execution Model
 
+> **Historical architecture — retained for context.** Historical #338 design proposal.
+> The original text below is preserved; descriptions of “current” behavior and
+> proposed guarantees refer to that earlier version, not today’s implementation.
+> **[Current architecture — start here](contributor_architecture_map.md).**
+> For implemented result selection see [precedence rules](system_of_record_precedence.md);
+> for worker operations see the [worker runbook](../deployment/parser_worker.md).
+
 Issue #338 defines the implementation contract for moving parser execution out
 of the public intake request path. This document is design-only: it does not
 change production parser execution behavior.
