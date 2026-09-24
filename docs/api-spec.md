@@ -30,7 +30,7 @@ Dashboard read endpoints may be available locally without reviewer identity, but
 * `PATCH /submissions/{submission_id}/ops`
 * `GET /resumes/{submission_id}`
 
-In deployed environments, the actor is derived from Cloudflare Access headers supplied by the protected access layer, preferably `cf-access-authenticated-user-email`, or from the `email` claim in `cf-access-jwt-assertion`. If no actor can be derived, these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
+In deployed environments, the actor is derived exclusively from a single valid `cf-access-authenticated-user-email` header supplied by the protected ingress under the [trusted proxy identity contract](deployment/internal_actor_trust.md). `cf-access-jwt-assertion` is ignored and cannot establish identity. Missing, malformed, or duplicate email headers fail closed; these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
 
 For local UI testing, see [Local Dashboard Write Testing](local-dev-dashboard-writes.md).
 
