@@ -117,6 +117,8 @@ sudo journalctl -u libelle-v03-backend -n 100 --no-pager
 
 ## Cloudflare Tunnel
 
+Reviewer identity uses the [trusted proxy identity contract](./internal_actor_trust.md). Access token validation, protected API coverage, origin isolation, and ingress header handling described there are required for staging and production. The topology below alone does not prove those controls are active.
+
 The existing Cloudflare Tunnel routes public hostnames to the Raspberry Pi.
 
 Current staging route:
