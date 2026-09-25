@@ -295,3 +295,8 @@ Libelle is an experiment in different ways of working, belonging, and building.
 It is also becoming a real internal tool: one that helps TCUS receive volunteer interest, preserve human context, and turn scattered offers of help into coordinated action.
 
 Welcome to the mission.
+
+Volunteer data expires after 365 days and is removed by an administrator's monthly
+maintenance sweep. See the [retention and deletion runbook](docs/deployment/volunteer_data_retention.md)
+for the data inventory, request handling, offline deletion command, restricted
+recovery manifests, orphan cleanup, and required log/backup controls before production.
