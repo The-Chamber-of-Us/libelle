@@ -1,25 +1,23 @@
-import base64
-import binascii
-import json
-from typing import Any
+"""Actor attribution under the trusted-ingress contract (see docs/deployment/internal_actor_trust.md).
+
+Access authentication happens upstream. Direct origin access must be blocked;
+header syntax validation cannot authenticate an arbitrary caller.
+"""
+
+import re
 
 from fastapi import HTTPException, Request
 
 
 CLOUDFLARE_ACCESS_EMAIL_HEADER = "cf-access-authenticated-user-email"
-CLOUDFLARE_ACCESS_JWT_HEADER = "cf-access-jwt-assertion"
 
 
 def get_internal_actor(request: Request) -> str | None:
-    actor = _normalize_actor(request.headers.get(CLOUDFLARE_ACCESS_EMAIL_HEADER))
-    if actor is not None:
-        return actor
-
-    access_jwt = request.headers.get(CLOUDFLARE_ACCESS_JWT_HEADER)
-    if not access_jwt:
+    # Multiple values are ambiguous even if an intermediary would pick one.
+    values = request.headers.getlist(CLOUDFLARE_ACCESS_EMAIL_HEADER)
+    if len(values) != 1:
         return None
-
-    return _normalize_actor(_get_email_from_access_jwt(access_jwt))
+    return _normalize_actor(values[0])
 
 
 def require_internal_actor(request: Request) -> str:
@@ -36,34 +34,23 @@ def require_internal_actor(request: Request) -> str:
     return actor
 
 
-def _normalize_actor(value: Any) -> str | None:
-    if not isinstance(value, str):
+def _normalize_actor(value: str) -> str | None:
+    # Accept a single ASCII mailbox, not display names or address lists.
+    # Trim surrounding spaces while rejecting controls (including CR/LF).
+    if any(ord(char) < 32 or ord(char) > 126 for char in value):
         return None
-
     normalized = value.strip().lower()
-    if not normalized:
+    if len(normalized) > 254 or normalized.count("@") != 1:
         return None
-
+    local, domain = normalized.split("@")
+    if not local or len(local) > 64 or not re.fullmatch(r"[a-z0-9.!#$%&'*+/=?^_`{|}~-]+", local):
+        return None
+    if local.startswith(".") or local.endswith(".") or ".." in local:
+        return None
+    labels = domain.split(".")
+    if len(labels) < 2 or any(
+        not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", label)
+        for label in labels
+    ):
+        return None
     return normalized
-
-
-def _get_email_from_access_jwt(access_jwt: str) -> str | None:
-    parts = access_jwt.split(".")
-    if len(parts) != 3:
-        return None
-
-    try:
-        payload_bytes = _decode_base64url(parts[1])
-        payload = json.loads(payload_bytes)
-    except (binascii.Error, UnicodeDecodeError, ValueError, TypeError, json.JSONDecodeError):
-        return None
-
-    if not isinstance(payload, dict):
-        return None
-
-    return payload.get("email")
-
-
-def _decode_base64url(value: str) -> bytes:
-    padding = "=" * (-len(value) % 4)
-    return base64.urlsafe_b64decode(f"{value}{padding}")

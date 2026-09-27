@@ -20,14 +20,9 @@ Dashboard read endpoints such as `GET /snapshot` and `GET /ops/statuses` do not 
 
 ## Expected Actor Header
 
-The backend derives the internal actor from one of these Cloudflare Access request headers:
+The backend accepts only `cf-access-authenticated-user-email` under the [trusted ingress contract](deployment/internal_actor_trust.md). It ignores `cf-access-jwt-assertion` entirely. A single well-formed email is normalized to a trimmed lowercase value and used for both `ops.updated_by` and appended `ops_events.actor_email` rows. Client-submitted actor fields are ignored.
 
-- `cf-access-authenticated-user-email`
-- `cf-access-jwt-assertion`, using the JWT payload `email` claim
-
-If both are present, `cf-access-authenticated-user-email` wins. The backend normalizes the actor to a trimmed lowercase email and uses that value for both the current ops `updated_by` field and appended `ops_events.actor_email` rows. Client-submitted actor fields such as `updated_by` or `actor_email` are ignored on write endpoints.
-
-If neither header produces an actor, write endpoints return:
+Missing, blank, malformed, or duplicate identity headers return:
 
 ```json
 {
@@ -54,7 +49,7 @@ cd frontend
 VITE_DEV_INTERNAL_ACTOR_EMAIL=local.reviewer@example.org npm run dev
 ```
 
-During local dev, the Vite proxy may attach `cf-access-authenticated-user-email` to `/ops/*` and `/submissions/*` proxied requests when `VITE_DEV_INTERNAL_ACTOR_EMAIL` is set. Only protected write endpoints enforce this actor identity; read endpoints such as `/snapshot` and `/ops/statuses` do not require it and should ignore it. If `VITE_DEV_INTERNAL_ACTOR_EMAIL` is absent, no actor header is added and writes should continue to fail with `401`.
+Only when serving in `development` mode (never build, production mode, or preview), the Vite proxy may attach `cf-access-authenticated-user-email` to `/ops/*`, `/submissions/*`, and `/resumes/*` proxied requests when `VITE_DEV_INTERNAL_ACTOR_EMAIL` is set. `GET /resumes/{submission_id}` also requires an actor. Protected endpoints enforce this actor identity; read endpoints such as `/snapshot` and `/ops/statuses` do not require it and should ignore it. If `VITE_DEV_INTERNAL_ACTOR_EMAIL` is absent, no actor header is added and writes should continue to fail with `401`.
 
 3. Open the dashboard through the Vite dev server:
 

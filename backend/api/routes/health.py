@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter
 
-from config import ALLOWED_ORIGINS, APP_REDIRECT_URI, MAX_PDF_MB
+from config import ALLOWED_ORIGINS, MAX_PDF_MB
 
 router = APIRouter()
 
@@ -27,7 +27,6 @@ def debug_config():
         "status": "ok",
         "MAX_PDF_MB": MAX_PDF_MB,
         "ALLOWED_ORIGINS": ALLOWED_ORIGINS,
-        "APP_REDIRECT_URI": APP_REDIRECT_URI,
         "has_google_oauth_client": bool(GOOGLE_OAUTH_CLIENT),
         "has_token_file": bool(TOKEN_FILE),
     }

@@ -206,6 +206,33 @@ def test_durable_path_preserves_owned_state_and_selects_authority(sheet, monkeyp
         assert sheets_repo.load_error_rows()[0]['error_code'] == 'RESOLVER_FAILED'
         assert snapshot['resolved']['resolver_state'] == 'not_run'
         assert snapshot['resolved']['resolver_result_state'] == 'failed'
+        assert snapshot['submission_health_state'] == 'resolver_failed'
+        assert all(sheets_repo.load_parser_result_rows()[0][field] == ''
+                   for field in dashboard_service.RESOLVED_FIELDS)
     else:
         assert sheets_repo.load_parser_result_rows()[0]['resolver_version']
         assert not sheet.rows['errors']
+
+
+def test_parser_only_persistence_keeps_absent_resolver_output_blank(sheet):
+    persist(parser_version='synthetic-parser')
+    row = sheets_repo.load_parser_result_rows()[0]
+    assert all(row[field] == '' for field in dashboard_service.RESOLVED_FIELDS)
+    assert sheets_repo.persist_resolver_output_for_parser_result(
+        submission_id='synthetic-submission', parser_run_id='attempt-1',
+        parsed=dict(resolver_version='synthetic-resolver', aliases_version='synthetic-aliases',
+                    resolved_skill_ids=[], unknown_skills=[], resolver_coverage=0),
+    )
+    enriched = sheets_repo.load_parser_result_rows()[0]
+    assert enriched['resolved_skill_ids'] == '[]'
+    assert enriched['unknown_skills'] == '[]'
+    assert enriched['resolver_coverage'] == '0'
+
+
+def test_complete_zero_match_result_preserves_explicit_empty_lists(sheet):
+    persist(resolver_version='synthetic-resolver', resolved_skill_ids=[],
+            unknown_skills=[], resolver_coverage=0)
+    row = sheets_repo.load_parser_result_rows()[0]
+    assert row['resolved_skill_ids'] == '[]'
+    assert row['unknown_skills'] == '[]'
+    assert row['resolver_coverage'] == '0'

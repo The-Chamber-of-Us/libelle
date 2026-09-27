@@ -14,7 +14,7 @@ This document defines how the Libelle frontend and backend communicate. It is th
 * **Format:** Responses are JSON unless an endpoint explicitly documents a binary response.
 * **Client Auth:** Public volunteer intake endpoints are currently **open** (no user login required).
 * **Backend Auth:** The backend internally uses two Google authentication methods for infrastructure access:
-  * **Google Drive:** Uses OAuth user consent (bootstrapped via `/authorize` to create `token.json`).
+  * **Google Drive:** Uses OAuth user consent (bootstrapped via the operator CLI to create `token.json`).
   * **Google Sheets:** Google Sheets: Uses a service account credential, typically configured via GOOGLE_CREDENTIALS..
 * **Uploads:** File upload is handled via `multipart/form-data`.
 * **CORS:** Restricted to approved origins.
@@ -30,7 +30,7 @@ Dashboard read endpoints may be available locally without reviewer identity, but
 * `PATCH /submissions/{submission_id}/ops`
 * `GET /resumes/{submission_id}`
 
-In deployed environments, the actor is derived from Cloudflare Access headers supplied by the protected access layer, preferably `cf-access-authenticated-user-email`, or from the `email` claim in `cf-access-jwt-assertion`. If no actor can be derived, these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
+In deployed environments, the actor is derived exclusively from a single valid `cf-access-authenticated-user-email` header supplied by the protected ingress under the [trusted proxy identity contract](deployment/internal_actor_trust.md). `cf-access-jwt-assertion` is ignored and cannot establish identity. Missing, malformed, or duplicate email headers fail closed; these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
 
 For local UI testing, see [Local Dashboard Write Testing](local-dev-dashboard-writes.md).
 
@@ -169,7 +169,7 @@ Each snapshot record always includes these top-level domains:
 | `parsed` | Yes | No | Parser read model. Always present, even when the parser has not run or failed. |
 | `resolved` | Yes | No | Resolver read model. Always present, even when resolver output is unavailable. |
 | `parser_job` | Yes | Yes | Safe durable parser-job operational state, or `null` when no parser job exists for the submission. |
-| `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists. |
+| `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists; an invalid stored status is also normalized to `new` in the response, without updating storage. |
 | `errors` | Yes | No | Latest error summary. Always present; raw error details are not exposed. |
 
 Missing top-level domains are invalid. Current nested domains other than `parser_job` are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
@@ -191,7 +191,9 @@ Partial pipeline states are explicit:
 
 When `parser_job` is present, it may include `submission_id`, `parser_job_status`, `attempt_count`, `max_attempts`, `parser_run_id`, `is_stale`, `parser_job_state_quality`, `last_error_code`, `last_error_summary`, `available_at`, `parser_started_at`, `created_at`, and `updated_at`. `attempt_count`, `max_attempts`, and `is_stale` may be `null` when persisted operational state is malformed rather than silently converted into a valid-looking value. For `succeeded` jobs, `parser_run_id`, `parsed`, and `resolved` follow `parser_jobs.authoritative_parser_run_id`; if that authority is blank or cannot be resolved to a parser result, the snapshot fails closed with `parser_job_state_quality: "malformed"` and does not substitute another parser attempt. Non-succeeded jobs may fall back to `last_parser_run_id` for current/latest attempt visibility. Storage and lease internals such as `drive_file_id`, Drive URLs, `resume_filename`, `locked_by`, `locked_at`, and `lock_expires_at` are not exposed. Persisted parser-job `last_error_summary` values are restricted at the repository write boundary to known coarse summaries for the associated `last_error_code`.
 
-Legacy parser/resolver payload fields such as `parsed_skills_raw`, `resolved_skill_ids`, and `unknown_skills` are sheet-backed strings. A blank string means no stored value for that field. JSON array strings such as `"[]"` mean the stage ran and stored an empty list; consumers should use the explicit result-state fields rather than infer pipeline state from these strings.
+Legacy parser/resolver payload fields such as `parsed_skills_raw`, `resolved_skill_ids`, and `unknown_skills` are sheet-backed strings. A blank string means no stored value for that field. JSON array strings such as `"[]"` represent stored empty lists, but older parser-only rows also contain these placeholders: empty Resolver lists alone do not prove Resolver ran. The backend recognizes Resolver output from nonblank Resolver metadata or coverage (including zero), or nonempty resolved/unknown skill output. A completed zero-match result is `resolver_state="zero_matches"` with `resolver_result_state="empty_success"`. Without output evidence, a latest `RESOLVER_FAILED` error produces `resolver_result_state="failed"` while the legacy `resolver_state` remains `"not_run"`. Consumers must use explicit result-state fields rather than infer execution from payload strings.
+
+`error_state="unavailable"` is supported by the pure snapshot composer when its `error_rows` argument is `None`. Its accompanying `has_error=false` and blank summaries mean no error evidence was available to compose, not proof that no errors occurred. The live `get_snapshot_records()` loader calls `load_error_rows()` directly; it does not catch an error-source read failure and convert it to `None`. This state therefore does not promise graceful snapshot delivery during a Sheets error-source outage.
 
 Date/time fields are strings. `raw.created_at` and `parsed.created_at` use the timestamp format stored by their source row, normally ISO-like `YYYY-MM-DDTHH:MM:SS`; `ops.updated_at` may use the existing UTC sheet format `MM-DD-YYYY HH:MM:SS UTC`. Blank string means no timestamp is available for that nested domain.
 
@@ -272,14 +274,13 @@ fetch(`/api/upload`, {
   body: formData
 });
 ```
-## Admin & Setup Endpoints
-These endpoints are used to bootstrap the backend's connection to Google Drive. **They are not for frontend user authentication.**
+## Administrative Google credential setup
 
-### `GET /authorize`
-Starts the Google OAuth consent flow for the backend service. Returns a JSON object with the authorization URL. Current implementation does not automatically redirect the browser.
-
-### `GET /oauth2callback`
-Receives the Google authorization code, exchanges it for a token, and saves `token.json` file to the server for persistent backend Drive access. This endpoint must match the redirect URI configured in the Google OAuth client.
+Google Drive credentials are provisioned with `python bootstrap_google_oauth.py`
+from `backend/`, using a temporary loopback-only callback listener. The application
+exposes neither `/authorize` nor `/oauth2callback` in any mode. See the
+[setup guide](local-dev-backend-google-setup.md#11-generate-tokenjson) for the operator
+workflow. This is backend infrastructure setup, not frontend user authentication.
 
 ## Roadmap (Future Endpoints)
 These are NOT implemented yet. For roadmap visibility only.

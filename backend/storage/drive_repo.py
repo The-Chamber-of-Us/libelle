@@ -5,8 +5,8 @@ from typing import Tuple
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
 
-from config import DRIVE_ROOT_FOLDER_ID, TOKEN_FILE
-from storage._auth import load_oauth_creds, build_oauth_flow, DRIVE_SCOPES
+from config import DRIVE_ROOT_FOLDER_ID
+from storage._auth import load_oauth_creds, DRIVE_SCOPES
 
 
 DRIVE_FILENAME_UNSAFE_RE = re.compile(r"[\x00-\x1f\x7f/\\]+")
@@ -15,7 +15,7 @@ DRIVE_FILENAME_UNSAFE_RE = re.compile(r"[\x00-\x1f\x7f/\\]+")
 def get_drive_service():
     """
     Returns a Google Drive API service authorized with user's OAuth credentials.
-    If token.json is missing/invalid, instruct caller to run /authorize.
+    If token.json is missing/invalid, instruct the operator to run bootstrap_google_oauth.py.
     """
     creds = load_oauth_creds(DRIVE_SCOPES)
     return build("drive", "v3", credentials=creds)
@@ -72,22 +72,3 @@ def download_file(file_id: str) -> bytes:
         status, done = downloader.next_chunk()
     print(f"[DRIVE] Downloaded file {file_id}")
     return buf.getvalue()
-
-
-def build_auth_url(redirect_uri: str) -> str:
-    """Build a Google OAuth authorization URL for Drive access."""
-    flow = build_oauth_flow(redirect_uri)
-    auth_url, _ = flow.authorization_url(
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent",
-    )
-    return auth_url
-
-
-def exchange_code(code: str, redirect_uri: str) -> None:
-    """Exchange an OAuth authorization code for credentials and persist them."""
-    flow = build_oauth_flow(redirect_uri)
-    flow.fetch_token(code=code)
-    with open(TOKEN_FILE, "w") as token:
-        token.write(flow.credentials.to_json())

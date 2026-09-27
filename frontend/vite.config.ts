@@ -3,9 +3,11 @@ import react from '@vitejs/plugin-react'
 
 const backendTarget = 'http://127.0.0.1:8000'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
-  const devInternalActorEmail = env.VITE_DEV_INTERNAL_ACTOR_EMAIL?.trim()
+  const devInternalActorEmail = command === 'serve' && mode === 'development' && !isPreview
+    ? env.VITE_DEV_INTERNAL_ACTOR_EMAIL?.trim()
+    : undefined
   const devInternalActorHeaders = devInternalActorEmail
     ? { 'cf-access-authenticated-user-email': devInternalActorEmail }
     : undefined

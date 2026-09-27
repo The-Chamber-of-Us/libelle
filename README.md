@@ -6,6 +6,13 @@ It helps mission-driven organizations collect volunteer information, preserve st
 
 Libelle is not just a resume parser. It is an early workflow system for turning volunteer interest into trusted, reviewable, and actionable organizational knowledge.
 
+## Architecture for contributors
+
+**[Current architecture — start here](docs/architecture/contributor_architecture_map.md).**
+This describes the implemented durable parser workflow and its storage, ownership,
+and reviewer boundaries. See the [documentation index](docs/README.md) for deeper
+contracts and clearly labeled historical architecture.
+
 ## Current Status
 
 **Current release:** Libelle v0.3.0, “Trustworthy Volunteer Intake”
