@@ -295,3 +295,9 @@ Libelle is an experiment in different ways of working, belonging, and building.
 It is also becoming a real internal tool: one that helps TCUS receive volunteer interest, preserve human context, and turn scattered offers of help into coordinated action.
 
 Welcome to the mission.
+
+Volunteer data supports explicit administrator deletion and monthly orphan cleanup.
+Automatic age-based expiry is deferred until intake evidence and contributor
+relationship lifecycles can be represented reliably. See the [retention and deletion runbook](docs/deployment/volunteer_data_retention.md)
+for the data inventory, request handling, offline deletion command, restricted
+recovery manifests, orphan cleanup, and required log/backup controls before production.
