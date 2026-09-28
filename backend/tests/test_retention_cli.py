@@ -34,36 +34,51 @@ def test_cli_resolves_credentials_from_backend_and_receipt_from_caller(monkeypat
 
 def test_cli_safe_diagnostics_and_preview_does_not_use_drive(monkeypatch, capsys):
     sheet = Sheet()
-    sheet.add("submissions", submission_id="private", created_at="bad")
+    sheet.add("submissions", email="private@example.org")
     monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: sheet)
     drive = Mock(side_effect=RuntimeError("private credential details"))
     monkeypatch.setattr(drive_repo, "get_drive_service", drive)
-    assert cli.main(["--expired"]) == 1
+    assert cli.main(["--orphans"]) == 1
     output = capsys.readouterr().out
-    assert "timestamp" in output and "private" not in output
+    assert "UNKEYED_RECORD" in output and "private" not in output
+    sheet.rows["submissions"].pop()
+    sheet.add("submissions", submission_id="private", created_at="bad")
     assert cli.main(["--submission-id", "private"]) == 0
     drive.assert_not_called()
 
 
-def test_cli_expiry_receipt_preserves_selected_ids(monkeypatch, tmp_path, capsys):
+def test_cli_orphan_receipt_preserves_selected_ids(monkeypatch, tmp_path, capsys):
     sheet = Sheet()
-    sheet.add("submissions", submission_id="expired", created_at="2020-01-01T00:00:00Z")
+    sheet.add("submissions", submission_id="old", created_at="2020-01-01T00:00:00Z")
+    sheet.add("ops", submission_id="old", status="in_progress", notes="Ongoing relationship")
     sheet.add("parser_results", submission_id="orphan")
+    preserved = {tab: [row.copy() for row in sheet.rows[tab]] for tab in ("submissions", "ops")}
     monkeypatch.setattr(sheets_repo, "_get_sheet", lambda: sheet)
     monkeypatch.setattr(drive_repo, "get_drive_service", Mock())
     path = tmp_path / "receipt.json"
-    assert cli.main(["--expired", "--apply", "--writers-and-readers-stopped",
+    assert cli.main(["--orphans", "--apply", "--writers-and-readers-stopped",
                      "--manifest", str(path)]) == 0
-    assert load_manifest(path)["submission_ids"] == ["expired", "orphan"]
+    assert load_manifest(path)["submission_ids"] == ["orphan"]
     summary = json.loads(capsys.readouterr().out)
     assert summary["external_cleanup_required"]
+    for tab, rows in preserved.items():
+        assert sheet.rows[tab] == rows
 
 
 @pytest.mark.parametrize("arguments", [
-    ["--expired", "--apply"],
-    ["--expired", "--apply", "--writers-and-readers-stopped"],
+    ["--orphans", "--apply"],
+    ["--orphans", "--apply", "--writers-and-readers-stopped"],
 ])
 def test_cli_requires_maintenance_and_manifest(arguments):
     with pytest.raises(SystemExit) as exc:
         cli.main(arguments)
     assert exc.value.code == 2
+
+
+def test_removed_age_expiry_flag_is_rejected_before_access(monkeypatch):
+    get_sheet = Mock()
+    monkeypatch.setattr(sheets_repo, "_get_sheet", get_sheet)
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["--expired", "--apply", "--writers-and-readers-stopped", "--manifest", "unused.json"])
+    assert exc.value.code == 2
+    get_sheet.assert_not_called()

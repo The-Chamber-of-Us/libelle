@@ -1,12 +1,11 @@
 from copy import deepcopy
-from datetime import datetime, timezone
 from unittest.mock import Mock
 
 import pytest
 
 from sheet_schema import SHEET_SCHEMA, build_row
 from storage.retention_repo import (DeletionIncomplete, delete_submissions,
-                                    expired_submission_ids, read_inventory)
+                                    orphan_submission_ids, read_inventory)
 
 
 class Sheet:
@@ -108,15 +107,15 @@ def test_shared_file_and_unknown_schema_block_before_drive(tmp_path):
         read_inventory(sheet, "sheet")
 
 
-def test_expiry_boundary_and_malformed_timestamp():
+@pytest.mark.parametrize("created_at", ["2000-01-01T00:00:00Z", "", "bad"])
+@pytest.mark.parametrize("status", ["new", "reviewed", "contacted", "in_progress", "paused", "closed"])
+def test_orphan_selection_preserves_existing_submissions_regardless_of_age_or_status(created_at, status):
     sheet = Sheet()
-    sheet.add("submissions", submission_id="old", created_at="09-25-2025 00:00:00 UTC")
-    sheet.add("submissions", submission_id="new", created_at="2026-09-25T00:00:00Z")
-    now = datetime(2026, 9, 25, tzinfo=timezone.utc)
-    assert expired_submission_ids(read_inventory(sheet, "sheet"), now) == {"old"}
-    sheet.add("submissions", submission_id="bad", created_at="")
-    with pytest.raises(DeletionIncomplete, match="timestamp"):
-        expired_submission_ids(read_inventory(sheet, "sheet"), now)
+    sheet.add("submissions", submission_id="existing", created_at=created_at)
+    sheet.add("ops", submission_id="existing", status=status,
+              notes="Ongoing relationship", updated_at="2000-01-01T00:00:00Z")
+    sheet.add("parser_results", submission_id="existing")
+    assert orphan_submission_ids(read_inventory(sheet, "sheet")) == set()
 
 
 def test_verification_failure_is_not_success(tmp_path):
@@ -215,11 +214,11 @@ def test_manifest_rejects_symlink_and_public_permissions(tmp_path):
         load_manifest(path)
 
 
-def test_expiry_includes_orphans_and_rejects_unkeyed_personal_data():
+def test_cleanup_includes_orphans_and_rejects_unkeyed_personal_data():
     sheet = Sheet()
     sheet.add("parser_results", submission_id="orphan", parsed_skills_raw="personal")
     sheet.add("ops_events", action="update")  # Already minimized, no source required.
-    assert expired_submission_ids(read_inventory(sheet, "sheet")) == {"orphan"}
+    assert orphan_submission_ids(read_inventory(sheet, "sheet")) == {"orphan"}
     sheet.add("submissions", email="private@example.org")
     with pytest.raises(DeletionIncomplete, match="UNKEYED_RECORD"):
         read_inventory(sheet, "sheet")

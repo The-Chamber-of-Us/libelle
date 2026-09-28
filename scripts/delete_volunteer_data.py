@@ -11,14 +11,14 @@ BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
 from storage.deletion_manifest import ManifestError, load_manifest
-from storage.retention_repo import DeletionIncomplete, delete_submissions, read_inventory, expired_submission_ids
+from storage.retention_repo import DeletionIncomplete, delete_submissions, read_inventory, orphan_submission_ids
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--submission-id", action="append")
-    selection.add_argument("--expired", action="store_true", help="Include orphan derived records")
+    selection.add_argument("--orphans", action="store_true", help="Select only records whose source submission is absent; no age-based expiry")
     selection.add_argument("--resume", type=Path, help="Resume the exact selection in a recovery manifest")
     parser.add_argument("--manifest", type=Path, help="Required private recovery receipt for a new apply")
     parser.add_argument("--apply", action="store_true")
@@ -50,9 +50,9 @@ def main(argv=None):
                     raise DeletionIncomplete("MANIFEST_MISMATCH: configured spreadsheet differs from receipt")
                 ids = manifest["submission_ids"]
             else:
-                ids = args.submission_id or expired_submission_ids(read_inventory(sheet, GOOGLE_SHEET_ID))
+                ids = args.submission_id or orphan_submission_ids(read_inventory(sheet, GOOGLE_SHEET_ID))
             if not ids:
-                summary = {"expired_submissions": 0, "applied": False}
+                summary = {"orphan_submissions": 0, "applied": False}
             else:
                 # Preview never requires or refreshes Drive credentials.
                 drive = None

@@ -1,5 +1,4 @@
 """Offline retention operations. All application writers MUST be stopped."""
-from datetime import datetime, timedelta, timezone
 
 from sheet_schema import SHEET_SCHEMA, OPTIONAL_TABS
 from storage.deletion_manifest import DeletionManifest
@@ -42,33 +41,13 @@ def read_inventory(sheet, spreadsheet_id):
     return inventory
 
 
-def expired_submission_ids(inventory, now=None):
-    """365-day maximum; malformed timestamps block the sweep, never imply fresh."""
-    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=365)
-    result = set()
-    for _, row in inventory["submissions"][1]:
-        sid = str(row["submission_id"]).strip()
-        if not sid:
-            continue
-        value = str(row["created_at"]).strip()
-        try:
-            try:
-                created = datetime.strptime(value, "%m-%d-%Y %H:%M:%S UTC").replace(tzinfo=timezone.utc)
-            except ValueError:
-                created = datetime.fromisoformat(value.replace("Z", "+00:00"))
-            if created.tzinfo is None:
-                raise ValueError()
-        except ValueError:
-            raise DeletionIncomplete("Invalid submission timestamp; repair before sweep") from None
-        if created <= cutoff:
-            result.add(sid)
-    # Orphan derived rows have no valid source purpose and expire immediately.
+def orphan_submission_ids(inventory):
+    """Select only IDs without source submissions; age/activity never implies deletion."""
     sources = {str(row["submission_id"]).strip() for _, row in inventory["submissions"][1]}
-    result.update(str(row["submission_id"]).strip()
-                  for _, rows in inventory.values() for _, row in rows
-                  if str(row.get("submission_id", "")).strip() not in sources)
-    result.discard("")
-    return result
+    return {str(row["submission_id"]).strip()
+            for _, rows in inventory.values() for _, row in rows
+            if str(row.get("submission_id", "")).strip()
+            and str(row["submission_id"]).strip() not in sources}
 
 
 def _matches(row, ids):
