@@ -47,6 +47,9 @@ def _snapshot_payload() -> list[dict]:
     return [
         {
             "submission_id": "sub_001",
+            "source_state": "present",
+            "coordination_state": "unassessed",
+            "coordination": None,
             "submission_health_state": "pending_processing",
             "raw": {
                 "created_at": "2026-04-19T10:00:00",

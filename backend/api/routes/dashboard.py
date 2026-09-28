@@ -13,6 +13,8 @@ from api.models.dashboard import (
 )
 from api.ops_status_validation import validate_incoming_ops_status
 from ops_schema import VALID_OPS_STATUSES
+from core.coordination_lifecycle import CoordinationIntent, CoordinationRecord
+from storage.sheets_repo import set_coordination_intent
 from services.dashboard_service import get_snapshot_records
 from services.ops_write_service import (
     create_first_ops_workflow_state,
@@ -168,3 +170,12 @@ def update_ops_dashboard_state(payload: OpsDashboardUpdateRequest, request: Requ
             "updated_by": updated_row["updated_by"],
         },
     }
+
+
+@router.post("/submissions/{submission_id}/coordination", response_model=CoordinationRecord)
+def update_coordination(submission_id: str, payload: CoordinationIntent, request: Request):
+    actor = require_internal_actor(request)
+    try:
+        return set_coordination_intent(submission_id.strip(), payload, actor)
+    except ValueError:
+        raise HTTPException(status_code=409, detail="Coordination state requires review.")
