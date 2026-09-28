@@ -4,6 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from core.state_contract import VALID_SUBMISSION_HEALTH_STATES
 from ops_schema import VALID_OPS_STATUSES
+from core.coordination_lifecycle import CoordinationRecord
 
 
 class SnapshotModel(BaseModel):
@@ -31,6 +32,7 @@ class SnapshotRawData(SnapshotModel):
 class SnapshotParsedData(SnapshotModel):
     parser_state: Literal["pending", "complete"]
     parser_result_state: Literal[
+        "source_unavailable",
         "not_yet_run",
         "failed",
         "skipped",
@@ -49,6 +51,7 @@ class SnapshotParsedData(SnapshotModel):
 class SnapshotResolvedData(SnapshotModel):
     resolver_state: Literal["not_run", "resolved", "zero_matches"]
     resolver_result_state: Literal[
+        "source_unavailable",
         "not_yet_run",
         "failed",
         "unavailable_upstream",
@@ -158,7 +161,10 @@ class SnapshotErrorsData(SnapshotModel):
 
 class ReviewerSubmissionSnapshot(SnapshotModel):
     submission_id: str
-    submission_health_state: Literal[VALID_SUBMISSION_HEALTH_STATES]
+    source_state: Literal["present", "unavailable"] = "present"
+    coordination_state: Literal["unassessed", "active", "ended", "malformed"] = "unassessed"
+    coordination: CoordinationRecord | None = None
+    submission_health_state: Literal[(*VALID_SUBMISSION_HEALTH_STATES, "coordination_only")]
     raw: SnapshotRawData
     parsed: SnapshotParsedData
     resolved: SnapshotResolvedData

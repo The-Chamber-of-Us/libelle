@@ -10,7 +10,7 @@ from sheet_schema import OPS_HEADERS
 OpsRow = Dict[str, Any]
 OpsState = Dict[str, Any]
 
-OPS_STATE_FIELDS = tuple(field for field in OPS_HEADERS if field != "submission_id")
+OPS_STATE_FIELDS = tuple(field for field in OPS_HEADERS if field not in {"submission_id", "coordination"})
 
 
 def _updated_at_sort_value(updated_at: Any) -> Tuple[int, Any]:
