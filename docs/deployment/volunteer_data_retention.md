@@ -1,199 +1,176 @@
-# Volunteer data retention and deletion
+# Volunteer retention and deletion operations
 
-This is Libelle's initial product retention policy for issue #380, not a legal
-retention determination. The deployment administrator owns execution and records
-monthly completion. Before production, assign that owner and configure the
-external retention controls below. There are no automatic expiry jobs. This is an offline, single-operator workflow.
+This operator-only, offline procedure implements the lifecycle distinction in
+[#408's domain contract](../architecture/coordination_lifecycle.md). It reuses the
+manifest and deletion machinery merged by #407 (`6df419a`), extending it with
+scoped lifecycle operations.
+There is no background expiry job and no new source or coordination retention
+duration. TCUS must approve source eligibility and the period after a coordination
+purpose ends before applying the corresponding policy. The existing #407
+operational and external-copy controls below remain in force.
 
-Ordinary submissions are not automatically selected for deletion based on age.
-Intake/source data (responses, resumes, parser/Resolver evidence and processing
-artifacts) and contributor relationship data (status, notes, tags and contact
-tracking) have different purposes. The current model cannot reliably represent
-relationship activity or lifecycle: `submissions.created_at` is an intake date,
-`ops.updated_at` is an edit timestamp, and workflow status does not establish
-whether a contributor relationship remains active. None of these selects an
-ordinary submission for deletion.
+## Existing operational policy from #407
 
-Age-based retention is deferred to a focused follow-up that will distinguish
-bounded intake evidence from ongoing contributor relationship context. This PR
-sets no universal retention duration for ordinary submission-linked data; it
-remains until an explicit authorized deletion. It does not implement a contributor
-relationship model or substitute an activity/status heuristic.
+These requirements are preserved from the merged retention policy; they do not
+set an age-based lifetime for intake or coordination:
 
-An authenticated volunteer deletion request triggers the explicit workflow within
-30 days. Verify the requester outside this tool. Identify **all** their submission
-IDs, including duplicate submissions and changed email addresses; email alone is
-not an identity proof. Explicit deletion still removes all linked source and
-relationship data and minimizes audit history.
+- Complete verified volunteer deletion requests within 30 days. Verify the
+  requester outside the tool and identify all applicable submission IDs.
+- Run orphan cleanup at least monthly, with a maximum operational removal delay
+  of 31 days for eligible orphan artifacts. Under #408, retained ops is a root,
+  so source-less coordination is not eligible for this sweep.
+- Restrict runtime/access logs, journal, proxy logs and monitoring exports to
+  operators and enforce a maximum 30-day lifetime on every host and external sink.
+  On deletion, purge affected records or entire log segments when necessary,
+  including archives.
+- Restrict backups and enforce the maximum 30-day backup window where configurable.
+  Confirm provider revision/history controls before production. Restore only into
+  isolation and replay deletion/expiry scopes before enabling readers or writers.
+- Keep unfinished mode-0600 manifests until recovery completes and investigate
+  incomplete operations daily. After external cleanup, retain the manifest and
+  identifying administrator receipt for 30 days to suppress backup resurrection,
+  then delete the manifest and remove identifying request linkage. Retain only
+  aggregate completion dates/counts.
+- Delete controlled downloads, exports, debug PDFs and local copies during the
+  request. Do not place production volunteer data in Git or benchmark fixtures.
+  Only non-identifying event action counts may remain indefinitely for operational
+  volume comparisons; retained ops follows its separately defined purpose.
 
-Run orphan cleanup at least monthly. It selects only records whose source
-submission is absent, with a maximum operational removal delay of 31 days.
+Assign the deployment administrator responsible for these controls and record
+monthly completion. Application-store deletion does not by itself establish
+external cleanup or provider-internal erasure.
 
-| Category / system of record | Purpose | Retention and deletion |
+## Select the purpose of the operation
+
+| Reason | Eligibility | Effect |
 | --- | --- | --- |
-| Contact, consent, interests, links, free text / Sheets `submissions` | Intake and volunteer coordination | No automatic age expiry pending lifecycle follow-up; delete entire matching rows on explicit authorized deletion |
-| Original PDF, original filename / Drive upload folder; references in submissions and jobs | Source evidence and reviewer access | Same lifecycle; permanently delete files before removing references; trash alone is insufficient |
-| Parser evidence and Resolver interpretation / Sheets `parser_results` | Explain extracted skills/location and resolution | Same lifecycle, including every historical parser attempt; delete rows |
-| Queue, leases, retries, authoritative run references / Sheets `parser_jobs` | Durable processing and recovery | Same lifecycle; delete all jobs while workers and reconciliation are stopped |
-| Current status, notes, tags, contact tracking, actor / Sheets `ops` | Ongoing contributor relationship coordination | Retain while the source exists unless explicitly selected for deletion; no age, edit-time or status heuristic. Delete linked rows including notes on explicit deletion; remove orphan rows during cleanup |
-| Reviewer events / Sheets `ops_events` | History while active, aggregate action counts after deletion | Identifying history lives only as long as submission; replace each matching row with only allowlisted `create`/`update` action (otherwise `anonymized`). Remove event/submission IDs, actor, timestamp, source, field and both values. Non-identifying aggregate counts may remain indefinitely for operational volume comparisons |
-| Failure diagnostics / Sheets `errors` | Troubleshooting | Same lifecycle; delete complete matching rows, including summaries/details and run IDs |
-| Snapshot and resume responses / backend and browser memory | Reviewer read models | Computed on request, no persisted backend snapshot; API sends `Cache-Control: no-store`. Restart backend and close/reload reviewer clients during deletion; future snapshots have no deleted submission |
-| Runtime/access logs, journal, proxy logs, monitoring exports | Security and operational investigation | Restricted operator access, maximum 30 days. Configure rotation/expiry on every host and external sink; identifiers and filenames can occur. On deletion purge affected records or entire log segments if selective removal is unavailable, including archived copies |
-| Downloads, exports, debugging PDFs, benchmark outputs using real data, local copies | Temporary operator work only | No production data in Git or benchmark fixtures. Remove controlled copies during deletion; synthetic fixtures are outside volunteer retention. Do not make unmanaged exports |
-| Deletion manifests / restricted operator filesystem | Recovery after partial deletion and suppression during backup restore | Written before deletion, mode 0600. Contains submission/file IDs, store ID, timestamps, counts and confirmed progress; no contact information or source text. Keep unfinished receipts until recovery completes and investigate daily. After external cleanup, retain for 30 days (the backup window), then delete the manifest and remove identifiers from the administrator receipt |
-| Backups, Google revision/provider history | Disaster recovery | Restrict access; maximum 30-day backup window where configurable. Never restore directly into a serving environment: replay explicit deletions and orphan cleanup offline first. Provider-internal history is outside the row/file API guarantee; confirm provider controls before production |
+| `volunteer_deletion` (default) | Explicitly verified volunteer deletion request and IDs | Delete all matching intake, processing and current coordination rows and referenced PDFs; minimize identifying reviewer history. Active purpose does not block this. |
+| `source_expiry` | Operator selects IDs under an approved source policy | Delete intake, PDFs, parser jobs/results and errors; minimize old reviewer history; preserve current ops exactly. Existing ops must have valid explicit coordination intent; unassessed, malformed or duplicate ops require review first. |
+| `coordination_expiry` | Ended purpose on/before the supplied approved cutoff | Delete current ops and minimize identifying history. Leave intake and PDFs on their own lifecycle. Every selected ID must be eligible; no partial eligibility batch. |
 
-Only minimized event counts outlive the source in the application store. Restricted
-recovery manifests temporarily outlive it to prevent lost recovery references and
-backup resurrection. Explicit deletion covers source and linked data together;
-deleting only a PDF is not submission deletion. This command deliberately overrides append-only evidence/history
-conventions for privacy maintenance. It preserves event volume and action type,
-not identifiable historical replay. This is minimization, not a guarantee against
-correlation with independently retained external copies.
+`--orphans` selects only IDs with **neither a submission nor an ops root**. An
+ops-only record is intentional coordination, not an orphan. Unassessed/malformed
+ops-only roots are also protected from automatic orphan selection and require
+review. Neither age, workflow status, notes nor parser activity selects expiry.
+Multiple submissions remain separate; equal email addresses never establish identity.
 
-## Administrator procedure
+The application stores the current human-authored takeaway, STATE, WHY, NEXT
+ACTION, REVISIT, notes, tags and contact context only in ops. Review these before
+source expiry and remove detailed intake evidence that was manually copied there.
+Do not preserve resumes, employment or education histories as coordination notes.
+Old event values are not reviewed current context: the executor replaces matching
+ops_events rows with action counts only (`create`, `update`, or `anonymized`). It
+clears identifiers, actor, timestamps, field names and old/new values. This avoids
+a second archive of superseded content. The command does not automatically copy
+source fields into ops or infer that arbitrary free text is safe.
 
-Use the same Sheets and Drive credentials/configuration as the deployment. Run
-from the repository root with backend dependencies installed. The command is
-operator-only; it is not an HTTP endpoint. The command resolves default credential
-files (`org_credentials.json`, `token.json`) and relative credential environment
-paths from `backend/`, matching the existing backend setup. Absolute environment
-paths are recommended for deployment. Manifest paths resolve from your original
-working directory. Preview requires Sheets access only; apply also loads Drive
-credentials. Never copy credentials into the repository root to run this command.
+## Prepare and preview
 
-Create a private receipt directory **outside the repository**, on durable storage
-available for recovery (for example `/var/lib/libelle/privacy`, owned by the
-operator, mode 0700). Substitute its path in the examples. Do not use `/tmp` for
-production recovery receipts. Run one deletion command at a time. The stopped
-services precondition includes all other administrative deletion commands.
+1. Verify the request or approved expiry policy outside this tool. Collect every
+   relevant submission ID, including ops-only IDs. Look up reviewed coordination
+   name/contact where needed and verify identity; contact matching alone is not
+   authority. Inventory controlled downloads, logs, exports, backups and orphan
+   Drive uploads separately. The command handles referenced PDFs, not arbitrary
+   Drive folder searches.
+2. Put ingress and the dashboard into maintenance mode. Stop **all readers and
+   writers on every host**: API instances, workers, reconciliation, scripts and
+   manual Sheet edits. Drain or terminate in-flight work and close reviewer/PDF
+   windows. Stop other deletion commands as well. The apply flag attests this
+   precondition; it is not a distributed lock. Online deletion is unsupported.
+3. Create a private durable receipt directory outside Git, owned by the operator,
+   mode 0700, for example `/var/lib/libelle/privacy`. Do not use temporary storage
+   for production recovery. Use a distinct manifest for each operation.
+4. Run from the repository root with backend dependencies and the deployment's
+   environment. Relative default credentials resolve from `backend/`; manifests
+   resolve from the caller's directory. Preview performs only Sheets reads and
+   does not load Drive credentials.
 
-1. Verify the request and collect every submission ID. Inspect both submissions
-   and jobs for file references. Inspect the configured Drive upload folder for
-   orphan uploads (including files uploaded before an intake write failed) and
-   copies belonging to the volunteer; permanently remove these separately.
-   The command handles referenced files only, not arbitrary Drive searches.
-2. Put the proxy/dashboard in maintenance mode. Stop **all** backend instances,
-   parser workers, reconciliation jobs, scripts and manual Sheet editing on
-   **every** host. Drain/terminate in-flight work. Close reviewer tabs and PDF
-   windows. The flag below attests this operational precondition; it is not a
-   distributed lock. Online deletion is unsupported.
-3. Preview one or multiple IDs:
-
-   ```sh
-   python scripts/delete_volunteer_data.py --submission-id ID_ONE --submission-id ID_TWO
-   ```
-
-   Or preview orphan cleanup (ordinary submissions are never selected):
-
-   ```sh
-   python scripts/delete_volunteer_data.py --orphans
-   ```
-
-   Inspect counts against the selected records. Unknown tabs,
-   unexpected headers/columns, shared file references and uploaded resumes with
-   missing references block deletion. Repair/reconcile these offline; do not
-   bypass schema validation. Orphan cleanup selects derived/ops/error/job/event
-   rows whose submission no longer exists: these have no remaining source purpose
-   and must be removed during the next sweep. Nonempty rows without an ID block
-   inventory (except already minimized audit rows); reconcile them manually before
-   proceeding. Drive orphan files still require the folder inspection in step 1,
-   including on every monthly sweep, because they may have no Sheets reference.
-4. Apply with the same selection:
-
-   ```sh
-   python scripts/delete_volunteer_data.py --submission-id ID_ONE --apply --writers-and-readers-stopped --manifest /var/lib/libelle/privacy/request-001.json
-   python scripts/delete_volunteer_data.py --orphans --apply --writers-and-readers-stopped --manifest /var/lib/libelle/privacy/sweep-001.json
-   ```
-
-   Use a distinct manifest path for each new selection. Before deleting any file,
-   the command durably writes the selected IDs, file references and counts to a
-   mode-0600 manifest; failure to persist it blocks deletion. File deletion happens
-   in sorted ID order, recording each confirmed deletion before proceeding. Only
-   after every Drive operation succeeds does one Sheets `batchUpdate` delete source/derived/ops/error/job rows
-   and minimize event rows atomically. Duplicate rows are all handled. A fresh
-   read must find no selected submission references before `applied: true`.
-   The manifest then records `stores_deleted`. Output also reports
-   `external_cleanup_required: true`: this is **not** whole-request completion.
-   A preview or empty orphan sweep is not evidence of completed deletion.
-5. Purge controlled logs, downloads, exports, backups and orphan uploads above.
-   The manifest already preserves the exact selection, including for `--orphans`.
-   Record the request reference, administrator, external completion date and cleanup
-   status in your restricted administrator record. Do not edit the recovery
-   manifest to record these. Do not add names, emails or resume content. Keep both
-   the manifest and ID-bearing administrator record for 30 days after external
-   completion to suppress resurrection from backups, then delete the manifest and
-   remove IDs/request linkage from the administrator record. Retain only aggregate
-   completion dates/counts. A restore must use the retained manifests to delete
-   restored submissions and derived artifacts **before** enabling readers/writers.
-   File progress in an old manifest describes the old store: when restoring a
-   backup, use its submission IDs with a **new** manifest, so restored Drive files
-   are not skipped as previously deleted.
-6. Restart the backend behind the maintenance boundary, verify its API no longer
-   returns the submission or its resume, then restart workers and reopen access.
-   Reload clients. Only declare the **whole request**
-   complete after external cleanup, not merely after the script succeeds.
-
-## Policy transition
-
-The former `--expired` option has been removed; it fails argument validation.
-Use `--orphans` for orphan cleanup and `--submission-id` for explicitly authorized
-deletion. Update any existing operational scripts before running them.
-
-Existing manifests still resume their exact recorded selection. They do not record
-whether selection originally came from the former age sweep. Before resuming a
-manifest created under that policy, review its selected IDs and obtain explicit
-authorization for any ordinary submissions. Do not resume an old age-based batch
-solely because a manifest exists. Keep interrupted work offline while reviewing
-partial progress; preserve the receipt for recovery. The recovery protocol itself
-is unchanged.
-
-## Partial failure and recovery
-
-Exit status 1 means incomplete; usage errors return 2. Output includes safe
-repository-owned reasons (schema mismatch, shared reference,
-unkeyed row, manifest mismatch/write failure, Drive failure, or Sheets failure).
-Unexpected credential/transport errors expose only a safe stage label, never API
-payloads or identifiers. **Keep readers and writers stopped.**
-
-There is no cross-service transaction: files can already be permanently deleted
-while Sheets still contains their references. Never restore PDFs to roll back
-privacy deletion. Resume the exact selection from its manifest, including after a
-lost Sheets response or an interrupted orphan sweep:
+Examples (replace IDs, receipt paths and the illustrative cutoff with approved values):
 
 ```sh
-python scripts/delete_volunteer_data.py --resume /var/lib/libelle/privacy/request-001.json
-python scripts/delete_volunteer_data.py --resume /var/lib/libelle/privacy/request-001.json --apply --writers-and-readers-stopped
+# Explicit full deletion; repeat --submission-id for multiple verified IDs.
+python scripts/delete_volunteer_data.py --submission-id ID_ONE
+
+# Source evidence only, preserving reviewed coordination.
+python scripts/delete_volunteer_data.py --submission-id ID_ONE --reason source_expiry
+
+# Independent coordination expiry; this date is an example, not a retention policy.
+python scripts/delete_volunteer_data.py --submission-id ID_ONE --reason coordination_expiry --approved-coordination-cutoff 2026-01-01T00:00:00Z
+
+# Derived artifacts with neither kind of root.
+python scripts/delete_volunteer_data.py --orphans
 ```
 
-Confirmed Drive deletions are skipped on resume. A crash/timeout between the Drive
-operation and the progress write is ambiguous. Inspect that reference in the
-restricted manifest using the owner account. A Drive 404 can mean lost permission;
-restore access if the file exists. If the owner verifies permanent absence, attest
-that exact manifest-listed ID:
+Inspect counts. Unexpected tabs, headers, extra columns, nonempty unkeyed rows,
+shared Drive references and uploaded resumes without references block deletion.
+Repair the inventory offline. For lifecycle review errors, assess the purpose via
+the coordination controls before entering maintenance; do not fabricate approval
+from `ops.updated_at` or reset an ended timestamp to bypass expiry rules.
+
+## Apply and recover
+
+Append these flags to the reviewed preview command:
 
 ```sh
-python scripts/delete_volunteer_data.py --resume /var/lib/libelle/privacy/request-001.json --apply --writers-and-readers-stopped --confirmed-absent-drive-id VERIFIED_FILE_ID
+--apply --writers-and-readers-stopped --manifest /var/lib/libelle/privacy/operation-001.json
 ```
 
-Repeat the option for multiple verified IDs. Unlisted attestations, a different
-spreadsheet, or newly introduced file references are rejected. Never attest lost
-access as deletion. Do not put sensitive command history in shared logs. Do not
-edit/delete an unfinished receipt or change its selection. A corrupted receipt
-requires owner-led reconciliation; it must not be treated as completed. A completed
-resume is harmless; the stored selection remains available after Sheets removal.
+The executor writes a mode-0600 manifest before external deletion. It binds the
+spreadsheet, exact selected IDs, file references, reason and approved cutoff.
+Referenced Drive files are permanently deleted first, recording confirmed progress
+after each deletion. Then one Sheets batch removes only the selected domains and
+minimizes their history. It rereads the inventory and verifies absence in the
+targeted domains; retained coordination is expected after source expiry. Duplicate
+source and processing rows are all removed. Explicit full deletion also removes
+all duplicate ops. Coordination expiry requires no Drive credentials or operations.
 
-For `MANIFEST_WRITE_FAILED`, restore writable private durable storage before retry.
-For `MANIFEST_MISMATCH`, check configuration and stopped-writer isolation before
-continuing. For schema mismatches or unkeyed rows, reconcile the
-underlying data while offline and preview again. For access errors, verify the
-appropriate Sheets service account or Drive OAuth owner credentials. If request
-size exceeds Google limits, keep maintenance enabled and process smaller explicit
-ID groups with distinct manifests; account for every ID in the original receipt.
+A crash or partial failure leaves a restricted receipt for retry. Keep maintenance
+enabled and retain it. Resume inherits the original reason and cutoff, so a source
+expiry retry cannot become full volunteer deletion:
 
-The automated tests use fake APIs. Production acceptance still requires a staging
-exercise with real Drive/Sheets permissions, a forced partial failure/retry,
-verification of maintenance isolation and absent dashboard/resume data, and
-recorded external log/backup expiry settings. API deletion does not claim physical
-erasure from Google infrastructure or revoke copies already downloaded by others.
+```sh
+python scripts/delete_volunteer_data.py --resume /var/lib/libelle/privacy/operation-001.json
+python scripts/delete_volunteer_data.py --resume /var/lib/libelle/privacy/operation-001.json --apply --writers-and-readers-stopped
+```
+
+Changing the reason, cutoff, store or IDs fails. Newly introduced file references
+also fail application against an existing receipt. A lost Sheets response is
+recoverable even when the selected rows are already gone. Confirmed file deletions
+are skipped. A Drive failure or timeout, including 404, is not proof of deletion;
+the owner must distinguish missing files from lost access. Once permanent absence
+is verified, add `--confirmed-absent-drive-id VERIFIED_ID` to the resume command.
+Only receipt-listed IDs may be attested. Never discard an unfinished receipt to
+work around a recovery failure.
+
+Version-1 receipts from the predecessor tool mean **full volunteer deletion**.
+They cannot be reused for scoped expiry. Review their original authorization
+before resuming; an old receipt alone is not authorization for an age sweep.
+Use a new receipt for a new authorized selection/reason. `--expired` remains
+unsupported. No duration is inferred from a receipt or a timestamp.
+
+Exit 0 with `applied: true` and receipt state `stores_deleted` means the selected
+application-store operation was verified, not that all external copies vanished.
+`external_cleanup_required: true` remains until the operator handles controlled
+logs, downloads, backups, orphan uploads and provider history according to the
+approved policy. Exit 1 is incomplete; exit 2 is invalid usage. Diagnostics use
+safe stage descriptions and omit API payloads and volunteer identifiers.
+
+## Completion and restore
+
+Record operator completion without copying volunteer content. Keep recovery
+receipts protected until recovery completes and for 30 days after external
+cleanup, then remove identifying receipts under the #407 policy above. Backups must be
+restored into an isolated environment; replay each operation's **original scope**
+before serving it. Use new manifests for restored stores/files so old confirmed
+Drive deletions are not incorrectly skipped. A restored source-expiry operation
+must preserve coordination; a full deletion must remove both roots.
+
+Restart behind maintenance and check the expected snapshot/resume behavior:
+source expiry leaves coordination-only records and no mediated resume; full
+deletion leaves neither; coordination expiry removes ops but may leave independently
+retained intake. API responses carry `Cache-Control: no-store`; close/reload existing
+clients and purge controlled downloaded copies. Restart workers only after
+verification. Repository tests use fake APIs and do not establish production
+isolation or Google permissions. Before release with real volunteer data, exercise
+all three scopes in staging, force partial failure/retry, verify stopped-writer
+isolation, apply the ops schema migration and record external cleanup controls.

@@ -179,3 +179,10 @@ def test_first_preserve_never_copies_intake_into_coordination(monkeypatch):
     assert "Source name" not in str(sheet.rows)
     assert "source@example.org" not in str(sheet.rows)
     assert "Source skills" not in str(sheet.rows)
+
+
+@pytest.mark.parametrize("stored", ["", "bad JSON"])
+def test_source_expiry_requires_explicit_review_when_coordination_context_exists(stored):
+    with pytest.raises(ValueError):
+        retention_scope("source_expiry", stored, coordination_present=True)
+    assert "coordination_context" in retention_scope("volunteer_deletion", stored, coordination_present=True)

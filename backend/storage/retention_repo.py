@@ -1,5 +1,9 @@
 """Offline retention operations. All application writers MUST be stopped."""
 
+from pathlib import Path
+
+from core.coordination_lifecycle import retention_scope
+from storage.deletion_manifest import load_manifest, ManifestError
 from sheet_schema import SHEET_SCHEMA, OPTIONAL_TABS
 from storage.deletion_manifest import DeletionManifest
 
@@ -42,8 +46,9 @@ def read_inventory(sheet, spreadsheet_id):
 
 
 def orphan_submission_ids(inventory):
-    """Select only IDs without source submissions; age/activity never implies deletion."""
-    sources = {str(row["submission_id"]).strip() for _, row in inventory["submissions"][1]}
+    """Select IDs without either intake or coordination roots, never by age/activity."""
+    sources = {str(row["submission_id"]).strip()
+               for tab in ("submissions", "ops") for _, row in inventory[tab][1]}
     return {str(row["submission_id"]).strip()
             for _, rows in inventory.values() for _, row in rows
             if str(row.get("submission_id", "")).strip()
@@ -55,7 +60,8 @@ def _matches(row, ids):
 
 
 def delete_submissions(sheet, drive, spreadsheet_id, ids, *, apply=False,
-                       confirmed_absent=(), manifest_path=None):
+                       confirmed_absent=(), manifest_path=None,
+                       reason="volunteer_deletion", approved_coordination_cutoff=None):
     """Drive first, then a single atomic Sheets batch; re-read to verify.
 
     confirmed_absent is an operator attestation for permanently absent
@@ -64,9 +70,48 @@ def delete_submissions(sheet, drive, spreadsheet_id, ids, *, apply=False,
     ids = {str(s).strip() for s in ids if str(s).strip()}
     if not ids:
         raise DeletionIncomplete("No submissions selected")
+    cutoff = (approved_coordination_cutoff.isoformat()
+              if approved_coordination_cutoff is not None else None)
+    if reason != "coordination_expiry" and cutoff is not None:
+        raise DeletionIncomplete("Cutoff is only valid for coordination expiry")
+    previous = None
+    if manifest_path and (Path(manifest_path).exists() or Path(manifest_path).is_symlink()):
+        previous = load_manifest(manifest_path)
+        if (previous["spreadsheet_id"] != spreadsheet_id
+                or set(previous["submission_ids"]) != ids
+                or previous["reason"] != reason
+                or previous["coordination_cutoff"] != cutoff):
+            raise ManifestError("MANIFEST_MISMATCH: selection, store or retention policy changed")
     inventory = read_inventory(sheet, spreadsheet_id)
+    domains = None
+    for sid in ids:
+        ops = [row for _, row in inventory["ops"][1] if _matches(row, {sid})]
+        try:
+            if reason != "volunteer_deletion" and len(ops) > 1:
+                raise ValueError("Duplicate coordination roots")
+            stored = ops[0].get("coordination", "") if ops else ""
+            selected = retention_scope(reason, stored,
+                approved_coordination_cutoff=approved_coordination_cutoff,
+                coordination_present=bool(ops))
+            if reason == "coordination_expiry" and not selected:
+                # A lost Sheets response can leave no ops after the batch applied.
+                # Only the same durable receipt authorizes finishing that retry.
+                if not ops and previous is not None:
+                    selected = ("coordination_context", "reviewer_history")
+                else:
+                    raise ValueError("Coordination is not eligible")
+        except ValueError:
+            raise DeletionIncomplete("LIFECYCLE_REVIEW_REQUIRED: verify purpose and approved cutoff") from None
+        domains = selected
+    target_tabs = set()
+    if "intake_evidence" in domains:
+        target_tabs.update(("submissions", "parser_jobs", "parser_results", "errors"))
+    if "coordination_context" in domains:
+        target_tabs.add("ops")
+    if "reviewer_history" in domains:
+        target_tabs.add("ops_events")
     files = set()
-    for tab in ("submissions", "parser_jobs"):
+    for tab in ({"submissions", "parser_jobs"} & target_tabs):
         for _, row in inventory[tab][1]:
             if _matches(row, ids):
                 file_id = str(row.get("drive_file_id", "")).strip()
@@ -81,7 +126,8 @@ def delete_submissions(sheet, drive, spreadsheet_id, ids, *, apply=False,
     requests = []
     counts = {}
     for tab, (sheet_id, rows) in inventory.items():
-        matched = [(index, row) for index, row in rows if _matches(row, ids)]
+        matched = [(index, row) for index, row in rows
+                   if tab in target_tabs and _matches(row, ids)]
         counts[tab] = len(matched)
         for index, row in reversed(matched):
             if tab == "ops_events":
@@ -108,7 +154,8 @@ def delete_submissions(sheet, drive, spreadsheet_id, ids, *, apply=False,
     if not manifest_path:
         raise DeletionIncomplete("MANIFEST_REQUIRED: supply a private recovery manifest path")
     manifest = DeletionManifest(manifest_path, spreadsheet_id=spreadsheet_id,
-        submission_ids=ids, drive_file_ids=files, counts=counts)
+        submission_ids=ids, drive_file_ids=files, counts=counts,
+        reason=reason, coordination_cutoff=cutoff)
     if set(confirmed_absent) - set(manifest.data["drive_file_ids"]):
         raise DeletionIncomplete("Absent-file attestation is outside selected references")
     # Persist selection and progress before external deletion; resume uses these
@@ -133,7 +180,8 @@ def delete_submissions(sheet, drive, spreadsheet_id, ids, *, apply=False,
             sheet.batchUpdate(spreadsheetId=spreadsheet_id,
                               body={"requests": requests}).execute()
         remaining = read_inventory(sheet, spreadsheet_id)
-        if any(_matches(row, ids) for _, rows in remaining.values() for _, row in rows):
+        if any(_matches(row, ids) for tab, (_, rows) in remaining.items()
+               if tab in target_tabs for _, row in rows):
             raise DeletionIncomplete("Verification found remaining records")
     except DeletionIncomplete:
         raise

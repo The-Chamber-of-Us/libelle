@@ -24,7 +24,7 @@ def load_manifest(path):
             if not stat.S_ISREG(metadata.st_mode) or stat.S_IMODE(metadata.st_mode) != 0o600:
                 raise ValueError()
             data = json.load(stream)
-        if (data["version"] != 1 or not isinstance(data["submission_ids"], list)
+        if (data["version"] not in {1, 2} or not isinstance(data["submission_ids"], list)
                 or not data["submission_ids"]
                 or not all(isinstance(s, str) and s.strip() for s in data["submission_ids"])
                 or not isinstance(data["drive_file_ids"], list)
@@ -34,24 +34,40 @@ def load_manifest(path):
                 or not isinstance(data["spreadsheet_id"], str)
                 or data["state"] not in {"prepared", "deleting", "stores_deleted"}):
             raise ValueError()
+        if data["version"] == 1:
+            data["reason"] = "volunteer_deletion"
+            data["coordination_cutoff"] = None
+        elif data.get("reason") not in {"volunteer_deletion", "source_expiry", "coordination_expiry"}:
+            raise ValueError()
+        cutoff = data.get("coordination_cutoff")
+        if data["reason"] == "coordination_expiry":
+            if (not isinstance(cutoff, str) or datetime.fromisoformat(cutoff).tzinfo is None
+                    or data["drive_file_ids"]):
+                raise ValueError()
+        elif cutoff is not None:
+            raise ValueError()
         return data
     except Exception:
         raise ManifestError("MANIFEST_READ_FAILED: use an intact mode-0600 recovery manifest") from None
 
 
 class DeletionManifest:
-    def __init__(self, path, *, spreadsheet_id, submission_ids, drive_file_ids, counts):
+    def __init__(self, path, *, spreadsheet_id, submission_ids, drive_file_ids, counts,
+                 reason="volunteer_deletion", coordination_cutoff=None):
         self.path = Path(path)
         try:
             if self.path.exists() or self.path.is_symlink():
                 self.data = load_manifest(self.path)
-                if (self.data["spreadsheet_id"] != spreadsheet_id
+                if (self.data["reason"] != reason
+                        or self.data["coordination_cutoff"] != coordination_cutoff
+                        or self.data["spreadsheet_id"] != spreadsheet_id
                         or set(self.data["submission_ids"]) != set(submission_ids)
                         or not set(drive_file_ids) <= set(self.data["drive_file_ids"])):
                     raise ManifestError("MANIFEST_MISMATCH: selection, store or file references changed")
             else:
                 self.data = {
-                    "version": 1, "created_at": timestamp(), "updated_at": timestamp(),
+                    "version": 2, "reason": reason, "coordination_cutoff": coordination_cutoff,
+                    "created_at": timestamp(), "updated_at": timestamp(),
                     "spreadsheet_id": spreadsheet_id,
                     "submission_ids": sorted(submission_ids),
                     "drive_file_ids": sorted(drive_file_ids), "deleted_drive_ids": [],

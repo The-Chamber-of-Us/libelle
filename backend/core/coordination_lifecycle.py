@@ -80,6 +80,7 @@ def retention_scope(
     coordination_json: str = "",
     *,
     approved_coordination_cutoff: datetime | None = None,
+    coordination_present: bool = False,
 ) -> tuple[str, ...]:
     """Return deletion targets, not an executor or a duration policy.
 
@@ -91,7 +92,10 @@ def retention_scope(
     if reason == "volunteer_deletion":
         return source + coordination
     if reason == "source_expiry":
-        # Never interpret absent/malformed approval as permission to cascade ops.
+        # Existing human context must have an explicit reviewed purpose before
+        # source removal. No ops row needs no coordination approval.
+        if coordination_present and read_coordination(coordination_json) is None:
+            raise ValueError("Coordination context requires explicit review")
         return source
     if reason != "coordination_expiry":
         raise ValueError("Unknown retention reason")
