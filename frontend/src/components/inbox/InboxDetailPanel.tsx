@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertCircle, ExternalLink, FileText, Loader2 } from 'lucide-react'
-import type { OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
+import type { CoordinationRecord, OpsStatus, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import { DetailField, StateCallout } from './DetailPrimitives'
 import ParsedOutputSection from './ParsedOutputSection'
 import RawSubmissionSection from './RawSubmissionSection'
 import ResolvedOutputSection from './ResolvedOutputSection'
+import CoordinationSection from './CoordinationSection'
 import WorkflowSection, { type StatusSaveState } from './WorkflowSection'
 import { formatSubmittedDate } from './detailUtils'
 
@@ -15,7 +16,8 @@ export default function InboxDetailPanel({
   statusSaveState,
   notesSaveState,
   onStatusChange,
-  onNotesSave
+  onNotesSave,
+  onCoordinationSaved
 }: {
   submission: ReviewerSubmissionSnapshot | null
   statusOptions: OpsStatus[]
@@ -24,6 +26,7 @@ export default function InboxDetailPanel({
   notesSaveState: StatusSaveState
   onStatusChange: (status: OpsStatus) => void
   onNotesSave: (notes: string) => void
+  onCoordinationSaved?: (id: string, record: CoordinationRecord) => void
 }) {
   if (submission === null) {
     return (
@@ -33,7 +36,7 @@ export default function InboxDetailPanel({
     )
   }
 
-  const displayName = submission.raw.full_name.trim() || 'Unnamed submission'
+  const displayName = submission.raw.full_name.trim() || submission.coordination?.display_name || 'Coordination record'
 
   return (
     <aside className="rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -63,10 +66,15 @@ export default function InboxDetailPanel({
         onStatusChange={onStatusChange}
         onNotesSave={onNotesSave}
       />
+      <CoordinationSection key={submission.submission_id} submission={submission} onSaved={onCoordinationSaved} />
+      {submission.source_state === 'unavailable' ? (
+        <p className="px-5 py-5 text-sm">Source evidence is unavailable. Coordination context remains.</p>
+      ) : <>
       <ResumeAccessSection submission={submission} />
       <RawSubmissionSection submission={submission} />
       <ParsedOutputSection submission={submission} />
       <ResolvedOutputSection submission={submission} />
+      </>}
     </aside>
   )
 }

@@ -124,8 +124,10 @@ see the [snapshot API](../api-spec.md#get-snapshot) for exact result-state seman
 ## Result authority and snapshot composition
 
 The worker finalizes `authoritative_parser_run_id` after parser output persistence
-and ownership checks. Snapshot composition starts from submissions so missing
-or failed derived data does not remove an intake record.
+and ownership checks. Snapshot composition starts from submissions and retained ops IDs so missing
+or failed derived data does not remove an intake record, and removing intake
+does not hide retained coordination. Ops-only records suppress all source and
+processing layers; see [coordination lifecycle](coordination_lifecycle.md).
 
 If an authority ID exists, selection uses that attempt’s result and does not
 substitute another result when the ID cannot be resolved. A `succeeded` job
@@ -184,6 +186,8 @@ Pathfinder domain architecture.
 
 ## Deeper contracts and implementation
 
+- [Retention operations](../deployment/volunteer_data_retention.md): offline scoped deletion and durable recovery.
+- [Coordination lifecycle](coordination_lifecycle.md): explicit purpose, independent source retention, and deletion integration.
 - [Engineering principles](engineering_principles.md): contributor standards.
 - [State contract](state_contract.md): pure state domains and health derivation.
 - [Field ownership](field_ownership_contract.md): writers and persistence boundaries.

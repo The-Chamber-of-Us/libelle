@@ -116,6 +116,7 @@ REVIEWER_OWNED_FIELDS = (
     "notes",
     "tags",
     "contact_tracking",
+    "coordination",
 )
 # ops tab: backend-derived attribution for the latest reviewer write.
 OPS_ATTRIBUTION_FIELDS = (

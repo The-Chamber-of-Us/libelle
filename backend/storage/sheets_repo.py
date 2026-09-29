@@ -6,6 +6,12 @@ from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
 from config import GOOGLE_SHEET_ID
+from core.coordination_lifecycle import (
+    CoordinationIntent,
+    CoordinationRecord,
+    apply_intent,
+    read_coordination,
+)
 from error_schema import ErrorEventV1, build_error_event
 from sheet_schema import SHEET_SCHEMA, build_row, get_headers
 from storage._auth import load_service_account_creds, SHEETS_SCOPES
@@ -680,3 +686,51 @@ def update_resume_in_sheet(submission_id: str, parsed: Dict[str, Any]) -> None:
         f"[SHEETS] Parser results appended → submission_id={submission_id}, "
         f"parser_run_id={parser_run_id}"
     )
+
+
+def set_coordination_intent(
+    submission_id: str, intent: CoordinationIntent, actor: str
+) -> CoordinationRecord:
+    """Write explicit lifecycle intent under the existing ops writer lock.
+
+    Requires a unique ops row or an existing intake root; ordinary edits preserve this cell.
+    Lifecycle authority is current ops, never best-effort event history.
+    """
+    submission_id = submission_id.strip()
+    if not submission_id:
+        raise ValueError("submission_id is required")
+    with _ops_write_lock:
+        matches = [(number, row) for number, row in _load_ops_rows_with_sheet_row_numbers()
+                   if row.get("submission_id") == submission_id]
+        if len(matches) > 1:
+            raise ValueError("A unique ops row is required")
+        if matches:
+            number, row = matches[0]
+        else:
+            if intent.action != "preserve" or submission_id not in load_submission_records():
+                raise ValueError("No coordination root found")
+            number = None
+            row = {field: "" for field in get_headers(OPS_SHEET_NAME)}
+            row.update(submission_id=submission_id, status="new")
+        current = read_coordination(row.get("coordination", ""))
+        record = apply_intent(current, intent, actor, datetime.now(timezone.utc))
+        row = dict(row, coordination=record.model_dump_json(),
+                   updated_at=_local_timestamp(), updated_by=actor)
+        end_column = chr(ord("A") + len(get_headers(OPS_SHEET_NAME)) - 1)
+        if number is None:
+            _get_sheet().values().append(
+                spreadsheetId=GOOGLE_SHEET_ID, range=f"{OPS_SHEET_NAME}!A2",
+                valueInputOption="RAW", insertDataOption="INSERT_ROWS",
+                body={"values": [build_row("ops", row)]},
+            ).execute()
+        else:
+            _get_sheet().values().update(
+                spreadsheetId=GOOGLE_SHEET_ID,
+                range=f"{OPS_SHEET_NAME}!A{number}:{end_column}{number}",
+                valueInputOption="RAW", body={"values": [build_row("ops", row)]},
+            ).execute()
+        # Do not create a second archive of retained free text in event history.
+        append_ops_event_rows(submission_id=submission_id, actor_email=actor,
+                              action="coordination_intent",
+                              changes=[("coordination_state", current.state if current else "", record.state)])
+        return record

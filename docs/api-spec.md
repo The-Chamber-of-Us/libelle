@@ -172,7 +172,7 @@ Each snapshot record always includes these top-level domains:
 | `ops` | Yes | No | Reviewer workflow state. Defaults to `status: "new"` when no ops row exists; an invalid stored status is also normalized to `new` in the response, without updating storage. |
 | `errors` | Yes | No | Latest error summary. Always present; raw error details are not exposed. |
 
-Missing top-level domains are invalid. Current nested domains other than `parser_job` are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
+Missing top-level domains are invalid. Current nested domains other than `parser_job` and `coordination` are objects, never `null`; empty values inside a domain do not mean the domain is absent. Missing nested fields are invalid unless the response model documents a default.
 
 Storage-only resume references such as `drive_file_id` are not included in `/snapshot`. Reviewers access uploaded resumes through `GET /resumes/{submission_id}`.
 
@@ -299,3 +299,21 @@ If the backend health check fails, surface a clear UI state to the user preventi
 
 ## Maintainer
 [The Chamber of Us](https://www.thechamberofus.org/)
+
+
+## Coordination lifecycle (#408)
+
+`POST /submissions/{submission_id}/coordination` records an explicit purpose
+through the trusted internal actor boundary. Request fields and lifecycle rules
+are defined in [coordination lifecycle](architecture/coordination_lifecycle.md).
+A valid write returns the current structured coordination record; invalid input
+returns 422 and missing/duplicate/malformed lifecycle roots return 409. Timestamps
+and attribution are server-owned. This full-content update does not alter STATE.
+
+`GET /snapshot` additionally exposes `source_state` (`present` or `unavailable`),
+`coordination_state` (`unassessed`, `active`, `ended`, `malformed`), and validated
+`coordination` (or null). Ops IDs survive as snapshot roots without submissions.
+Such records have `submission_health_state=coordination_only`, blank raw fields,
+`source_unavailable` parser/Resolver result states, no parser job and unavailable
+error evidence. Missing source does not prove erasure or mean no resume was ever
+provided. Existing workflow writeback remains available for retained ops IDs.

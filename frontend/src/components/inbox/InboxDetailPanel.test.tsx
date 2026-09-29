@@ -1,7 +1,7 @@
 import React, { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
-import type { ReviewerSubmissionSnapshot } from '../../types/dashboard'
+import type { CoordinationRecord, ReviewerSubmissionSnapshot } from '../../types/dashboard'
 import InboxDetailPanel from './InboxDetailPanel'
 
 type Deferred<T> = {
@@ -90,7 +90,7 @@ function createSubmission(
   }
 }
 
-function renderPanel(submission: ReviewerSubmissionSnapshot) {
+function renderPanel(submission: ReviewerSubmissionSnapshot, onCoordinationSaved?: (id: string, record: CoordinationRecord) => void) {
   const container = document.createElement('div')
   document.body.append(container)
   const root = createRoot(container)
@@ -106,6 +106,7 @@ function renderPanel(submission: ReviewerSubmissionSnapshot) {
           notesSaveState={{ status: 'idle' }}
           onStatusChange={() => undefined}
           onNotesSave={() => undefined}
+          onCoordinationSaved={onCoordinationSaved}
         />
       )
     })
@@ -359,4 +360,69 @@ describe('InboxDetailPanel resume access', () => {
     expect(panel.container.textContent).toContain('Second Candidate')
     expect(panel.container.textContent).toContain('No resume was provided.')
   })
+
+  it('keeps coordination visible and hides source controls when intake is absent', () => {
+    rendered = renderPanel(createSubmission({
+      source_state: 'unavailable', submission_health_state: 'coordination_only',
+      coordination_state: 'active', raw: { full_name: '' },
+      coordination: {
+        state: 'active', purpose: 'Ongoing project', takeaway: 'Follow up next week',
+        why: 'Continue the project', next_action: 'Arrange a call', revisit: '2026-10-01',
+        display_name: 'Retained contact', contact: 'coordination@example.org',
+        purpose_started_at: '2026-09-28T00:00:00Z', purpose_ended_at: null,
+        decided_by: 'reviewer@example.org'
+      }
+    }))
+    expect(rendered.container.textContent).toContain('Retained contact')
+    expect(rendered.container.textContent).toContain('Source evidence is unavailable')
+    expect(getButton(rendered.container, 'Open Resume')).toBeNull()
+    expect(getButton(rendered.container, 'Save Notes')).not.toBeNull()
+    expect(getButton(rendered.container, 'Preserve purpose')?.disabled).toBe(true)
+  })
+
+  it('requires review before an explicit lifecycle write and sends no client timestamps', async () => {
+    const coordination = {
+      state: 'active' as const, purpose: 'Ongoing project', takeaway: '', why: '',
+      next_action: '', revisit: null, display_name: '', contact: '',
+      purpose_started_at: '2026-09-28T00:00:00Z', purpose_ended_at: null,
+      decided_by: 'reviewer@example.org'
+    }
+    const onSaved = vi.fn()
+    rendered = renderPanel(createSubmission({ coordination_state: 'active', coordination }), onSaved)
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(coordination), { status: 200 }))
+    expect(getButton(rendered.container, 'Preserve purpose')?.disabled).toBe(true)
+    click(rendered.container.querySelector('input[type="checkbox"]')!)
+    click(getButton(rendered.container, 'Preserve purpose')!)
+    await flushAsyncWork()
+    expect(fetch).toHaveBeenCalledWith('/submissions/sub_001/coordination', expect.objectContaining({ method: 'POST' }))
+    const payload = JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string)
+    expect(onSaved).toHaveBeenCalledWith('sub_001', coordination)
+    expect(payload.action).toBe('preserve')
+    expect(payload.context_reviewed).toBe(true)
+    expect(payload.purpose_started_at).toBeUndefined()
+    expect(payload.decided_by).toBeUndefined()
+    expect(rendered.container.textContent).toContain('Coordination purpose preserved.')
+    expect(getButton(rendered.container, 'Preserve purpose')?.disabled).toBe(true)
+  })
+
+  it('refreshes coordination content and purpose state for the same selected submission', () => {
+    const coordination: CoordinationRecord = {
+      state: 'active', purpose: 'Project', takeaway: 'Old takeaway', why: '', next_action: '',
+      revisit: null, display_name: '', contact: '', purpose_started_at: '2026-09-28T00:00:00Z',
+      purpose_ended_at: null, decided_by: 'reviewer@example.org'
+    }
+    const initial = createSubmission({ coordination_state: 'active', coordination })
+    const panel = renderPanel(initial)
+    rendered = panel
+    click(rendered.container.querySelector('input[type="checkbox"]')!)
+    panel.render({ ...initial, coordination_state: 'ended', coordination: {
+      ...coordination, state: 'ended', takeaway: 'New takeaway',
+      purpose_ended_at: '2026-09-29T00:00:00Z'
+    } })
+    expect(Array.from(rendered.container.querySelectorAll('textarea')).map(e => e.value)).toContain('New takeaway')
+    expect(rendered.container.textContent).toContain('Purpose: ended')
+    expect(getButton(rendered.container, 'Start new purpose')?.disabled).toBe(true)
+    expect(rendered.container.textContent).toContain('2026-09-29T00:00:00Z')
+  })
+
 })

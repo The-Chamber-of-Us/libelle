@@ -103,6 +103,7 @@ a read-model fallback; it does not repair the stored row.
 | `tags` | Reviewer | |
 | `contact_tracking` | Reviewer | |
 | `updated_at` | Backend attribution | Set by the write path, not the reviewer. |
+| `coordination` | Reviewer intent and backend lifecycle attribution | Structured purpose and human-authored continuity; see [coordination lifecycle](coordination_lifecycle.md). |
 | `updated_by` | Backend attribution | Actor identity derived by the backend (`internal_actor`). |
 
 ### `errors` tab — owner: audit/error logging

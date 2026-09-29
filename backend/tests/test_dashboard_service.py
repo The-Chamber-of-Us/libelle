@@ -142,6 +142,7 @@ def test_assemble_snapshot_records_returns_one_layered_record_per_submission_id(
 
     first = records[0]
     assert set(first) == {
+        "source_state", "coordination_state", "coordination",
         "submission_id",
         "submission_health_state",
         "raw",

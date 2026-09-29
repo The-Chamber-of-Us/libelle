@@ -14,10 +14,12 @@ const submissionHealthLabels: Record<SubmissionHealthState, string> = {
   parser_failed: 'Parser failed',
   resolver_failed: 'Resolver failed',
   pending_processing: 'Pending',
+  coordination_only: 'Coordination only',
   broken_pipeline: 'Pipeline issue'
 }
 
 const parserResultLabels: Record<ParserResultState, string> = {
+  source_unavailable: 'Source evidence unavailable',
   not_yet_run: 'Parser not run',
   failed: 'Parser failed',
   skipped: 'Parser skipped',
@@ -26,6 +28,7 @@ const parserResultLabels: Record<ParserResultState, string> = {
 }
 
 const resolverResultLabels: Record<ResolverResultState, string> = {
+  source_unavailable: 'Source evidence unavailable',
   not_yet_run: 'Resolver not run',
   failed: 'Resolver failed',
   unavailable_upstream: 'Resolver blocked',
