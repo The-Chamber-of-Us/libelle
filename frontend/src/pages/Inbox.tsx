@@ -471,6 +471,12 @@ export default function Inbox() {
             notesSaveState={selectedNotesSaveState}
             onStatusChange={handleStatusChange}
             onNotesSave={handleNotesSave}
+            onCoordinationSaved={(id, coordination) => setState(current => current.status !== 'ready' ? current : {
+              ...current,
+              submissions: current.submissions.map(row => row.submission_id === id
+                ? { ...row, coordination, coordination_state: coordination.state }
+                : row)
+            })}
           />
         </div>
       </div>
@@ -661,6 +667,10 @@ function getInboxSearchText(submission: ReviewerSubmissionSnapshot) {
       submission.submission_id,
       submission.raw?.full_name,
       submission.raw?.email,
+      submission.coordination?.display_name,
+      submission.coordination?.contact,
+      submission.coordination?.takeaway,
+      submission.coordination?.next_action,
       submission.raw?.location_raw,
       submission.raw?.timezone,
       submission.raw?.skills_raw,

@@ -16,6 +16,13 @@ from validator import validate_sheet_schema
 app = FastAPI(title="Libelle Backend API")
 
 
+@app.middleware("http")
+async def prevent_volunteer_response_caching(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 if ALLOWED_ORIGINS:
     app.add_middleware(
         CORSMiddleware,

@@ -38,6 +38,7 @@ const SUBMISSION_HEALTH_OPTIONS: SubmissionHealthState[] = [
   'parser_failed',
   'resolver_failed',
   'pending_processing',
+  'coordination_only',
   'broken_pipeline'
 ]
 
@@ -300,7 +301,7 @@ export default function Ops() {
 
 function OpsRow({ submission }: { submission: ReviewerSubmissionSnapshot }) {
   const ops = submission.ops
-  const displayName = submission.raw.full_name.trim() || 'Unnamed submission'
+  const displayName = submission.raw.full_name.trim() || submission.coordination?.display_name || 'Coordination record'
   const tags = parseSnapshotList(ops.tags)
   const hasOpsState = hasTouchedOpsState(ops)
 
@@ -533,6 +534,8 @@ function getOpsSearchText(submission: ReviewerSubmissionSnapshot) {
       submission.submission_id,
       submission.raw.full_name,
       submission.raw.email,
+      submission.coordination?.display_name,
+      submission.coordination?.contact,
       submission.submission_health_state,
       submission.ops.status,
       submission.ops.notes,
