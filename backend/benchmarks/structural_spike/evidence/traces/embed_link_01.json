@@ -1,0 +1,288 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/embed_link_01.pdf",
+  "pdf_sha256": "4ba91682d14425af7a22462d4eabe5d500cec455b0676bc7743fb2ded4c64cce",
+  "golden": "backend/benchmarks/golden_json/embed_link_01.json",
+  "golden_sha256": "56c7c02e91c61c7e60cce6d530a86f427473a430674587d7e05d2f65b3101cb5",
+  "layout": "SINGLE_COLUMN",
+  "section_lines": [
+    {
+      "index": 6,
+      "text": "OBJECTIVE  "
+    },
+    {
+      "index": 7,
+      "text": ""
+    },
+    {
+      "index": 8,
+      "text": "Detail-oriented Data Analyst with experience in data cleaning, analysis, and visualization. "
+    },
+    {
+      "index": 9,
+      "text": "Skilled in working with structured datasets, collaborating with cross-functional teams, and "
+    },
+    {
+      "index": 10,
+      "text": "translating data insights into actionable recommendations. "
+    },
+    {
+      "index": 11,
+      "text": ""
+    },
+    {
+      "index": 12,
+      "text": "EXPERIENCE  "
+    },
+    {
+      "index": 13,
+      "text": ""
+    },
+    {
+      "index": 14,
+      "text": "Data Analyst "
+    },
+    {
+      "index": 15,
+      "text": "BrightWave Analytics, Denver, CO "
+    },
+    {
+      "index": 16,
+      "text": "Jun 2022 - Present "
+    },
+    {
+      "index": 17,
+      "text": ""
+    },
+    {
+      "index": 18,
+      "text": "Analyzed large datasets to identify trends and patterns supporting business decisions. "
+    },
+    {
+      "index": 19,
+      "text": "Developed dashboards and reports for internal stakeholders. Collaborated with engineering "
+    },
+    {
+      "index": 20,
+      "text": "and product teams to define data requirements. Automated routine data processing tasks using "
+    },
+    {
+      "index": 21,
+      "text": "Python. "
+    },
+    {
+      "index": 22,
+      "text": ""
+    },
+    {
+      "index": 23,
+      "text": "Data Analyst Intern "
+    },
+    {
+      "index": 24,
+      "text": "Insight Core Solutions, Seattle, WA "
+    },
+    {
+      "index": 25,
+      "text": "May 2021 – May 2022 "
+    },
+    {
+      "index": 26,
+      "text": ""
+    },
+    {
+      "index": 27,
+      "text": "Assisted with data cleaning and validation processes. Wrote SQL queries to extract data for "
+    },
+    {
+      "index": 28,
+      "text": "analysis. Supported senior analysts in preparing reports and presentations. "
+    },
+    {
+      "index": 29,
+      "text": ""
+    },
+    {
+      "index": 30,
+      "text": "EDUCATION  "
+    },
+    {
+      "index": 31,
+      "text": ""
+    },
+    {
+      "index": 32,
+      "text": "B.S. in Data Science  "
+    },
+    {
+      "index": 33,
+      "text": "Central Studies University, Seattle, WA "
+    },
+    {
+      "index": 34,
+      "text": "2018 - 2022 "
+    },
+    {
+      "index": 35,
+      "text": ""
+    },
+    {
+      "index": 36,
+      "text": "SKILLS "
+    },
+    {
+      "index": 37,
+      "text": ""
+    },
+    {
+      "index": 38,
+      "text": "Data Analytics and interpretation "
+    },
+    {
+      "index": 39,
+      "text": ""
+    },
+    {
+      "index": 40,
+      "text": "Python "
+    },
+    {
+      "index": 41,
+      "text": ""
+    },
+    {
+      "index": 42,
+      "text": "SQL Querying "
+    },
+    {
+      "index": 43,
+      "text": ""
+    },
+    {
+      "index": 44,
+      "text": "Data visualization (Matplotlib, Tableau, PowerBI) "
+    },
+    {
+      "index": 45,
+      "text": ""
+    },
+    {
+      "index": 46,
+      "text": "Statistical Analysis "
+    },
+    {
+      "index": 47,
+      "text": ""
+    },
+    {
+      "index": 48,
+      "text": "Data cleaning and preprocessing "
+    },
+    {
+      "index": 49,
+      "text": ""
+    },
+    {
+      "index": 50,
+      "text": "Technical Documentation "
+    },
+    {
+      "index": 51,
+      "text": ""
+    },
+    {
+      "index": 52,
+      "text": "PROJECT  "
+    },
+    {
+      "index": 53,
+      "text": ""
+    },
+    {
+      "index": 54,
+      "text": "Customer Behavior Analysis "
+    },
+    {
+      "index": 55,
+      "text": ""
+    },
+    {
+      "index": 56,
+      "text": "Analyzed transactional data to identify customer segmentation patterns. Presented findings "
+    },
+    {
+      "index": 57,
+      "text": "through visual dashboards and summary reports. "
+    },
+    {
+      "index": 58,
+      "text": ""
+    },
+    {
+      "index": 59,
+      "text": "CERTIFICATIONS  "
+    },
+    {
+      "index": 60,
+      "text": ""
+    },
+    {
+      "index": 61,
+      "text": "Google Data Analytics Certificate "
+    },
+    {
+      "index": 62,
+      "text": ""
+    },
+    {
+      "index": 63,
+      "text": " "
+    }
+  ],
+  "golden_headings": [],
+  "projected_skill_text": "SKILLS\nData Analytics and interpretation\nPython\nSQL Querying\nData visualization (Matplotlib, Tableau, PowerBI)\nStatistical Analysis\nData cleaning and preprocessing\nTechnical Documentation",
+  "parsed": {
+    "skills": {
+      "value": [
+        "data analytics and interpretation",
+        "python",
+        "sql querying",
+        "data visualization",
+        "statistical analysis",
+        "data cleaning and preprocessing",
+        "technical documentation"
+      ],
+      "confidence": 1.0
+    },
+    "locations": {
+      "value": [
+        "Denver, CO"
+      ],
+      "confidence": 1.0
+    },
+    "education": {
+      "value": [
+        "B.S. in Data Science",
+        "Central Studies University, Seattle, WA",
+        "2018 - 2022"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [
+        "Data Analyst BrightWave Analytics, Denver, CO Jun 2022 - Present",
+        "Analyzed large datasets to identify trends and patterns supporting business decisions. Developed dashboards and reports for internal stakeholders. Collaborated with engineering and product teams to define data requirements. Automated routine data processing tasks using Python.",
+        "Data Analyst Intern Insight Core Solutions, Seattle, WA May 2021 – May 2022",
+        "Assisted with data cleaning and validation processes. Wrote SQL queries to extract data for analysis. Supported senior analysts in preparing reports and presentations."
+      ],
+      "confidence": 1.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 30,
+  "work_stop_line": "EDUCATION  ",
+  "projects_from_document_start": []
+}

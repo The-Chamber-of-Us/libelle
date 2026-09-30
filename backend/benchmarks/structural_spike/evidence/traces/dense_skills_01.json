@@ -1,0 +1,645 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/dense_skills_01.pdf",
+  "pdf_sha256": "94ceabb99f8e2f8b6ce05937fbfa0fc01ac195ccb21b098da01095080d797cd5",
+  "golden": "backend/benchmarks/golden_json/dense_skills_01.json",
+  "golden_sha256": "86792389bf03db500c36438278e8a057d464e2fb55a4acb14e77dbc6beb0347c",
+  "layout": "SINGLE_COLUMN",
+  "section_lines": [
+    {
+      "index": 6,
+      "text": "Contact "
+    },
+    {
+      "index": 7,
+      "text": ""
+    },
+    {
+      "index": 8,
+      "text": "Summary "
+    },
+    {
+      "index": 9,
+      "text": ""
+    },
+    {
+      "index": 10,
+      "text": "UI/UX designer with 7+ years crafting intuitive, accessible digital "
+    },
+    {
+      "index": 11,
+      "text": "experiences across mobile, web, and enterprise platforms. "
+    },
+    {
+      "index": 12,
+      "text": "Equally comfortable leading early-stage discovery research "
+    },
+    {
+      "index": 13,
+      "text": "and delivering pixel-perfect UI ready for handoff.  "
+    },
+    {
+      "index": 14,
+      "text": ""
+    },
+    {
+      "index": 15,
+      "text": "123 South St. "
+    },
+    {
+      "index": 16,
+      "text": ""
+    },
+    {
+      "index": 17,
+      "text": "San Francisco, CA "
+    },
+    {
+      "index": 18,
+      "text": ""
+    },
+    {
+      "index": 19,
+      "text": "000.000.0000 "
+    },
+    {
+      "index": 20,
+      "text": ""
+    },
+    {
+      "index": 21,
+      "text": "anasser@example.com "
+    },
+    {
+      "index": 22,
+      "text": ""
+    },
+    {
+      "index": 23,
+      "text": "Education "
+    },
+    {
+      "index": 24,
+      "text": ""
+    },
+    {
+      "index": 25,
+      "text": "Experience "
+    },
+    {
+      "index": 26,
+      "text": ""
+    },
+    {
+      "index": 27,
+      "text": "California College of the Arts "
+    },
+    {
+      "index": 28,
+      "text": ""
+    },
+    {
+      "index": 29,
+      "text": "MAR 2021 - PRESENT "
+    },
+    {
+      "index": 30,
+      "text": "Lead UX Designer | Fieldstone Digital, San Francisco, CA "
+    },
+    {
+      "index": 31,
+      "text": "Leads UX strategy and execution for a B2B SaaS platform "
+    },
+    {
+      "index": 32,
+      "text": "serving 200K+ users, owning the full design process from "
+    },
+    {
+      "index": 33,
+      "text": "research through to production handoff. Established the "
+    },
+    {
+      "index": 34,
+      "text": "company's first design system, reducing UI inconsistencies "
+    },
+    {
+      "index": 35,
+      "text": "across the product by 70% and cutting designer-to-developer "
+    },
+    {
+      "index": 36,
+      "text": "handoff time significantly. "
+    },
+    {
+      "index": 37,
+      "text": " "
+    },
+    {
+      "index": 38,
+      "text": ""
+    },
+    {
+      "index": 39,
+      "text": "Santa Barbara, CA "
+    },
+    {
+      "index": 40,
+      "text": ""
+    },
+    {
+      "index": 41,
+      "text": "B.F.A Interaction Design, 2016 "
+    },
+    {
+      "index": 42,
+      "text": ""
+    },
+    {
+      "index": 43,
+      "text": "GPA 3.87 "
+    },
+    {
+      "index": 44,
+      "text": ""
+    },
+    {
+      "index": 45,
+      "text": " "
+    },
+    {
+      "index": 46,
+      "text": " "
+    },
+    {
+      "index": 47,
+      "text": " "
+    },
+    {
+      "index": 48,
+      "text": ""
+    },
+    {
+      "index": 49,
+      "text": "Key Skills "
+    },
+    {
+      "index": 50,
+      "text": ""
+    },
+    {
+      "index": 51,
+      "text": "Figma, Sketch, Adobe XD, InVision, "
+    },
+    {
+      "index": 52,
+      "text": ""
+    },
+    {
+      "index": 53,
+      "text": "JUL 2018 – FEB 2021  "
+    },
+    {
+      "index": 54,
+      "text": "UI/UX Designer| Clayburn Apps, Oakland, CA "
+    },
+    {
+      "index": 55,
+      "text": "Designed end-to-end experiences for three consumer mobile "
+    },
+    {
+      "index": 56,
+      "text": "apps across iOS and Android, each achieving above 4.5 star "
+    },
+    {
+      "index": 57,
+      "text": "ratings in their respective app stores. Collaborated closely with "
+    },
+    {
+      "index": 58,
+      "text": "engineering to ensure design feasibility, regularly attending "
+    },
+    {
+      "index": 59,
+      "text": "sprint planning and contributing to technical scoping "
+    },
+    {
+      "index": 60,
+      "text": "discussions. "
+    },
+    {
+      "index": 61,
+      "text": " "
+    },
+    {
+      "index": 62,
+      "text": ""
+    },
+    {
+      "index": 63,
+      "text": "Zeplin, Framer, Principle, Marvel, Axure "
+    },
+    {
+      "index": 64,
+      "text": "RP, Balsamiq, Adobe Illustrator, Adobe "
+    },
+    {
+      "index": 65,
+      "text": "Photoshop, After Effects, Lottie, HTML, "
+    },
+    {
+      "index": 66,
+      "text": ""
+    },
+    {
+      "index": 67,
+      "text": "CSS, JavaScript (basic), Storybook, "
+    },
+    {
+      "index": 68,
+      "text": ""
+    },
+    {
+      "index": 69,
+      "text": "Design Systems, Component Libraries, "
+    },
+    {
+      "index": 70,
+      "text": ""
+    },
+    {
+      "index": 71,
+      "text": "Wireframing, Prototyping, User "
+    },
+    {
+      "index": 72,
+      "text": ""
+    },
+    {
+      "index": 73,
+      "text": "Research, Usability Testing, Heuristic "
+    },
+    {
+      "index": 74,
+      "text": ""
+    },
+    {
+      "index": 75,
+      "text": "Evaluation, Card Sorting, Tree Testing, "
+    },
+    {
+      "index": 76,
+      "text": ""
+    },
+    {
+      "index": 77,
+      "text": "A/B Testing, Journey Mapping, "
+    },
+    {
+      "index": 78,
+      "text": ""
+    },
+    {
+      "index": 79,
+      "text": "AUG 2016 – JUN 2018  "
+    },
+    {
+      "index": 80,
+      "text": "Junior UX Designer | Brightwell Agency, San Jose, CA "
+    },
+    {
+      "index": 81,
+      "text": "Supported senior designers on client projects spanning fintech, "
+    },
+    {
+      "index": 82,
+      "text": "healthcare, and retail, contributing wireframes, prototypes, "
+    },
+    {
+      "index": 83,
+      "text": "and user research synthesis. Conducted moderated usability "
+    },
+    {
+      "index": 84,
+      "text": "tests with end users and documented findings in structured "
+    },
+    {
+      "index": 85,
+      "text": "reports delivered to client stakeholders. Redesigned the "
+    },
+    {
+      "index": 86,
+      "text": "onboarding flow for a healthcare client, reducing drop-off at "
+    },
+    {
+      "index": 87,
+      "text": "account creation by 35%. "
+    },
+    {
+      "index": 88,
+      "text": ""
+    },
+    {
+      "index": 89,
+      "text": "Persona Development, Information "
+    },
+    {
+      "index": 90,
+      "text": ""
+    },
+    {
+      "index": 91,
+      "text": "Architecture, Interaction Design, Visual "
+    },
+    {
+      "index": 92,
+      "text": ""
+    },
+    {
+      "index": 93,
+      "text": "Design, Motion Design, Responsive "
+    },
+    {
+      "index": 94,
+      "text": ""
+    },
+    {
+      "index": 95,
+      "text": "Design, Accessibility (WCAG 2.1), iOS "
+    },
+    {
+      "index": 96,
+      "text": "Human Interface Guidelines, Material "
+    },
+    {
+      "index": 97,
+      "text": ""
+    },
+    {
+      "index": 98,
+      "text": "Design, Agile/Scrum, JIRA, "
+    },
+    {
+      "index": 99,
+      "text": ""
+    },
+    {
+      "index": 100,
+      "text": "Confluence, Notion, Miro, FigJam, "
+    },
+    {
+      "index": 101,
+      "text": ""
+    },
+    {
+      "index": 102,
+      "text": "UserTesting, Hotjar, Maze, Lookback "
+    },
+    {
+      "index": 103,
+      "text": ""
+    },
+    {
+      "index": 104,
+      "text": " "
+    },
+    {
+      "index": 105,
+      "text": "Certifications "
+    },
+    {
+      "index": 106,
+      "text": ""
+    },
+    {
+      "index": 107,
+      "text": "Nielsen Normal Group UX Certifications (2020) "
+    },
+    {
+      "index": 108,
+      "text": "Google UX Design Professional Certificate (2019) "
+    }
+  ],
+  "golden_headings": [
+    {
+      "heading": "Summary",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "Education",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "Key Skills",
+      "general_header": false,
+      "skill_start": true,
+      "skill_stop": false
+    },
+    {
+      "heading": "Experience",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "Certifications",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    }
+  ],
+  "projected_skill_text": "SKILLS\nFigma, Sketch, Adobe XD, InVision,\nJUL 2018 – FEB 2021\nUI/UX Designer| Clayburn Apps, Oakland, CA\nDesigned end-to-end experiences for three consumer mobile\napps across iOS and Android, each achieving above 4.5 star\nratings in their respective app stores. Collaborated closely with\nengineering to ensure design feasibility, regularly attending\nsprint planning and contributing to technical scoping\ndiscussions.\nZeplin, Framer, Principle, Marvel, Axure\nRP, Balsamiq, Adobe Illustrator, Adobe\nPhotoshop, After Effects, Lottie, HTML,\nCSS, JavaScript (basic), Storybook,\nDesign Systems, Component Libraries,\nWireframing, Prototyping, User\nResearch, Usability Testing, Heuristic\nEvaluation, Card Sorting, Tree Testing,\nA/B Testing, Journey Mapping,\nAUG 2016 – JUN 2018\nJunior UX Designer | Brightwell Agency, San Jose, CA\nSupported senior designers on client projects spanning fintech,\nhealthcare, and retail, contributing wireframes, prototypes,\nand user research synthesis. Conducted moderated usability\ntests with end users and documented findings in structured\nreports delivered to client stakeholders. Redesigned the\nonboarding flow for a healthcare client, reducing drop-off at\naccount creation by 35%.\nPersona Development, Information\nArchitecture, Interaction Design, Visual\nDesign, Motion Design, Responsive\nDesign, Accessibility (WCAG 2.1), iOS\nHuman Interface Guidelines, Material\nDesign, Agile/Scrum, JIRA,\nConfluence, Notion, Miro, FigJam,\nUserTesting, Hotjar, Maze, Lookback",
+  "parsed": {
+    "skills": {
+      "value": [
+        "figma",
+        "sketch",
+        "adobe xd",
+        "invision",
+        "jul 2018 - feb 2021",
+        "ui/ux designer",
+        "clayburn apps",
+        "oakland",
+        "ca",
+        "designed end-to-end experiences for three consumer mobile",
+        "apps across ios and android",
+        "each achieving above 4.5 star",
+        "ratings in their respective app stores. collaborated closely with",
+        "engineering to ensure design feasibility",
+        "regularly attending",
+        "sprint planning and contributing to technical scoping",
+        "discussions.",
+        "zeplin",
+        "framer",
+        "principle",
+        "marvel",
+        "axure",
+        "rp",
+        "balsamiq",
+        "adobe illustrator",
+        "adobe",
+        "photoshop",
+        "after effects",
+        "lottie",
+        "html",
+        "css",
+        "javascript",
+        "storybook",
+        "design systems",
+        "component libraries",
+        "wireframing",
+        "prototyping",
+        "user",
+        "research",
+        "usability testing",
+        "heuristic",
+        "evaluation",
+        "card sorting",
+        "tree testing",
+        "a/b testing",
+        "journey mapping",
+        "aug 2016 - jun 2018",
+        "junior ux designer",
+        "brightwell agency",
+        "san jose",
+        "ca",
+        "supported senior designers on client projects spanning fintech",
+        "healthcare",
+        "and retail",
+        "contributing wireframes",
+        "prototypes",
+        "and user research synthesis. conducted moderated usability",
+        "tests with end users and documented findings in structured",
+        "reports delivered to client stakeholders. redesigned the",
+        "onboarding flow for a healthcare client",
+        "reducing drop-off at",
+        "account creation by 35%.",
+        "persona development",
+        "information",
+        "architecture",
+        "interaction design",
+        "visual",
+        "design",
+        "motion design",
+        "responsive",
+        "design",
+        "accessibility",
+        "ios",
+        "human interface guidelines",
+        "material",
+        "design, agile",
+        "scrum, jira,",
+        "confluence",
+        "notion",
+        "miro",
+        "figjam",
+        "usertesting",
+        "hotjar",
+        "maze",
+        "lookback"
+      ],
+      "confidence": 1.0
+    },
+    "locations": {
+      "value": [
+        "San Francisco, CA"
+      ],
+      "confidence": 1.0
+    },
+    "education": {
+      "value": [
+        "Experience",
+        "California College of the Arts",
+        "MAR 2021 - PRESENT",
+        "Lead UX Designer | Fieldstone Digital, San Francisco, CA",
+        "Leads UX strategy and execution for a B2B SaaS platform",
+        "serving 200K+ users, owning the full design process from",
+        "research through to production handoff. Established the",
+        "company's first design system, reducing UI inconsistencies",
+        "across the product by 70% and cutting designer-to-developer",
+        "handoff time significantly.",
+        "Santa Barbara, CA",
+        "B.F.A Interaction Design, 2016",
+        "GPA 3.87",
+        "Key Skills",
+        "Figma, Sketch, Adobe XD, InVision,",
+        "JUL 2018 – FEB 2021",
+        "UI/UX Designer| Clayburn Apps, Oakland, CA",
+        "Designed end-to-end experiences for three consumer mobile",
+        "apps across iOS and Android, each achieving above 4.5 star",
+        "ratings in their respective app stores. Collaborated closely with",
+        "engineering to ensure design feasibility, regularly attending",
+        "sprint planning and contributing to technical scoping",
+        "discussions.",
+        "Zeplin, Framer, Principle, Marvel, Axure",
+        "RP, Balsamiq, Adobe Illustrator, Adobe",
+        "Photoshop, After Effects, Lottie, HTML,",
+        "CSS, JavaScript (basic), Storybook,",
+        "Design Systems, Component Libraries,",
+        "Wireframing, Prototyping, User",
+        "Research, Usability Testing, Heuristic",
+        "Evaluation, Card Sorting, Tree Testing,",
+        "A/B Testing, Journey Mapping,",
+        "AUG 2016 – JUN 2018",
+        "Junior UX Designer | Brightwell Agency, San Jose, CA",
+        "Supported senior designers on client projects spanning fintech,",
+        "healthcare, and retail, contributing wireframes, prototypes,",
+        "and user research synthesis. Conducted moderated usability",
+        "tests with end users and documented findings in structured",
+        "reports delivered to client stakeholders. Redesigned the",
+        "onboarding flow for a healthcare client, reducing drop-off at",
+        "account creation by 35%.",
+        "Persona Development, Information",
+        "Architecture, Interaction Design, Visual",
+        "Design, Motion Design, Responsive",
+        "Design, Accessibility (WCAG 2.1), iOS",
+        "Human Interface Guidelines, Material",
+        "Design, Agile/Scrum, JIRA,",
+        "Confluence, Notion, Miro, FigJam,",
+        "UserTesting, Hotjar, Maze, Lookback",
+        "Certifications",
+        "Nielsen Normal Group UX Certifications (2020)",
+        "Google UX Design Professional Certificate (2019)"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [
+        "California College of the Arts",
+        "MAR 2021 - PRESENT Lead UX Designer | Fieldstone Digital, San Francisco, CA Leads UX strategy and execution for a B2B SaaS platform serving 200K+ users, owning the full design process from research through to production handoff. Established the company's first design system, reducing UI inconsistencies across the product by 70% and cutting designer-to-developer handoff time significantly.",
+        "Santa Barbara, CA",
+        "B.F.A Interaction Design, 2016",
+        "GPA 3.87",
+        "Key Skills",
+        "Figma, Sketch, Adobe XD, InVision,",
+        "JUL 2018 – FEB 2021 UI/UX Designer| Clayburn Apps, Oakland, CA Designed end-to-end experiences for three consumer mobile apps across iOS and Android, each achieving above 4.5 star ratings in their respective app stores. Collaborated closely with engineering to ensure design feasibility, regularly attending sprint planning and contributing to technical scoping discussions.",
+        "Zeplin, Framer, Principle, Marvel, Axure RP, Balsamiq, Adobe Illustrator, Adobe Photoshop, After Effects, Lottie, HTML,",
+        "CSS, JavaScript (basic), Storybook,",
+        "Design Systems, Component Libraries,",
+        "Wireframing, Prototyping, User",
+        "Research, Usability Testing, Heuristic",
+        "Evaluation, Card Sorting, Tree Testing,",
+        "A/B Testing, Journey Mapping,",
+        "AUG 2016 – JUN 2018 Junior UX Designer | Brightwell Agency, San Jose, CA Supported senior designers on client projects spanning fintech, healthcare, and retail, contributing wireframes, prototypes, and user research synthesis. Conducted moderated usability tests with end users and documented findings in structured reports delivered to client stakeholders. Redesigned the onboarding flow for a healthcare client, reducing drop-off at account creation by 35%.",
+        "Persona Development, Information",
+        "Architecture, Interaction Design, Visual",
+        "Design, Motion Design, Responsive",
+        "Design, Accessibility (WCAG 2.1), iOS Human Interface Guidelines, Material",
+        "Design, Agile/Scrum, JIRA,",
+        "Confluence, Notion, Miro, FigJam,",
+        "UserTesting, Hotjar, Maze, Lookback"
+      ],
+      "confidence": 1.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 105,
+  "work_stop_line": "Certifications ",
+  "projects_from_document_start": []
+}

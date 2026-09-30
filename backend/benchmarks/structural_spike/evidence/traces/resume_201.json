@@ -1,0 +1,408 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/v2/resume_201.pdf",
+  "pdf_sha256": "14a0015cbac4876da36b59a63d9604830f62ba3a14dc2a2c0858fbfd62b08fd9",
+  "golden": "backend/benchmarks/golden_json/v2/resume_201.json",
+  "golden_sha256": "a37ee62d82596243f787fe7e1c8b7ad9646f41e858ff0b2a35d79166bb39c0ce",
+  "layout": "SINGLE_COLUMN",
+  "section_lines": [
+    {
+      "index": 4,
+      "text": "OBJECTIVE"
+    },
+    {
+      "index": 5,
+      "text": ""
+    },
+    {
+      "index": 6,
+      "text": "Recent computer science graduate seeking an entry-level software engineering role focused on internal tools, data workflows,"
+    },
+    {
+      "index": 7,
+      "text": "and user-centered automation."
+    },
+    {
+      "index": 8,
+      "text": ""
+    },
+    {
+      "index": 9,
+      "text": "EDUCATION"
+    },
+    {
+      "index": 10,
+      "text": "Cornell University, College of Engineering, Ithaca, NY"
+    },
+    {
+      "index": 11,
+      "text": "May 2026"
+    },
+    {
+      "index": 12,
+      "text": ""
+    },
+    {
+      "index": 13,
+      "text": "Bachelor of Science in Computer Science, Minor in Information Science"
+    },
+    {
+      "index": 14,
+      "text": ""
+    },
+    {
+      "index": 15,
+      "text": "- GPA: 3.41; Dean's List, Spring 2025"
+    },
+    {
+      "index": 16,
+      "text": "- Relevant Courses: Data Structures, Databases, Web Programming, Human-Computer Interaction"
+    },
+    {
+      "index": 17,
+      "text": ""
+    },
+    {
+      "index": 18,
+      "text": "PROJECTS"
+    },
+    {
+      "index": 19,
+      "text": "Course Planner Web App"
+    },
+    {
+      "index": 20,
+      "text": "Jan-May 2026"
+    },
+    {
+      "index": 21,
+      "text": ""
+    },
+    {
+      "index": 22,
+      "text": "Class project"
+    },
+    {
+      "index": 23,
+      "text": ""
+    },
+    {
+      "index": 24,
+      "text": "- Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements."
+    },
+    {
+      "index": 25,
+      "text": "- Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits."
+    },
+    {
+      "index": 26,
+      "text": ""
+    },
+    {
+      "index": 27,
+      "text": "Campus Food Pantry Inventory Sheet"
+    },
+    {
+      "index": 28,
+      "text": "Sep-Dec 2025"
+    },
+    {
+      "index": 29,
+      "text": ""
+    },
+    {
+      "index": 30,
+      "text": "Volunteer technical project"
+    },
+    {
+      "index": 31,
+      "text": ""
+    },
+    {
+      "index": 32,
+      "text": "- Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday."
+    },
+    {
+      "index": 33,
+      "text": "- Documented the handoff process for three student volunteers with limited technical background."
+    },
+    {
+      "index": 34,
+      "text": ""
+    },
+    {
+      "index": 35,
+      "text": "EXPERIENCE"
+    },
+    {
+      "index": 36,
+      "text": "Library Technology Assistant, Cornell University Library"
+    },
+    {
+      "index": 37,
+      "text": "Aug 2024-May 2026"
+    },
+    {
+      "index": 38,
+      "text": ""
+    },
+    {
+      "index": 39,
+      "text": "Ithaca, NY"
+    },
+    {
+      "index": 40,
+      "text": ""
+    },
+    {
+      "index": 41,
+      "text": "- Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access."
+    },
+    {
+      "index": 42,
+      "text": "- Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues."
+    },
+    {
+      "index": 43,
+      "text": ""
+    },
+    {
+      "index": 44,
+      "text": "SKILLS"
+    },
+    {
+      "index": 45,
+      "text": ""
+    },
+    {
+      "index": 46,
+      "text": "Python, Java, JavaScript, React, Flask, SQL, Git, Excel; basic Spanish"
+    },
+    {
+      "index": 47,
+      "text": ""
+    },
+    {
+      "index": 48,
+      "text": "ADDITIONAL PROJECTS"
+    },
+    {
+      "index": 49,
+      "text": "Student Organization Check-In Tracker"
+    },
+    {
+      "index": 50,
+      "text": "Feb-Apr 2026"
+    },
+    {
+      "index": 51,
+      "text": ""
+    },
+    {
+      "index": 52,
+      "text": "Python and Airtable"
+    },
+    {
+      "index": 53,
+      "text": ""
+    },
+    {
+      "index": 54,
+      "text": "- Created a small script that compared event sign-in exports against member rosters and highlighted duplicate or missing"
+    },
+    {
+      "index": 55,
+      "text": "check-ins."
+    },
+    {
+      "index": 56,
+      "text": ""
+    },
+    {
+      "index": 57,
+      "text": "- Shared weekly attendance summaries with two club officers so they could follow up with inactive members before"
+    },
+    {
+      "index": 58,
+      "text": "elections."
+    },
+    {
+      "index": 59,
+      "text": ""
+    },
+    {
+      "index": 60,
+      "text": "Intro Programming Review Notes"
+    },
+    {
+      "index": 61,
+      "text": "Fall 2025"
+    },
+    {
+      "index": 62,
+      "text": ""
+    },
+    {
+      "index": 63,
+      "text": "Peer learning resource"
+    },
+    {
+      "index": 64,
+      "text": ""
+    },
+    {
+      "index": 65,
+      "text": "- Compiled short examples for recursion, dictionaries, and file input/output after tutoring first-year students during office"
+    },
+    {
+      "index": 66,
+      "text": "hours."
+    },
+    {
+      "index": 67,
+      "text": ""
+    },
+    {
+      "index": 68,
+      "text": "- Organized examples into a GitHub repository with README files and expected output for each exercise."
+    },
+    {
+      "index": 69,
+      "text": ""
+    },
+    {
+      "index": 70,
+      "text": "LEADERSHIP & SERVICE"
+    },
+    {
+      "index": 71,
+      "text": "Peer Tutor, Engineering Learning Initiatives"
+    },
+    {
+      "index": 72,
+      "text": "Sep 2025-May 2026"
+    },
+    {
+      "index": 73,
+      "text": ""
+    },
+    {
+      "index": 74,
+      "text": "Ithaca, NY"
+    },
+    {
+      "index": 75,
+      "text": ""
+    },
+    {
+      "index": 76,
+      "text": "- Tutored 6-8 students weekly in introductory Python and data structures, focusing on debugging habits and test-case design."
+    },
+    {
+      "index": 77,
+      "text": "- Coordinated review sessions before two prelims and collected anonymized questions to improve future study guides."
+    }
+  ],
+  "golden_headings": [
+    {
+      "heading": "OBJECTIVE",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "EDUCATION",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "PROJECTS",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "EXPERIENCE",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "SKILLS",
+      "general_header": true,
+      "skill_start": true,
+      "skill_stop": true
+    },
+    {
+      "heading": "ADDITIONAL PROJECTS",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "LEADERSHIP & SERVICE",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    }
+  ],
+  "projected_skill_text": "SKILLS\nPython, Java, JavaScript, React, Flask, SQL, Git, Excel; basic Spanish",
+  "parsed": {
+    "skills": {
+      "value": [
+        "python",
+        "java",
+        "javascript",
+        "react",
+        "flask",
+        "sql",
+        "git",
+        "excel",
+        "basic spanish"
+      ],
+      "confidence": 1.0
+    },
+    "locations": {
+      "value": [
+        "(   Ithaca, NY"
+      ],
+      "confidence": 1.0
+    },
+    "education": {
+      "value": [
+        "Cornell University, College of Engineering, Ithaca, NY",
+        "May 2026",
+        "Bachelor of Science in Computer Science, Minor in Information Science",
+        "- GPA: 3.41; Dean's List, Spring 2025",
+        "- Relevant Courses: Data Structures, Databases, Web Programming, Human-Computer Interaction"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [
+        "Library Technology Assistant, Cornell University Library Aug 2024-May 2026",
+        "Ithaca, NY",
+        "Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.",
+        "Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues."
+      ],
+      "confidence": 1.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 44,
+  "work_stop_line": "SKILLS",
+  "projects_from_document_start": [
+    "Course Planner Web App Jan-May 2026",
+    "Class project",
+    "Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.",
+    "Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits.",
+    "Campus Food Pantry Inventory Sheet Sep-Dec 2025",
+    "Volunteer technical project",
+    "Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.",
+    "Documented the handoff process for three student volunteers with limited technical background."
+  ]
+}

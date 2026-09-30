@@ -1,0 +1,392 @@
+{
+  "timestamp": "2026-09-30T19:13:51.615897+00:00",
+  "git_commit": "e04ab03",
+  "parsers": [
+    "libelle"
+  ],
+  "parser_versions": {
+    "libelle": "local"
+  },
+  "command": "scripts/benchmark.py --pdf_dir backend/benchmarks/resumes/v2 --golden_dir backend/benchmarks/golden_json/v2 --out /tmp/issue301-v2",
+  "system": {
+    "platform": "Darwin",
+    "platform_version": "Darwin Kernel Version 25.4.0: Thu Mar 19 19:33:25 PDT 2026; root:xnu-12377.101.15~1/RELEASE_ARM64_T6041",
+    "python": "3.11.8",
+    "machine": "arm64"
+  },
+  "args": {
+    "pdf_dir": "backend/benchmarks/resumes/v2",
+    "golden_dir": "backend/benchmarks/golden_json/v2",
+    "parsers": [
+      "libelle"
+    ],
+    "out": "/tmp/issue301-v2",
+    "aliases_path": null,
+    "allow_missing": false,
+    "validate_only": false
+  },
+  "resolver": {
+    "alias_path": "/Users/jiaqiliu/TCUS/libelle/backend/resolver/knowledge/aliases_v1.json",
+    "average_resolver_coverage": 0.112,
+    "resolved_rows_count": 8,
+    "unknown_skills": [
+      {
+        "skill": "sql",
+        "count": 4
+      },
+      {
+        "skill": "git",
+        "count": 3
+      },
+      {
+        "skill": "tableau",
+        "count": 3
+      },
+      {
+        "skill": "excel",
+        "count": 2
+      },
+      {
+        "skill": "flask",
+        "count": 2
+      },
+      {
+        "skill": "github actions",
+        "count": 2
+      },
+      {
+        "skill": "pandas",
+        "count": 2
+      },
+      {
+        "skill": "postgresql",
+        "count": 2
+      },
+      {
+        "skill": "pytorch",
+        "count": 2
+      },
+      {
+        "skill": "typescript",
+        "count": 2
+      },
+      {
+        "skill": "- added concise case-study summaries so project links were meaningful outside the visual portfolio context.",
+        "count": 1
+      },
+      {
+        "skill": "- audited project pages for heading order",
+        "count": 1
+      },
+      {
+        "skill": "- built r markdown templates for analysis notes so collaborators could review assumptions",
+        "count": 1
+      },
+      {
+        "skill": "- completed coursework in causal inference",
+        "count": 1
+      },
+      {
+        "skill": "- converted research findings into user stories and acceptance criteria for a partner engineering backlog.",
+        "count": 1
+      },
+      {
+        "skill": "- coordinate speaker questions for visiting researchers presenting climate and health work.",
+        "count": 1
+      },
+      {
+        "skill": "- interviewed business owners about permit terminology",
+        "count": 1
+      },
+      {
+        "skill": "- summarize methods limitations and data-source constraints for monthly article discussions.",
+        "count": 1
+      },
+      {
+        "skill": "2025-2026",
+        "count": 1
+      },
+      {
+        "skill": "2026",
+        "count": 1
+      },
+      {
+        "skill": "accessibility testing",
+        "count": 1
+      },
+      {
+        "skill": "and descriptive link text.",
+        "count": 1
+      },
+      {
+        "skill": "and model changes.",
+        "count": 1
+      },
+      {
+        "skill": "and reproducible research",
+        "count": 1
+      },
+      {
+        "skill": "and status-notification gaps.",
+        "count": 1
+      },
+      {
+        "skill": "arduino",
+        "count": 1
+      },
+      {
+        "skill": "aws/gcp",
+        "count": 1
+      },
+      {
+        "skill": "basic spanish",
+        "count": 1
+      },
+      {
+        "skill": "ci/cd pipelines",
+        "count": 1
+      },
+      {
+        "skill": "color contrast",
+        "count": 1
+      },
+      {
+        "skill": "customer onboarding analytics",
+        "count": 1
+      },
+      {
+        "skill": "dashboard",
+        "count": 1
+      },
+      {
+        "skill": "datadog",
+        "count": 1
+      },
+      {
+        "skill": "django, java, go, typescript, sql, bash",
+        "count": 1
+      },
+      {
+        "skill": "docker",
+        "count": 1
+      },
+      {
+        "skill": "document upload confusion",
+        "count": 1
+      },
+      {
+        "skill": "excel pivot tables",
+        "count": 1
+      },
+      {
+        "skill": "exclusions",
+        "count": 1
+      },
+      {
+        "skill": "figma",
+        "count": 1
+      },
+      {
+        "skill": "firebase",
+        "count": 1
+      },
+      {
+        "skill": "french and english fluent",
+        "count": 1
+      },
+      {
+        "skill": "graduate methods sequence",
+        "count": 1
+      },
+      {
+        "skill": "healthcare operations",
+        "count": 1
+      },
+      {
+        "skill": "java",
+        "count": 1
+      },
+      {
+        "skill": "javascript",
+        "count": 1
+      },
+      {
+        "skill": "jupyter",
+        "count": 1
+      },
+      {
+        "skill": "kafka",
+        "count": 1
+      },
+      {
+        "skill": "keyboard navigation",
+        "count": 1
+      },
+      {
+        "skill": "kubernetes",
+        "count": 1
+      },
+      {
+        "skill": "longitudinal data methods",
+        "count": 1
+      },
+      {
+        "skill": "looker studio",
+        "count": 1
+      },
+      {
+        "skill": "mcgill university",
+        "count": 1
+      },
+      {
+        "skill": "methods training",
+        "count": 1
+      },
+      {
+        "skill": "mlflow",
+        "count": 1
+      },
+      {
+        "skill": "montreal",
+        "count": 1
+      },
+      {
+        "skill": "node.js",
+        "count": 1
+      },
+      {
+        "skill": "notion",
+        "count": 1
+      },
+      {
+        "skill": "opencv",
+        "count": 1
+      },
+      {
+        "skill": "personal site",
+        "count": 1
+      },
+      {
+        "skill": "playwright",
+        "count": 1
+      },
+      {
+        "skill": "population health journal club",
+        "count": 1
+      },
+      {
+        "skill": "portfolio accessibility pass",
+        "count": 1
+      },
+      {
+        "skill": "professional service",
+        "count": 1
+      },
+      {
+        "skill": "qa",
+        "count": 1
+      },
+      {
+        "skill": "qc",
+        "count": 1
+      },
+      {
+        "skill": "r",
+        "count": 1
+      },
+      {
+        "skill": "redcap",
+        "count": 1
+      },
+      {
+        "skill": "redis",
+        "count": 1
+      },
+      {
+        "skill": "revenue operations",
+        "count": 1
+      },
+      {
+        "skill": "salesforce",
+        "count": 1
+      },
+      {
+        "skill": "salesforce reporting",
+        "count": 1
+      },
+      {
+        "skill": "sas basic",
+        "count": 1
+      },
+      {
+        "skill": "scikit-learn",
+        "count": 1
+      },
+      {
+        "skill": "selected design research",
+        "count": 1
+      },
+      {
+        "skill": "sept 2025-present",
+        "count": 1
+      },
+      {
+        "skill": "small business licensing study",
+        "count": 1
+      },
+      {
+        "skill": "snowflake",
+        "count": 1
+      },
+      {
+        "skill": "spanish conversational",
+        "count": 1
+      },
+      {
+        "skill": "sql basics",
+        "count": 1
+      },
+      {
+        "skill": "stakeholder communication",
+        "count": 1
+      },
+      {
+        "skill": "student reviewer",
+        "count": 1
+      },
+      {
+        "skill": "survival analysis",
+        "count": 1
+      },
+      {
+        "skill": "terraform",
+        "count": 1
+      },
+      {
+        "skill": "tidyverse",
+        "count": 1
+      },
+      {
+        "skill": "uw civic design lab",
+        "count": 1
+      },
+      {
+        "skill": "winter 2025",
+        "count": 1
+      },
+      {
+        "skill": "workflows.",
+        "count": 1
+      },
+      {
+        "skill": "zendesk",
+        "count": 1
+      },
+      {
+        "skill": "zotero",
+        "count": 1
+      }
+    ]
+  },
+  "errors": []
+}

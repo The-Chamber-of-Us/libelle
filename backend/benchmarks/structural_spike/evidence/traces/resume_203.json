@@ -1,0 +1,424 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/v2/resume_203.pdf",
+  "pdf_sha256": "164b019cf32d242d913228cedd1d53aa07256320d1f8ec61fa0c49a0592aaa13",
+  "golden": "backend/benchmarks/golden_json/v2/resume_203.json",
+  "golden_sha256": "ffe29b485678119d6974daabf29334afcaecd9cc6ee21c4cf5a465695fec47a4",
+  "layout": "SINGLE_COLUMN",
+  "section_lines": [
+    {
+      "index": 4,
+      "text": "PROFILE"
+    },
+    {
+      "index": 5,
+      "text": ""
+    },
+    {
+      "index": 6,
+      "text": "Operations analyst transitioning into data analytics, with experience improving hospital workflows and building SQL/Python"
+    },
+    {
+      "index": 7,
+      "text": "projects around staffing, scheduling, and quality metrics."
+    },
+    {
+      "index": 8,
+      "text": ""
+    },
+    {
+      "index": 9,
+      "text": "TECHNICAL PROJECTS"
+    },
+    {
+      "index": 10,
+      "text": "Clinic No-Show Dashboard"
+    },
+    {
+      "index": 11,
+      "text": "Mar-May 2026"
+    },
+    {
+      "index": 12,
+      "text": ""
+    },
+    {
+      "index": 13,
+      "text": "Independent project"
+    },
+    {
+      "index": 14,
+      "text": ""
+    },
+    {
+      "index": 15,
+      "text": "- Modeled 18 months of de-identified appointment data in PostgreSQL and created cohort views by clinic, referral source,"
+    },
+    {
+      "index": 16,
+      "text": "and appointment type."
+    },
+    {
+      "index": 17,
+      "text": ""
+    },
+    {
+      "index": 18,
+      "text": "- Built a Streamlit dashboard that highlighted weekday and reminder-message patterns associated with missed appointments."
+    },
+    {
+      "index": 19,
+      "text": ""
+    },
+    {
+      "index": 20,
+      "text": "Supply Cart Restock Forecast"
+    },
+    {
+      "index": 21,
+      "text": "Nov 2025-Jan 2026"
+    },
+    {
+      "index": 22,
+      "text": ""
+    },
+    {
+      "index": 23,
+      "text": "Python analysis"
+    },
+    {
+      "index": 24,
+      "text": ""
+    },
+    {
+      "index": 25,
+      "text": "- Cleaned CSV exports from three supply rooms and used pandas to identify items with recurring stockouts before Monday"
+    },
+    {
+      "index": 26,
+      "text": "clinics."
+    },
+    {
+      "index": 27,
+      "text": ""
+    },
+    {
+      "index": 28,
+      "text": "- Presented a reorder threshold model that would have avoided 63% of urgent restock requests in the sample period."
+    },
+    {
+      "index": 29,
+      "text": ""
+    },
+    {
+      "index": 30,
+      "text": "EXPERIENCE"
+    },
+    {
+      "index": 31,
+      "text": "Patient Access Coordinator, Lakeside Medical Group"
+    },
+    {
+      "index": 32,
+      "text": "Jun 2022-Present"
+    },
+    {
+      "index": 33,
+      "text": ""
+    },
+    {
+      "index": 34,
+      "text": "Chicago, IL"
+    },
+    {
+      "index": 35,
+      "text": ""
+    },
+    {
+      "index": 36,
+      "text": "- Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week."
+    },
+    {
+      "index": 37,
+      "text": "- Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%."
+    },
+    {
+      "index": 38,
+      "text": "- Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records."
+    },
+    {
+      "index": 39,
+      "text": ""
+    },
+    {
+      "index": 40,
+      "text": "Administrative Assistant, West Loop Physical Therapy"
+    },
+    {
+      "index": 41,
+      "text": "Aug 2020-May 2022"
+    },
+    {
+      "index": 42,
+      "text": ""
+    },
+    {
+      "index": 43,
+      "text": "Chicago, IL"
+    },
+    {
+      "index": 44,
+      "text": ""
+    },
+    {
+      "index": 45,
+      "text": "- Maintained daily visit logs, payment records, and therapist schedules across two clinic locations."
+    },
+    {
+      "index": 46,
+      "text": "- Trained four new front-desk staff members on intake scripts and claims documentation standards."
+    },
+    {
+      "index": 47,
+      "text": ""
+    },
+    {
+      "index": 48,
+      "text": "EDUCATION"
+    },
+    {
+      "index": 49,
+      "text": "DePaul University"
+    },
+    {
+      "index": 50,
+      "text": "Certificate expected Dec 2026"
+    },
+    {
+      "index": 51,
+      "text": ""
+    },
+    {
+      "index": 52,
+      "text": "Data Analytics Certificate"
+    },
+    {
+      "index": 53,
+      "text": ""
+    },
+    {
+      "index": 54,
+      "text": "- Coursework: SQL for Analytics, Python Programming, Data Visualization"
+    },
+    {
+      "index": 55,
+      "text": ""
+    },
+    {
+      "index": 56,
+      "text": "University of Illinois Chicago"
+    },
+    {
+      "index": 57,
+      "text": "May 2020"
+    },
+    {
+      "index": 58,
+      "text": ""
+    },
+    {
+      "index": 59,
+      "text": "Bachelor of Science in Public Health"
+    },
+    {
+      "index": 60,
+      "text": ""
+    },
+    {
+      "index": 61,
+      "text": "SKILLS"
+    },
+    {
+      "index": 62,
+      "text": ""
+    },
+    {
+      "index": 63,
+      "text": "SQL, Python, pandas, Tableau, Excel pivot tables, healthcare operations, Spanish conversational"
+    },
+    {
+      "index": 64,
+      "text": ""
+    },
+    {
+      "index": 65,
+      "text": "ADDITIONAL ANALYTICS WORK"
+    },
+    {
+      "index": 66,
+      "text": "Referral Queue Aging Review"
+    },
+    {
+      "index": 67,
+      "text": "Feb 2026"
+    },
+    {
+      "index": 68,
+      "text": ""
+    },
+    {
+      "index": 69,
+      "text": "Workplace analysis"
+    },
+    {
+      "index": 70,
+      "text": ""
+    },
+    {
+      "index": 71,
+      "text": "- Exported referral queue snapshots and grouped delayed records by payer, clinic, and missing-document reason."
+    },
+    {
+      "index": 72,
+      "text": "- Recommended a daily triage view that helped supervisors separate true bottlenecks from duplicate or already-scheduled"
+    },
+    {
+      "index": 73,
+      "text": "referrals."
+    },
+    {
+      "index": 74,
+      "text": ""
+    },
+    {
+      "index": 75,
+      "text": "COMMUNITY & TRAINING"
+    },
+    {
+      "index": 76,
+      "text": "Volunteer Data Coach, South Side Tech Circle"
+    },
+    {
+      "index": 77,
+      "text": "Sep 2025-Present"
+    },
+    {
+      "index": 78,
+      "text": ""
+    },
+    {
+      "index": 79,
+      "text": "Chicago, IL"
+    },
+    {
+      "index": 80,
+      "text": ""
+    },
+    {
+      "index": 81,
+      "text": "- Help adult learners practice spreadsheet cleanup, filtering, and chart interpretation using public health sample datasets."
+    },
+    {
+      "index": 82,
+      "text": "- Prepared short exercises on pivot tables and basic SQL-style grouping for learners exploring analyst careers."
+    }
+  ],
+  "golden_headings": [
+    {
+      "heading": "PROFILE",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    },
+    {
+      "heading": "TECHNICAL PROJECTS",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    },
+    {
+      "heading": "EXPERIENCE",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "EDUCATION",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "SKILLS",
+      "general_header": true,
+      "skill_start": true,
+      "skill_stop": true
+    },
+    {
+      "heading": "ADDITIONAL ANALYTICS WORK",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "COMMUNITY & TRAINING",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    }
+  ],
+  "projected_skill_text": "SKILLS\nSQL, Python, pandas, Tableau, Excel pivot tables, healthcare operations, Spanish conversational",
+  "parsed": {
+    "skills": {
+      "value": [
+        "sql",
+        "python",
+        "pandas",
+        "tableau",
+        "excel pivot tables",
+        "healthcare operations",
+        "spanish conversational"
+      ],
+      "confidence": 1.0
+    },
+    "locations": {
+      "value": [
+        "Chicago, IL   ("
+      ],
+      "confidence": 1.0
+    },
+    "education": {
+      "value": [
+        "DePaul University",
+        "Certificate expected Dec 2026",
+        "Data Analytics Certificate",
+        "- Coursework: SQL for Analytics, Python Programming, Data Visualization",
+        "University of Illinois Chicago",
+        "May 2020",
+        "Bachelor of Science in Public Health"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [
+        "Patient Access Coordinator, Lakeside Medical Group Jun 2022-Present",
+        "Chicago, IL",
+        "Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.",
+        "Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.",
+        "Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records.",
+        "Administrative Assistant, West Loop Physical Therapy Aug 2020-May 2022",
+        "Chicago, IL",
+        "Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.",
+        "Trained four new front-desk staff members on intake scripts and claims documentation standards."
+      ],
+      "confidence": 1.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 48,
+  "work_stop_line": "EDUCATION",
+  "projects_from_document_start": []
+}
