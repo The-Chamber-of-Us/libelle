@@ -1,0 +1,396 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/v2/resume_204.pdf",
+  "pdf_sha256": "6b1b4278bd11aacac274f47fe2f05b467d98059028a4a8180a2d15e2b57a5d67",
+  "golden": "backend/benchmarks/golden_json/v2/resume_204.json",
+  "golden_sha256": "04da99fc98dadb4a8d03ec48af0957ae274cbd0727ce5b22499436cea9122bb7",
+  "layout": "SINGLE_COLUMN",
+  "section_lines": [
+    {
+      "index": 4,
+      "text": "EDUCATION"
+    },
+    {
+      "index": 5,
+      "text": "McGill University, Montréal, QC"
+    },
+    {
+      "index": 6,
+      "text": "Expected May 2027"
+    },
+    {
+      "index": 7,
+      "text": ""
+    },
+    {
+      "index": 8,
+      "text": "Master of Science in Epidemiology"
+    },
+    {
+      "index": 9,
+      "text": ""
+    },
+    {
+      "index": 10,
+      "text": "- Thesis: Neighborhood heat exposure and emergency department utilization among older adults"
+    },
+    {
+      "index": 11,
+      "text": ""
+    },
+    {
+      "index": 12,
+      "text": "University of Ottawa, Ottawa, ON"
+    },
+    {
+      "index": 13,
+      "text": "June 2024"
+    },
+    {
+      "index": 14,
+      "text": ""
+    },
+    {
+      "index": 15,
+      "text": "Honours Bachelor of Health Sciences"
+    },
+    {
+      "index": 16,
+      "text": ""
+    },
+    {
+      "index": 17,
+      "text": "- Graduated magna cum laude"
+    },
+    {
+      "index": 18,
+      "text": ""
+    },
+    {
+      "index": 19,
+      "text": "RESEARCH EXPERIENCE"
+    },
+    {
+      "index": 20,
+      "text": "Graduate Research Assistant, Urban Health Metrics Lab"
+    },
+    {
+      "index": 21,
+      "text": "Sept 2025-Present"
+    },
+    {
+      "index": 22,
+      "text": ""
+    },
+    {
+      "index": 23,
+      "text": "McGill University"
+    },
+    {
+      "index": 24,
+      "text": ""
+    },
+    {
+      "index": 25,
+      "text": "- Clean and link weather station, census, and emergency department datasets covering 11 Montréal boroughs."
+    },
+    {
+      "index": 26,
+      "text": "- Draft reproducible R scripts for sensitivity analyses involving lagged temperature exposure windows."
+    },
+    {
+      "index": 27,
+      "text": "- Prepare weekly data notes for a cross-disciplinary team of epidemiologists, clinicians, and municipal analysts."
+    },
+    {
+      "index": 28,
+      "text": ""
+    },
+    {
+      "index": 29,
+      "text": "Summer Research Student, Ottawa Hospital Research Institute"
+    },
+    {
+      "index": 30,
+      "text": "May-Aug 2024"
+    },
+    {
+      "index": 31,
+      "text": ""
+    },
+    {
+      "index": 32,
+      "text": "Ottawa, ON"
+    },
+    {
+      "index": 33,
+      "text": ""
+    },
+    {
+      "index": 34,
+      "text": "- Abstracted clinical variables from 210 anonymized charts for a study of post-discharge follow-up after sepsis."
+    },
+    {
+      "index": 35,
+      "text": "- Flagged inconsistent coding patterns that informed a revised chart review guide for incoming assistants."
+    },
+    {
+      "index": 36,
+      "text": ""
+    },
+    {
+      "index": 37,
+      "text": "PUBLICATIONS"
+    },
+    {
+      "index": 38,
+      "text": ""
+    },
+    {
+      "index": 39,
+      "text": "Moreau E., Singh P., Caron L. Heat-alert messaging and care-seeking behavior among older adults. Canadian Journal of Public"
+    },
+    {
+      "index": 40,
+      "text": "Health. In review."
+    },
+    {
+      "index": 41,
+      "text": "Caron L., Moreau E., Tran V. Built environment predictors of summer respiratory visits. Environmental Health Abstracts."
+    },
+    {
+      "index": 42,
+      "text": "2025;12(3)."
+    },
+    {
+      "index": 43,
+      "text": ""
+    },
+    {
+      "index": 44,
+      "text": "SELECTED PRESENTATIONS"
+    },
+    {
+      "index": 45,
+      "text": ""
+    },
+    {
+      "index": 46,
+      "text": "Moreau E. Neighborhood heat exposure and emergency department utilization. Poster presented at Canadian Public Health"
+    },
+    {
+      "index": 47,
+      "text": "Association Annual Conference; 2026 May; Winnipeg, MB."
+    },
+    {
+      "index": 48,
+      "text": "Moreau E., Tran V. Chart review reliability in sepsis follow-up studies. Lightning talk presented at Ottawa Hospital Trainee"
+    },
+    {
+      "index": 49,
+      "text": "Research Day; 2024 Aug; Ottawa, ON."
+    },
+    {
+      "index": 50,
+      "text": ""
+    },
+    {
+      "index": 51,
+      "text": "SKILLS"
+    },
+    {
+      "index": 52,
+      "text": ""
+    },
+    {
+      "index": 53,
+      "text": "R, tidyverse, REDCap, Zotero, SAS basic, French and English fluent"
+    },
+    {
+      "index": 54,
+      "text": ""
+    },
+    {
+      "index": 55,
+      "text": "METHODS TRAINING"
+    },
+    {
+      "index": 56,
+      "text": "Graduate Methods Sequence"
+    },
+    {
+      "index": 57,
+      "text": "2025-2026"
+    },
+    {
+      "index": 58,
+      "text": ""
+    },
+    {
+      "index": 59,
+      "text": "McGill University"
+    },
+    {
+      "index": 60,
+      "text": ""
+    },
+    {
+      "index": 61,
+      "text": "- Completed coursework in causal inference, survival analysis, longitudinal data methods, and reproducible research"
+    },
+    {
+      "index": 62,
+      "text": "workflows."
+    },
+    {
+      "index": 63,
+      "text": ""
+    },
+    {
+      "index": 64,
+      "text": "- Built R Markdown templates for analysis notes so collaborators could review assumptions, exclusions, and model changes."
+    },
+    {
+      "index": 65,
+      "text": ""
+    },
+    {
+      "index": 66,
+      "text": "PROFESSIONAL SERVICE"
+    },
+    {
+      "index": 67,
+      "text": "Student Reviewer, Population Health Journal Club"
+    },
+    {
+      "index": 68,
+      "text": "Sept 2025-Present"
+    },
+    {
+      "index": 69,
+      "text": ""
+    },
+    {
+      "index": 70,
+      "text": "Montréal, QC"
+    },
+    {
+      "index": 71,
+      "text": ""
+    },
+    {
+      "index": 72,
+      "text": "- Summarize methods limitations and data-source constraints for monthly article discussions."
+    },
+    {
+      "index": 73,
+      "text": "- Coordinate speaker questions for visiting researchers presenting climate and health work."
+    }
+  ],
+  "golden_headings": [
+    {
+      "heading": "Education",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "Research Experience",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    },
+    {
+      "heading": "Publications",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "Selected Presentations",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    },
+    {
+      "heading": "Skills",
+      "general_header": true,
+      "skill_start": true,
+      "skill_stop": true
+    },
+    {
+      "heading": "Methods Training",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    },
+    {
+      "heading": "Professional Service",
+      "general_header": false,
+      "skill_start": false,
+      "skill_stop": false
+    }
+  ],
+  "projected_skill_text": "SKILLS\nR, tidyverse, REDCap, Zotero, SAS basic, French and English fluent\nMETHODS TRAINING\nGraduate Methods Sequence\n2025-2026\nMcGill University\n- Completed coursework in causal inference, survival analysis, longitudinal data methods, and reproducible research\nworkflows.\n- Built R Markdown templates for analysis notes so collaborators could review assumptions, exclusions, and model changes.\nPROFESSIONAL SERVICE\nStudent Reviewer, Population Health Journal Club\nSept 2025-Present\nMontréal, QC\n- Summarize methods limitations and data-source constraints for monthly article discussions.\n- Coordinate speaker questions for visiting researchers presenting climate and health work.",
+  "parsed": {
+    "skills": {
+      "value": [
+        "r",
+        "tidyverse",
+        "redcap",
+        "zotero",
+        "sas basic",
+        "french and english fluent",
+        "methods training",
+        "graduate methods sequence",
+        "2025-2026",
+        "mcgill university",
+        "- completed coursework in causal inference",
+        "survival analysis",
+        "longitudinal data methods",
+        "and reproducible research",
+        "workflows.",
+        "- built r markdown templates for analysis notes so collaborators could review assumptions",
+        "exclusions",
+        "and model changes.",
+        "professional service",
+        "student reviewer",
+        "population health journal club",
+        "sept 2025-present",
+        "montreal",
+        "qc",
+        "- summarize methods limitations and data-source constraints for monthly article discussions.",
+        "- coordinate speaker questions for visiting researchers presenting climate and health work."
+      ],
+      "confidence": 1.0
+    },
+    "locations": {
+      "value": [],
+      "confidence": 0.0
+    },
+    "education": {
+      "value": [
+        "McGill University, Montréal, QC",
+        "Expected May 2027",
+        "Master of Science in Epidemiology",
+        "- Thesis: Neighborhood heat exposure and emergency department utilization among older adults",
+        "University of Ottawa, Ottawa, ON",
+        "June 2024",
+        "Honours Bachelor of Health Sciences",
+        "- Graduated magna cum laude"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [],
+      "confidence": 0.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 74,
+  "work_stop_line": null,
+  "projects_from_document_start": []
+}

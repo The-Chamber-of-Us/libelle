@@ -1,0 +1,597 @@
+{
+  "git_commit": "e04ab03213ca7a18eb3a5e867c42314c9119a7d4",
+  "pdf": "backend/benchmarks/resumes/dense_skills_02.pdf",
+  "pdf_sha256": "d2fb4d197ba0f432453217c6ada1b1b18ab6edb899e66dd7ae5aba140cac06aa",
+  "golden": "backend/benchmarks/golden_json/dense_skills_02.json",
+  "golden_sha256": "ea99b806da98693633f7919a9c597a2874556484a16898707e79628f9296c843",
+  "layout": "AMBIGUOUS",
+  "section_lines": [
+    {
+      "index": 9,
+      "text": "SUMMARY"
+    },
+    {
+      "index": 10,
+      "text": ""
+    },
+    {
+      "index": 11,
+      "text": "Versatile content writer and copywriter with 6+ years producing high-performing content across brand,"
+    },
+    {
+      "index": 12,
+      "text": "digital, and editorial channels. Equally comfortable crafting long-form thought leadership and punchy ad copy."
+    },
+    {
+      "index": 13,
+      "text": "Known for fast turnaround, strong editorial instincts, and an ability to adapt tone and voice across wildly"
+    },
+    {
+      "index": 14,
+      "text": "different industries and audiences."
+    },
+    {
+      "index": 15,
+      "text": ""
+    },
+    {
+      "index": 16,
+      "text": "SKILLS"
+    },
+    {
+      "index": 17,
+      "text": ""
+    },
+    {
+      "index": 18,
+      "text": "WORK EXPERIENCE"
+    },
+    {
+      "index": 19,
+      "text": ""
+    },
+    {
+      "index": 20,
+      "text": "Senior Copywriter"
+    },
+    {
+      "index": 21,
+      "text": ""
+    },
+    {
+      "index": 22,
+      "text": "Content Strategy"
+    },
+    {
+      "index": 23,
+      "text": ""
+    },
+    {
+      "index": 24,
+      "text": "Ember Creative Agency, Austin, TX"
+    },
+    {
+      "index": 25,
+      "text": ""
+    },
+    {
+      "index": 26,
+      "text": "Brand Voice Development"
+    },
+    {
+      "index": 27,
+      "text": ""
+    },
+    {
+      "index": 28,
+      "text": "May 2021 to Present"
+    },
+    {
+      "index": 29,
+      "text": ""
+    },
+    {
+      "index": 30,
+      "text": "SEO Writing"
+    },
+    {
+      "index": 31,
+      "text": ""
+    },
+    {
+      "index": 32,
+      "text": "Leads copy across a portfolio of 8 active client accounts spanning SaaS, fintech,"
+    },
+    {
+      "index": 33,
+      "text": "and consumer lifestyle brands, owning everything from brand messaging"
+    },
+    {
+      "index": 34,
+      "text": "frameworks to individual campaign assets. Developed a full content strategy and"
+    },
+    {
+      "index": 35,
+      "text": "editorial calendar for a B2B SaaS client that grew organic blog traffic by 140%"
+    },
+    {
+      "index": 36,
+      "text": "over 12 months. Mentors two junior copywriters and conducts weekly copy"
+    },
+    {
+      "index": 37,
+      "text": "reviews to maintain consistent quality and brand voice standards across the"
+    },
+    {
+      "index": 38,
+      "text": "team."
+    },
+    {
+      "index": 39,
+      "text": "Content Writer "
+    },
+    {
+      "index": 40,
+      "text": ""
+    },
+    {
+      "index": 41,
+      "text": "Keyword Research"
+    },
+    {
+      "index": 42,
+      "text": ""
+    },
+    {
+      "index": 43,
+      "text": "Long-Form Editorial"
+    },
+    {
+      "index": 44,
+      "text": ""
+    },
+    {
+      "index": 45,
+      "text": "Blog Writing"
+    },
+    {
+      "index": 46,
+      "text": ""
+    },
+    {
+      "index": 47,
+      "text": "White Papers"
+    },
+    {
+      "index": 48,
+      "text": ""
+    },
+    {
+      "index": 49,
+      "text": "Case Studies"
+    },
+    {
+      "index": 50,
+      "text": ""
+    },
+    {
+      "index": 51,
+      "text": "Driftwood Media Group, Dallas, TX"
+    },
+    {
+      "index": 52,
+      "text": ""
+    },
+    {
+      "index": 53,
+      "text": "Email Marketing Copy"
+    },
+    {
+      "index": 54,
+      "text": ""
+    },
+    {
+      "index": 55,
+      "text": "March 2018 to April 2021"
+    },
+    {
+      "index": 56,
+      "text": ""
+    },
+    {
+      "index": 57,
+      "text": "Produced 10+ pieces of content per week across SEO blogs, email sequences,"
+    },
+    {
+      "index": 58,
+      "text": "and paid social copy for clients in healthcare, real estate, and education"
+    },
+    {
+      "index": 59,
+      "text": "sectors. Consistently ranked among the top three performers for client"
+    },
+    {
+      "index": 60,
+      "text": "satisfaction scores across the agency's writer pool. Rewrote the onboarding"
+    },
+    {
+      "index": 61,
+      "text": "email sequence for a real estate tech client, increasing open rates by 28%"
+    },
+    {
+      "index": 62,
+      "text": "and click-through rates by 19%."
+    },
+    {
+      "index": 63,
+      "text": ""
+    },
+    {
+      "index": 64,
+      "text": "Newsletter Writing"
+    },
+    {
+      "index": 65,
+      "text": ""
+    },
+    {
+      "index": 66,
+      "text": "Social Media Copy"
+    },
+    {
+      "index": 67,
+      "text": ""
+    },
+    {
+      "index": 68,
+      "text": "Ad Copy (Google, Meta,"
+    },
+    {
+      "index": 69,
+      "text": ""
+    },
+    {
+      "index": 70,
+      "text": "LinkedIn)"
+    },
+    {
+      "index": 71,
+      "text": ""
+    },
+    {
+      "index": 72,
+      "text": "Landing Page Copy"
+    },
+    {
+      "index": 73,
+      "text": ""
+    },
+    {
+      "index": 74,
+      "text": "Freelance Copywriter"
+    },
+    {
+      "index": 75,
+      "text": ""
+    },
+    {
+      "index": 76,
+      "text": "UX Writing"
+    },
+    {
+      "index": 77,
+      "text": ""
+    },
+    {
+      "index": 78,
+      "text": "Self-Employed"
+    },
+    {
+      "index": 79,
+      "text": ""
+    },
+    {
+      "index": 80,
+      "text": "2016 to 2018"
+    },
+    {
+      "index": 81,
+      "text": ""
+    },
+    {
+      "index": 82,
+      "text": "Microcopy"
+    },
+    {
+      "index": 83,
+      "text": ""
+    },
+    {
+      "index": 84,
+      "text": "Served a roster of 12 small business and startup clients, delivering brand"
+    },
+    {
+      "index": 85,
+      "text": "naming, taglines, website copy, and launch campaign content. Developed"
+    },
+    {
+      "index": 86,
+      "text": "brand voice guides for 4 clients from scratch, establishing tone, vocabulary,"
+    },
+    {
+      "index": 87,
+      "text": "and messaging pillars still in use today."
+    },
+    {
+      "index": 88,
+      "text": ""
+    },
+    {
+      "index": 89,
+      "text": "Product Descriptions"
+    },
+    {
+      "index": 90,
+      "text": ""
+    },
+    {
+      "index": 91,
+      "text": "Press Releases"
+    },
+    {
+      "index": 92,
+      "text": ""
+    },
+    {
+      "index": 93,
+      "text": "Notion"
+    },
+    {
+      "index": 94,
+      "text": ""
+    },
+    {
+      "index": 95,
+      "text": "Content Strategist (Contract)"
+    },
+    {
+      "index": 96,
+      "text": ""
+    },
+    {
+      "index": 97,
+      "text": "HubSpot"
+    },
+    {
+      "index": 98,
+      "text": ""
+    },
+    {
+      "index": 99,
+      "text": "Verve Publishing Group, Austin, TX"
+    },
+    {
+      "index": 100,
+      "text": ""
+    },
+    {
+      "index": 101,
+      "text": "EDUCATION"
+    },
+    {
+      "index": 102,
+      "text": ""
+    },
+    {
+      "index": 103,
+      "text": "January 2016 –to February 2018"
+    },
+    {
+      "index": 104,
+      "text": ""
+    },
+    {
+      "index": 105,
+      "text": "Embedded with the editorial team to support a digital content overhaul"
+    },
+    {
+      "index": 106,
+      "text": "across three online publications covering technology, culture, and lifestyle."
+    },
+    {
+      "index": 107,
+      "text": "Audited 500+ existing articles for SEO performance and rewrote"
+    },
+    {
+      "index": 108,
+      "text": "underperforming pieces, contributing to a 35% increase in organic search"
+    },
+    {
+      "index": 109,
+      "text": "visibility over six months. Collaborated with editors and designers to develop"
+    },
+    {
+      "index": 110,
+      "text": "a refreshed content style guide adopted site-wide across all three"
+    },
+    {
+      "index": 111,
+      "text": "publications."
+    },
+    {
+      "index": 112,
+      "text": ""
+    },
+    {
+      "index": 113,
+      "text": "B.A. English Literature"
+    },
+    {
+      "index": 114,
+      "text": ""
+    },
+    {
+      "index": 115,
+      "text": "University of Texas at Austin"
+    },
+    {
+      "index": 116,
+      "text": ""
+    },
+    {
+      "index": 117,
+      "text": "2016"
+    },
+    {
+      "index": 118,
+      "text": ""
+    },
+    {
+      "index": 119,
+      "text": "Creative Writing Diploma"
+    },
+    {
+      "index": 120,
+      "text": ""
+    },
+    {
+      "index": 121,
+      "text": "Texas University"
+    },
+    {
+      "index": 122,
+      "text": ""
+    },
+    {
+      "index": 123,
+      "text": "2015"
+    }
+  ],
+  "golden_headings": [
+    {
+      "heading": "SUMMARY",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "SKILLS",
+      "general_header": true,
+      "skill_start": true,
+      "skill_stop": true
+    },
+    {
+      "heading": "WORK EXPERIENCE",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    },
+    {
+      "heading": "EDUCATION",
+      "general_header": true,
+      "skill_start": false,
+      "skill_stop": true
+    }
+  ],
+  "projected_skill_text": "SKILLS",
+  "parsed": {
+    "skills": {
+      "value": [],
+      "confidence": 0.0
+    },
+    "locations": {
+      "value": [
+        "Austin, TX"
+      ],
+      "confidence": 1.0
+    },
+    "education": {
+      "value": [
+        "sectors. Consistently ranked among the top three performers for client",
+        "satisfaction scores across the agency's writer pool. Rewrote the onboarding",
+        "email sequence for a real estate tech client, increasing open rates by 28%",
+        "and click-through rates by 19%.",
+        "Newsletter Writing",
+        "Social Media Copy",
+        "Ad Copy (Google, Meta,",
+        "LinkedIn)",
+        "Landing Page Copy",
+        "Freelance Copywriter",
+        "UX Writing",
+        "Self-Employed",
+        "2016 to 2018",
+        "Microcopy",
+        "Served a roster of 12 small business and startup clients, delivering brand",
+        "naming, taglines, website copy, and launch campaign content. Developed",
+        "brand voice guides for 4 clients from scratch, establishing tone, vocabulary,",
+        "and messaging pillars still in use today.",
+        "Product Descriptions",
+        "Press Releases",
+        "Notion",
+        "Content Strategist (Contract)",
+        "HubSpot",
+        "Verve Publishing Group, Austin, TX",
+        "January 2016 –to February 2018",
+        "Embedded with the editorial team to support a digital content overhaul",
+        "across three online publications covering technology, culture, and lifestyle.",
+        "Audited 500+ existing articles for SEO performance and rewrote",
+        "underperforming pieces, contributing to a 35% increase in organic search",
+        "visibility over six months. Collaborated with editors and designers to develop",
+        "a refreshed content style guide adopted site-wide across all three",
+        "publications.",
+        "B.A. English Literature",
+        "University of Texas at Austin",
+        "2016",
+        "Creative Writing Diploma",
+        "Texas University",
+        "2015"
+      ],
+      "confidence": 1.0
+    },
+    "work_experience": {
+      "value": [
+        "Senior Copywriter",
+        "Content Strategy",
+        "Ember Creative Agency, Austin, TX",
+        "Brand Voice Development",
+        "May 2021 to Present",
+        "SEO Writing",
+        "Leads copy across a portfolio of 8 active client accounts spanning SaaS, fintech, and consumer lifestyle brands, owning everything from brand messaging frameworks to individual campaign assets. Developed a full content strategy and editorial calendar for a B2B SaaS client that grew organic blog traffic by 140% over 12 months. Mentors two junior copywriters and conducts weekly copy reviews to maintain consistent quality and brand voice standards across the team. Content Writer",
+        "Keyword Research",
+        "Long-Form Editorial",
+        "Blog Writing",
+        "White Papers",
+        "Case Studies",
+        "Driftwood Media Group, Dallas, TX",
+        "Email Marketing Copy",
+        "March 2018 to April 2021",
+        "Produced 10+ pieces of content per week across SEO blogs, email sequences, and paid social copy for clients in healthcare, real estate, and education sectors. Consistently ranked among the top three performers for client satisfaction scores across the agency's writer pool. Rewrote the onboarding email sequence for a real estate tech client, increasing open rates by 28% and click-through rates by 19%.",
+        "Newsletter Writing",
+        "Social Media Copy",
+        "Ad Copy (Google, Meta,",
+        "LinkedIn)",
+        "Landing Page Copy",
+        "Freelance Copywriter",
+        "UX Writing",
+        "Self-Employed",
+        "2016 to 2018",
+        "Microcopy",
+        "Served a roster of 12 small business and startup clients, delivering brand naming, taglines, website copy, and launch campaign content. Developed brand voice guides for 4 clients from scratch, establishing tone, vocabulary, and messaging pillars still in use today.",
+        "Product Descriptions",
+        "Press Releases",
+        "Notion",
+        "Content Strategist (Contract)",
+        "HubSpot",
+        "Verve Publishing Group, Austin, TX"
+      ],
+      "confidence": 1.0
+    },
+    "project_experience": {
+      "value": [],
+      "confidence": 0.0
+    }
+  },
+  "work_end_index": 101,
+  "work_stop_line": "EDUCATION",
+  "projects_from_document_start": []
+}
