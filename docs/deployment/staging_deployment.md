@@ -362,14 +362,21 @@ After deployment, an authorized reviewer should verify:
 
 ## PyMuPDF Dependency Note
 
-The staging environment currently uses a newer PyMuPDF version than the older repository pin that previously caused install problems on newer Python environments.
+The supported repository setup uses Python 3.11 and `PyMuPDF==1.22.5`.
+The newer version reported successful during staging installation is not
+approved for parser compatibility: the #316 review found semantic regressions.
 
 Observed issue:
 
 - `PyMuPDF==1.22.5` can fail to install on newer Python/macOS/aarch64 environments because pip may attempt a source build.
-- `PyMuPDF==1.27.2.3` installed successfully during staging setup.
+- `PyMuPDF==1.27.2.3` installed successfully during staging setup, but install
+  success alone does not establish equivalent extraction output.
 
-This should be tracked separately as a dependency maintenance issue so the repository pin matches supported local and staging environments.
+Use `python -m pip install --only-binary=PyMuPDF -r requirements.txt` from
+`backend/` to avoid an implicit source build. See the
+[compatibility review](../pymupdf-compatibility.md) for wheel requirements and
+benchmark evidence. This repository validation does not verify the current
+deployed environment.
 
 ## Rollback Notes
 

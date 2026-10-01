@@ -1,7 +1,7 @@
 fastapi==0.111.1
 uvicorn[standard]==0.23.2
 
-# PDF parsing
+# PDF parsing: use Python 3.11; see docs/pymupdf-compatibility.md before upgrading.
 PyMuPDF==1.22.5
 
 # Google APIs (Sheets + Drive)

@@ -102,7 +102,7 @@ From inside `libelle/backend`:
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install --only-binary=PyMuPDF -r requirements.txt
 ```
 
 ### 9) Create your local `.env`
