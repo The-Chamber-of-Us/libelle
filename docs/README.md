@@ -26,5 +26,6 @@ current architecture map for implementation guidance.
 
 ## Local Development
 
+- [Python / PyMuPDF Compatibility and Benchmark Setup](pymupdf-compatibility.md)
 - [Local Backend Google Setup](local-dev-backend-google-setup.md)
 - [Local Dashboard Write Testing](local-dev-dashboard-writes.md)

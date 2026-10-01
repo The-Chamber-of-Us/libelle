@@ -27,9 +27,10 @@ synthetic/
 All commands run from the **repo root**.
 
 ```bash
-# Spike-local venv. Doesn't change backend/requirements.txt prod pin.
-python3 -m venv .venv
-.venv/bin/pip install -r backend/benchmarks/synthetic/requirements.txt
+# Separate venv, using the same PyMuPDF pin as the backend.
+python3.11 -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install --only-binary=PyMuPDF -r backend/benchmarks/synthetic/requirements.txt
 
 # macOS WeasyPrint system deps:
 brew install pango cairo gdk-pixbuf libffi
@@ -52,6 +53,12 @@ DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
     --golden_dir backend/benchmarks/synthetic/out/golden_json \
     --out backend/benchmarks/synthetic/out/runs
 ```
+
+Use Python 3.11 and the backend's exact PyMuPDF pin; newer versions can change
+section ownership even when aggregate skill scores improve. See the
+[compatibility review](../../../docs/pymupdf-compatibility.md). The WeasyPrint
+system libraries above are only needed to generate this corpus; benchmarking
+the committed PDFs does not require them.
 
 Note: `--adversarial-ratio 0.34` (not the 0.30 default) ensures all 10
 adversarial templates fire at `--count 30`. With 0.30, only 9 fire — the
