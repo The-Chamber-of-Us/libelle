@@ -1,0 +1,2374 @@
+[
+  {
+    "resume": "resume_201",
+    "input_sha256": {
+      "pdf": "14a0015cbac4876da36b59a63d9604830f62ba3a14dc2a2c0858fbfd62b08fd9",
+      "golden": "a37ee62d82596243f787fe7e1c8b7ad9646f41e858ff0b2a35d79166bb39c0ce"
+    },
+    "extracted_text": "Maya R. Chen\n\nmaya.chen@example.com | (315) 555-0184 | Ithaca, NY | github.com/mayarchen\n\nOBJECTIVE\n\nRecent computer science graduate seeking an entry-level software engineering role focused on internal tools, data workflows,\nand user-centered automation.\n\nEDUCATION\nCornell University, College of Engineering, Ithaca, NY\nMay 2026\n\nBachelor of Science in Computer Science, Minor in Information Science\n\n- GPA: 3.41; Dean's List, Spring 2025\n- Relevant Courses: Data Structures, Databases, Web Programming, Human-Computer Interaction\n\nPROJECTS\nCourse Planner Web App\nJan-May 2026\n\nClass project\n\n- Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.\n- Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits.\n\nCampus Food Pantry Inventory Sheet\nSep-Dec 2025\n\nVolunteer technical project\n\n- Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.\n- Documented the handoff process for three student volunteers with limited technical background.\n\nEXPERIENCE\nLibrary Technology Assistant, Cornell University Library\nAug 2024-May 2026\n\nIthaca, NY\n\n- Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.\n- Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues.\n\nSKILLS\n\nPython, Java, JavaScript, React, Flask, SQL, Git, Excel; basic Spanish\n\nADDITIONAL PROJECTS\nStudent Organization Check-In Tracker\nFeb-Apr 2026\n\nPython and Airtable\n\n- Created a small script that compared event sign-in exports against member rosters and highlighted duplicate or missing\ncheck-ins.\n\n- Shared weekly attendance summaries with two club officers so they could follow up with inactive members before\nelections.\n\nIntro Programming Review Notes\nFall 2025\n\nPeer learning resource\n\n- Compiled short examples for recursion, dictionaries, and file input/output after tutoring first-year students during office\nhours.\n\n- Organized examples into a GitHub repository with README files and expected output for each exercise.\n\nLEADERSHIP & SERVICE\nPeer Tutor, Engineering Learning Initiatives\nSep 2025-May 2026\n\nIthaca, NY\n\n- Tutored 6-8 students weekly in introductory Python and data structures, focusing on debugging habits and test-case design.\n- Coordinated review sessions before two prelims and collected anonymized questions to improve future study guides.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "3155550184"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "(   Ithaca, NY"
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "python",
+          "java",
+          "javascript",
+          "react",
+          "flask",
+          "sql",
+          "git",
+          "excel",
+          "basic spanish"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "Cornell University, College of Engineering, Ithaca, NY",
+          "May 2026",
+          "Bachelor of Science in Computer Science, Minor in Information Science",
+          "- GPA: 3.41; Dean's List, Spring 2025",
+          "- Relevant Courses: Data Structures, Databases, Web Programming, Human-Computer Interaction"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Library Technology Assistant, Cornell University Library Aug 2024-May 2026",
+          "Ithaca, NY",
+          "Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.",
+          "Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "project",
+        "title": "Course Planner Web App",
+        "meta": "Jan-May 2026",
+        "subtitle": "Class project",
+        "bullets": [
+          "Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.",
+          "Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits."
+        ],
+        "raw_text": "Course Planner Web App\nJan-May 2026\nClass project\nBuilt a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.\nCreated SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits.",
+        "source_section": "PROJECTS"
+      },
+      {
+        "entry_type": "project",
+        "title": "Campus Food Pantry Inventory Sheet",
+        "meta": "Sep-Dec 2025",
+        "subtitle": "Volunteer technical project",
+        "bullets": [
+          "Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.",
+          "Documented the handoff process for three student volunteers with limited technical background."
+        ],
+        "raw_text": "Campus Food Pantry Inventory Sheet\nSep-Dec 2025\nVolunteer technical project\nReplaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.\nDocumented the handoff process for three student volunteers with limited technical background.",
+        "source_section": "PROJECTS"
+      },
+      {
+        "entry_type": "work",
+        "title": "Library Technology Assistant, Cornell University Library",
+        "meta": "Aug 2024-May 2026",
+        "subtitle": "Ithaca, NY",
+        "bullets": [
+          "Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.",
+          "Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues."
+        ],
+        "raw_text": "Library Technology Assistant, Cornell University Library\nAug 2024-May 2026\nIthaca, NY\nResolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.\nCreated a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues.",
+        "source_section": "EXPERIENCE"
+      },
+      {
+        "entry_type": "project",
+        "title": "Student Organization Check-In Tracker",
+        "meta": "Feb-Apr 2026",
+        "subtitle": "Python and Airtable",
+        "bullets": [
+          "Created a small script that compared event sign-in exports against member rosters and highlighted duplicate or missing check-ins.",
+          "Shared weekly attendance summaries with two club officers so they could follow up with inactive members before elections."
+        ],
+        "raw_text": "Student Organization Check-In Tracker\nFeb-Apr 2026\nPython and Airtable\nCreated a small script that compared event sign-in exports against member rosters and highlighted duplicate or missing check-ins.\nShared weekly attendance summaries with two club officers so they could follow up with inactive members before elections.",
+        "source_section": "ADDITIONAL PROJECTS"
+      },
+      {
+        "entry_type": "project",
+        "title": "Intro Programming Review Notes",
+        "meta": "Fall 2025",
+        "subtitle": "Peer learning resource",
+        "bullets": [
+          "Compiled short examples for recursion, dictionaries, and file input/output after tutoring first-year students during office hours.",
+          "Organized examples into a GitHub repository with README files and expected output for each exercise."
+        ],
+        "raw_text": "Intro Programming Review Notes\nFall 2025\nPeer learning resource\nCompiled short examples for recursion, dictionaries, and file input/output after tutoring first-year students during office hours.\nOrganized examples into a GitHub repository with README files and expected output for each exercise.",
+        "source_section": "ADDITIONAL PROJECTS"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Library Technology Assistant, Cornell University Library Aug 2024-May 2026",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Ithaca, NY",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Resolved 10-15 weekly student support tickets involving printing, classroom displays, and account access.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Created a short troubleshooting checklist that reduced repeat escalation for common scanner setup issues.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "additional projects low coverage or missed",
+        "extra work output; possible split or section bleed",
+        "low project text overlap",
+        "parser output shape gap: raw strings lack field and section ownership",
+        "project extraction differs with start_index=0",
+        "project section missed"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Library Technology Assistant, Cornell University Library",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 2,
+          "best_jaccard": 0.359,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Course Planner Web App",
+          "source_section": "PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Campus Food Pantry Inventory Sheet",
+          "source_section": "PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Student Organization Check-In Tracker",
+          "source_section": "ADDITIONAL PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Intro Programming Review Notes",
+          "source_section": "ADDITIONAL PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "expected_work_count": 1,
+      "predicted_work_count": 4,
+      "best_work_overlap": 0.359,
+      "expected_project_count": 4,
+      "predicted_project_count": 0,
+      "best_project_overlap": 0.0,
+      "work_end_index": 44,
+      "project_count_start_zero": 8
+    },
+    "projects_start_zero": [
+      "Course Planner Web App Jan-May 2026",
+      "Class project",
+      "Built a React and Flask prototype that let 28 classmates compare course combinations against graduation requirements.",
+      "Created SQLite seed data and validation checks for duplicate courses, missing prerequisites, and semester credit limits.",
+      "Campus Food Pantry Inventory Sheet Sep-Dec 2025",
+      "Volunteer technical project",
+      "Replaced a shared spreadsheet with a lightweight Google Apps Script workflow that flagged low-stock items each Friday.",
+      "Documented the handoff process for three student volunteers with limited technical background."
+    ],
+    "excluded_section_headings": [
+      "OBJECTIVE",
+      "EDUCATION",
+      "SKILLS",
+      "LEADERSHIP & SERVICE"
+    ]
+  },
+  {
+    "resume": "resume_202",
+    "input_sha256": {
+      "pdf": "1f6608ffdfaabf1c37ea4c361484e594dade599aa95cae1aca3854e5c08934d4",
+      "golden": "33c7dd2219f51a71ac380b26d2b8898d8a3b30dc7dd307b91e005b674aec1a1e"
+    },
+    "extracted_text": "Victor Alvarez\n\nvictor.alvarez@example.com | linkedin.com/in/victoralvarez | Austin, TX | (512) 555-0149\n\nSUMMARY\n\nSenior platform engineer with 18 years of experience modernizing data-intensive systems for logistics, payments, and\nenterprise operations.\n\nTECHNICAL TOOLKIT\n\nLanguages: Python/Django, Java, Go, TypeScript, SQL, Bash\nPlatforms: AWS/GCP, Kubernetes, Docker, PostgreSQL, Kafka, Redis, Snowflake, Datadog, Terraform, GitHub Actions,\nCI/CD pipelines\n\nPROFESSIONAL EXPERIENCE\nPrincipal Software Engineer, Northstar Freight Systems\nFeb 2018-Present\n\nAustin, TX\n\n- Led a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling\n4.2M quotes per month.\n\n- Reduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks\nacross six teams.\n\n- Designed a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.\n- Mentored staff engineers on technical design reviews, migration plans, and production readiness checklists.\n\nSenior Backend Engineer, Meridian Payments\nJul 2011-Jan 2018\n\nDenver, CO\n\n- Built Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.\n- Implemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail\nperiods.\n\n- Partnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements.\n\nSoftware Developer, Arrowline Manufacturing\nJun 2007-Jun 2011\n\nCleveland, OH\n\n- Maintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.\n- Created Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines.\n\nEDUCATION\nUniversity of Colorado Boulder\nMay 2007\n\nBachelor of Science in Computer Science\n\nPROFESSIONAL AFFILIATIONS\n\nAssociation for Computing Machinery; Austin Cloud Native Meetup organizer\n\nSELECTED IMPACT\nReliability and Migration Planning\n2021-2026\n\nCross-team architecture work\n\n- Authored migration plans for three legacy services, including rollback criteria, data validation checks, and customer-support\ncommunication steps.\n\n- Introduced lightweight architecture decision records that made tradeoffs visible across product, operations, and compliance\nstakeholders.\n\nDeveloper Enablement\n2019-Present\n\nInternal platform practice\n\n- Built reusable service templates with logging, health checks, metrics, and deployment defaults, reducing new-service setup\ntime from days to hours.\n\n- Led monthly production-readiness reviews for teams launching new event consumers and external partner APIs.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "5125550149"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "Austin, TX   ("
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "python",
+          "django, java, go, typescript, sql, bash",
+          "aws/gcp",
+          "kubernetes",
+          "docker",
+          "postgresql",
+          "kafka",
+          "redis",
+          "snowflake",
+          "datadog",
+          "terraform",
+          "github actions",
+          "ci/cd pipelines"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "University of Colorado Boulder",
+          "May 2007",
+          "Bachelor of Science in Computer Science"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Principal Software Engineer, Northstar Freight Systems Feb 2018-Present",
+          "Austin, TX",
+          "Led a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling 4.2M quotes per month.",
+          "Reduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks across six teams.",
+          "Designed a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.",
+          "Mentored staff engineers on technical design reviews, migration plans, and production readiness checklists.",
+          "Senior Backend Engineer, Meridian Payments Jul 2011-Jan 2018",
+          "Denver, CO",
+          "Built Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.",
+          "Implemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail periods.",
+          "Partnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements.",
+          "Software Developer, Arrowline Manufacturing Jun 2007-Jun 2011",
+          "Cleveland, OH",
+          "Maintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.",
+          "Created Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "work",
+        "title": "Principal Software Engineer, Northstar Freight Systems",
+        "meta": "Feb 2018-Present",
+        "subtitle": "Austin, TX",
+        "bullets": [
+          "Led a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling 4.2M quotes per month.",
+          "Reduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks across six teams.",
+          "Designed a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.",
+          "Mentored staff engineers on technical design reviews, migration plans, and production readiness checklists."
+        ],
+        "raw_text": "Principal Software Engineer, Northstar Freight Systems\nFeb 2018-Present\nAustin, TX\nLed a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling 4.2M quotes per month.\nReduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks across six teams.\nDesigned a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.\nMentored staff engineers on technical design reviews, migration plans, and production readiness checklists.",
+        "source_section": "PROFESSIONAL EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "Senior Backend Engineer, Meridian Payments",
+        "meta": "Jul 2011-Jan 2018",
+        "subtitle": "Denver, CO",
+        "bullets": [
+          "Built Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.",
+          "Implemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail periods.",
+          "Partnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements."
+        ],
+        "raw_text": "Senior Backend Engineer, Meridian Payments\nJul 2011-Jan 2018\nDenver, CO\nBuilt Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.\nImplemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail periods.\nPartnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements.",
+        "source_section": "PROFESSIONAL EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "Software Developer, Arrowline Manufacturing",
+        "meta": "Jun 2007-Jun 2011",
+        "subtitle": "Cleveland, OH",
+        "bullets": [
+          "Maintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.",
+          "Created Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines."
+        ],
+        "raw_text": "Software Developer, Arrowline Manufacturing\nJun 2007-Jun 2011\nCleveland, OH\nMaintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.\nCreated Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines.",
+        "source_section": "PROFESSIONAL EXPERIENCE"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Principal Software Engineer, Northstar Freight Systems Feb 2018-Present",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Austin, TX",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Led a 9-engineer modernization of shipment-rating services from a nightly batch process to event-driven APIs handling 4.2M quotes per month.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Reduced incident response time by 38% by standardizing service dashboards, log correlation, and escalation playbooks across six teams.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Designed a PostgreSQL partitioning strategy that cut invoice reconciliation queries from 22 minutes to under 90 seconds.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Mentored staff engineers on technical design reviews, migration plans, and production readiness checklists.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Senior Backend Engineer, Meridian Payments Jul 2011-Jan 2018",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Denver, CO",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Built Java services for merchant onboarding, risk review, and settlement reporting used by 14K small-business accounts.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Implemented idempotency keys and audit logging that reduced duplicate payout corrections by 71% during peak retail periods.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Partnered with compliance and finance teams to translate NACHA rule changes into testable engineering requirements.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Software Developer, Arrowline Manufacturing Jun 2007-Jun 2011",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Cleveland, OH",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Maintained ASP.NET and SQL Server applications for production scheduling, quality checks, and inventory transfers.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Created Crystal Reports used by plant supervisors to compare scrap rates across three assembly lines.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra work output; possible split or section bleed",
+        "parser output shape gap: raw strings lack field and section ownership"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Principal Software Engineer, Northstar Freight Systems",
+          "source_section": "PROFESSIONAL EXPERIENCE",
+          "best_predicted_index": 2,
+          "best_jaccard": 0.3026,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "Senior Backend Engineer, Meridian Payments",
+          "source_section": "PROFESSIONAL EXPERIENCE",
+          "best_predicted_index": 8,
+          "best_jaccard": 0.2982,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "Software Developer, Arrowline Manufacturing",
+          "source_section": "PROFESSIONAL EXPERIENCE",
+          "best_predicted_index": 14,
+          "best_jaccard": 0.3947,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "expected_work_count": 3,
+      "predicted_work_count": 15,
+      "best_work_overlap": 0.3319,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 49,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "SUMMARY",
+      "TECHNICAL TOOLKIT",
+      "EDUCATION",
+      "PROFESSIONAL AFFILIATIONS",
+      "SELECTED IMPACT"
+    ]
+  },
+  {
+    "resume": "resume_203",
+    "input_sha256": {
+      "pdf": "164b019cf32d242d913228cedd1d53aa07256320d1f8ec61fa0c49a0592aaa13",
+      "golden": "ffe29b485678119d6974daabf29334afcaecd9cc6ee21c4cf5a465695fec47a4"
+    },
+    "extracted_text": "Nadia Patel\n\nnadia.patel@example.com | Chicago, IL | (773) 555-0162 | github.com/nadiapatel-data\n\nPROFILE\n\nOperations analyst transitioning into data analytics, with experience improving hospital workflows and building SQL/Python\nprojects around staffing, scheduling, and quality metrics.\n\nTECHNICAL PROJECTS\nClinic No-Show Dashboard\nMar-May 2026\n\nIndependent project\n\n- Modeled 18 months of de-identified appointment data in PostgreSQL and created cohort views by clinic, referral source,\nand appointment type.\n\n- Built a Streamlit dashboard that highlighted weekday and reminder-message patterns associated with missed appointments.\n\nSupply Cart Restock Forecast\nNov 2025-Jan 2026\n\nPython analysis\n\n- Cleaned CSV exports from three supply rooms and used pandas to identify items with recurring stockouts before Monday\nclinics.\n\n- Presented a reorder threshold model that would have avoided 63% of urgent restock requests in the sample period.\n\nEXPERIENCE\nPatient Access Coordinator, Lakeside Medical Group\nJun 2022-Present\n\nChicago, IL\n\n- Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.\n- Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.\n- Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records.\n\nAdministrative Assistant, West Loop Physical Therapy\nAug 2020-May 2022\n\nChicago, IL\n\n- Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.\n- Trained four new front-desk staff members on intake scripts and claims documentation standards.\n\nEDUCATION\nDePaul University\nCertificate expected Dec 2026\n\nData Analytics Certificate\n\n- Coursework: SQL for Analytics, Python Programming, Data Visualization\n\nUniversity of Illinois Chicago\nMay 2020\n\nBachelor of Science in Public Health\n\nSKILLS\n\nSQL, Python, pandas, Tableau, Excel pivot tables, healthcare operations, Spanish conversational\n\nADDITIONAL ANALYTICS WORK\nReferral Queue Aging Review\nFeb 2026\n\nWorkplace analysis\n\n- Exported referral queue snapshots and grouped delayed records by payer, clinic, and missing-document reason.\n- Recommended a daily triage view that helped supervisors separate true bottlenecks from duplicate or already-scheduled\nreferrals.\n\nCOMMUNITY & TRAINING\nVolunteer Data Coach, South Side Tech Circle\nSep 2025-Present\n\nChicago, IL\n\n- Help adult learners practice spreadsheet cleanup, filtering, and chart interpretation using public health sample datasets.\n- Prepared short exercises on pivot tables and basic SQL-style grouping for learners exploring analyst careers.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "7735550162"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "Chicago, IL   ("
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "sql",
+          "python",
+          "pandas",
+          "tableau",
+          "excel pivot tables",
+          "healthcare operations",
+          "spanish conversational"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "DePaul University",
+          "Certificate expected Dec 2026",
+          "Data Analytics Certificate",
+          "- Coursework: SQL for Analytics, Python Programming, Data Visualization",
+          "University of Illinois Chicago",
+          "May 2020",
+          "Bachelor of Science in Public Health"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Patient Access Coordinator, Lakeside Medical Group Jun 2022-Present",
+          "Chicago, IL",
+          "Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.",
+          "Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.",
+          "Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records.",
+          "Administrative Assistant, West Loop Physical Therapy Aug 2020-May 2022",
+          "Chicago, IL",
+          "Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.",
+          "Trained four new front-desk staff members on intake scripts and claims documentation standards."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "project",
+        "title": "Clinic No-Show Dashboard",
+        "meta": "Mar-May 2026",
+        "subtitle": "Independent project",
+        "bullets": [
+          "Modeled 18 months of de-identified appointment data in PostgreSQL and created cohort views by clinic, referral source, and appointment type.",
+          "Built a Streamlit dashboard that highlighted weekday and reminder-message patterns associated with missed appointments."
+        ],
+        "raw_text": "Clinic No-Show Dashboard\nMar-May 2026\nIndependent project\nModeled 18 months of de-identified appointment data in PostgreSQL and created cohort views by clinic, referral source, and appointment type.\nBuilt a Streamlit dashboard that highlighted weekday and reminder-message patterns associated with missed appointments.",
+        "source_section": "TECHNICAL PROJECTS"
+      },
+      {
+        "entry_type": "project",
+        "title": "Supply Cart Restock Forecast",
+        "meta": "Nov 2025-Jan 2026",
+        "subtitle": "Python analysis",
+        "bullets": [
+          "Cleaned CSV exports from three supply rooms and used pandas to identify items with recurring stockouts before Monday clinics.",
+          "Presented a reorder threshold model that would have avoided 63% of urgent restock requests in the sample period."
+        ],
+        "raw_text": "Supply Cart Restock Forecast\nNov 2025-Jan 2026\nPython analysis\nCleaned CSV exports from three supply rooms and used pandas to identify items with recurring stockouts before Monday clinics.\nPresented a reorder threshold model that would have avoided 63% of urgent restock requests in the sample period.",
+        "source_section": "TECHNICAL PROJECTS"
+      },
+      {
+        "entry_type": "work",
+        "title": "Patient Access Coordinator, Lakeside Medical Group",
+        "meta": "Jun 2022-Present",
+        "subtitle": "Chicago, IL",
+        "bullets": [
+          "Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.",
+          "Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.",
+          "Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records."
+        ],
+        "raw_text": "Patient Access Coordinator, Lakeside Medical Group\nJun 2022-Present\nChicago, IL\nCoordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.\nCreated Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.\nPartner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records.",
+        "source_section": "EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "Administrative Assistant, West Loop Physical Therapy",
+        "meta": "Aug 2020-May 2022",
+        "subtitle": "Chicago, IL",
+        "bullets": [
+          "Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.",
+          "Trained four new front-desk staff members on intake scripts and claims documentation standards."
+        ],
+        "raw_text": "Administrative Assistant, West Loop Physical Therapy\nAug 2020-May 2022\nChicago, IL\nMaintained daily visit logs, payment records, and therapist schedules across two clinic locations.\nTrained four new front-desk staff members on intake scripts and claims documentation standards.",
+        "source_section": "EXPERIENCE"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Patient Access Coordinator, Lakeside Medical Group Jun 2022-Present",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Chicago, IL",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Coordinate scheduling and insurance intake for a 12-provider specialty practice averaging 340 visits per week.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Created Excel quality checks for referral queues, reducing unworked referrals older than seven days by 46%.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Partner with nurse managers and IT support to document root causes for appointment delays and duplicate patient records.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Administrative Assistant, West Loop Physical Therapy Aug 2020-May 2022",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Chicago, IL",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Maintained daily visit logs, payment records, and therapist schedules across two clinic locations.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Trained four new front-desk staff members on intake scripts and claims documentation standards.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra work output; possible split or section bleed",
+        "low project text overlap",
+        "parser output shape gap: raw strings lack field and section ownership",
+        "project section missed"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Patient Access Coordinator, Lakeside Medical Group",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 4,
+          "best_jaccard": 0.3036,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "Administrative Assistant, West Loop Physical Therapy",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 8,
+          "best_jaccard": 0.3684,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Clinic No-Show Dashboard",
+          "source_section": "TECHNICAL PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Supply Cart Restock Forecast",
+          "source_section": "TECHNICAL PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "expected_work_count": 2,
+      "predicted_work_count": 9,
+      "best_work_overlap": 0.336,
+      "expected_project_count": 2,
+      "predicted_project_count": 0,
+      "best_project_overlap": 0.0,
+      "work_end_index": 48,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "PROFILE",
+      "EDUCATION",
+      "SKILLS",
+      "ADDITIONAL ANALYTICS WORK",
+      "COMMUNITY & TRAINING"
+    ]
+  },
+  {
+    "resume": "resume_204",
+    "input_sha256": {
+      "pdf": "6b1b4278bd11aacac274f47fe2f05b467d98059028a4a8180a2d15e2b57a5d67",
+      "golden": "04da99fc98dadb4a8d03ec48af0957ae274cbd0727ce5b22499436cea9122bb7"
+    },
+    "extracted_text": "Elena Moreau\n\nelena.moreau@example.net | Montréal, QC, Canada | +1 438 555 0198 | orcid.org/0000-0002-1845-0182\n\nEDUCATION\nMcGill University, Montréal, QC\nExpected May 2027\n\nMaster of Science in Epidemiology\n\n- Thesis: Neighborhood heat exposure and emergency department utilization among older adults\n\nUniversity of Ottawa, Ottawa, ON\nJune 2024\n\nHonours Bachelor of Health Sciences\n\n- Graduated magna cum laude\n\nRESEARCH EXPERIENCE\nGraduate Research Assistant, Urban Health Metrics Lab\nSept 2025-Present\n\nMcGill University\n\n- Clean and link weather station, census, and emergency department datasets covering 11 Montréal boroughs.\n- Draft reproducible R scripts for sensitivity analyses involving lagged temperature exposure windows.\n- Prepare weekly data notes for a cross-disciplinary team of epidemiologists, clinicians, and municipal analysts.\n\nSummer Research Student, Ottawa Hospital Research Institute\nMay-Aug 2024\n\nOttawa, ON\n\n- Abstracted clinical variables from 210 anonymized charts for a study of post-discharge follow-up after sepsis.\n- Flagged inconsistent coding patterns that informed a revised chart review guide for incoming assistants.\n\nPUBLICATIONS\n\nMoreau E., Singh P., Caron L. Heat-alert messaging and care-seeking behavior among older adults. Canadian Journal of Public\nHealth. In review.\nCaron L., Moreau E., Tran V. Built environment predictors of summer respiratory visits. Environmental Health Abstracts.\n2025;12(3).\n\nSELECTED PRESENTATIONS\n\nMoreau E. Neighborhood heat exposure and emergency department utilization. Poster presented at Canadian Public Health\nAssociation Annual Conference; 2026 May; Winnipeg, MB.\nMoreau E., Tran V. Chart review reliability in sepsis follow-up studies. Lightning talk presented at Ottawa Hospital Trainee\nResearch Day; 2024 Aug; Ottawa, ON.\n\nSKILLS\n\nR, tidyverse, REDCap, Zotero, SAS basic, French and English fluent\n\nMETHODS TRAINING\nGraduate Methods Sequence\n2025-2026\n\nMcGill University\n\n- Completed coursework in causal inference, survival analysis, longitudinal data methods, and reproducible research\nworkflows.\n\n- Built R Markdown templates for analysis notes so collaborators could review assumptions, exclusions, and model changes.\n\nPROFESSIONAL SERVICE\nStudent Reviewer, Population Health Journal Club\nSept 2025-Present\n\nMontréal, QC\n\n- Summarize methods limitations and data-source constraints for monthly article discussions.\n- Coordinate speaker questions for visiting researchers presenting climate and health work.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "14385550198"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "skills": {
+        "value": [
+          "r",
+          "tidyverse",
+          "redcap",
+          "zotero",
+          "sas basic",
+          "french and english fluent",
+          "methods training",
+          "graduate methods sequence",
+          "2025-2026",
+          "mcgill university",
+          "- completed coursework in causal inference",
+          "survival analysis",
+          "longitudinal data methods",
+          "and reproducible research",
+          "workflows.",
+          "- built r markdown templates for analysis notes so collaborators could review assumptions",
+          "exclusions",
+          "and model changes.",
+          "professional service",
+          "student reviewer",
+          "population health journal club",
+          "sept 2025-present",
+          "montreal",
+          "qc",
+          "- summarize methods limitations and data-source constraints for monthly article discussions.",
+          "- coordinate speaker questions for visiting researchers presenting climate and health work."
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "McGill University, Montréal, QC",
+          "Expected May 2027",
+          "Master of Science in Epidemiology",
+          "- Thesis: Neighborhood heat exposure and emergency department utilization among older adults",
+          "University of Ottawa, Ottawa, ON",
+          "June 2024",
+          "Honours Bachelor of Health Sciences",
+          "- Graduated magna cum laude"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [],
+    "predicted": [],
+    "comparison": {
+      "notes": [],
+      "entry_diagnostics": [],
+      "expected_work_count": 0,
+      "predicted_work_count": 0,
+      "best_work_overlap": null,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 74,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "Education",
+      "Research Experience",
+      "Publications",
+      "Selected Presentations",
+      "Skills",
+      "Methods Training",
+      "Professional Service"
+    ]
+  },
+  {
+    "resume": "resume_205",
+    "input_sha256": {
+      "pdf": "1e73390ab86ead75b0f599d5eed1e1bbbd839db9c650f004ea35ff098c309df5",
+      "golden": "63d8daddc87c4e06c26a6a0414eb514ec1c1955d4afbff4a8f94a7aa337b5a55"
+    },
+    "extracted_text": "Jordan Kim\n\njordan.kim@example.test | github.com/jordankim-labs | portfolio: jordankim.dev | Ithaca, NY\n\nEDUCATION\nCornell University, College of Engineering, Ithaca, NY\nExpected May 2027\n\nBachelor of Science in Electrical and Computer Engineering\n\n- Relevant Courses: Machine Learning, Embedded Systems, Computer Vision, Algorithms\n\nPROJECTS\nBike Lane Hazard Detector\ngithub.com/jordankim-labs/bike-lan\ne\n\nComputer vision project\n\n- Trained a YOLOv8 model on 1,800 labeled street images to identify potholes, blocked bike lanes, and construction cones.\n- Built a small Flask API and map view that grouped hazards by route segment for a student cycling club pilot.\n\nMeal Match\ndemo.jordankim.dev/meal-match\n\nFull-stack web app\n\n- Developed a Next.js and Firebase app that matched students by dining hall preferences and overlapping free time.\n- Added privacy controls for preferred first name, contact method, and blocked time slots after testing with 16 users.\n\nMicrocontroller Greenhouse Monitor\nFall 2025\n\nEmbedded systems lab\n\n- Programmed an ESP32 to collect humidity, soil moisture, and light readings every 10 minutes.\n- Displayed sensor summaries in a simple web interface and logged threshold alerts for later calibration.\n\nTECHNICAL SKILLS\n\nPython, C++, TypeScript, Next.js, Firebase, Flask, OpenCV, PyTorch, Arduino, Git\n\nEXPERIENCE\nStudent App Developer, Cornell AppDev\nSep 2025-Present\n\nIthaca, NY\n\n- Contribute bug fixes and UI polish to a campus events app used by student organizations.\n- Review pull requests for accessibility labels, state handling, and mobile layout regressions.\n\nACTIVITIES\n\nAssociation of Computer Science Undergraduates; Cornell Cycling Club\n\nLEADERSHIP EXPERIENCE\nHardware Lead, Greenhouse Automation Team\nJan 2026-Present\n\nCornell Design Collaborative\n\n- Coordinate a five-student subgroup building sensor mounts, wiring diagrams, and calibration logs for a campus greenhouse\npilot.\n\n- Track hardware issues in GitHub Projects so firmware, enclosure, and data-dashboard work remain aligned before weekly\ndemos.\n\nCOURSEWORK & AWARDS\n\nCoursework: Signals and Systems, Data Structures, Probability Models, Digital Logic, Product Studio\nAwards: Cornell Engineering Project Showcase finalist, 2026; Dean's List, Fall 2025\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "locations": {
+        "value": [
+          "portfolio: jordankim.dev   Ithaca, NY"
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "python",
+          "c++",
+          "typescript",
+          "next.js",
+          "firebase",
+          "flask",
+          "opencv",
+          "pytorch",
+          "arduino",
+          "git"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "Cornell University, College of Engineering, Ithaca, NY",
+          "Expected May 2027",
+          "Bachelor of Science in Electrical and Computer Engineering",
+          "- Relevant Courses: Machine Learning, Embedded Systems, Computer Vision, Algorithms"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Student App Developer, Cornell AppDev Sep 2025-Present",
+          "Ithaca, NY",
+          "Contribute bug fixes and UI polish to a campus events app used by student organizations.",
+          "Review pull requests for accessibility labels, state handling, and mobile layout regressions."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "project",
+        "title": "Bike Lane Hazard Detector",
+        "meta": "github.com/jordankim-labs/bike-lane",
+        "subtitle": "Computer vision project",
+        "bullets": [
+          "Trained a YOLOv8 model on 1,800 labeled street images to identify potholes, blocked bike lanes, and construction cones.",
+          "Built a small Flask API and map view that grouped hazards by route segment for a student cycling club pilot."
+        ],
+        "raw_text": "Bike Lane Hazard Detector\ngithub.com/jordankim-labs/bike-lane\nComputer vision project\nTrained a YOLOv8 model on 1,800 labeled street images to identify potholes, blocked bike lanes, and construction cones.\nBuilt a small Flask API and map view that grouped hazards by route segment for a student cycling club pilot.",
+        "source_section": "PROJECTS"
+      },
+      {
+        "entry_type": "project",
+        "title": "Meal Match",
+        "meta": "demo.jordankim.dev/meal-match",
+        "subtitle": "Full-stack web app",
+        "bullets": [
+          "Developed a Next.js and Firebase app that matched students by dining hall preferences and overlapping free time.",
+          "Added privacy controls for preferred first name, contact method, and blocked time slots after testing with 16 users."
+        ],
+        "raw_text": "Meal Match\ndemo.jordankim.dev/meal-match\nFull-stack web app\nDeveloped a Next.js and Firebase app that matched students by dining hall preferences and overlapping free time.\nAdded privacy controls for preferred first name, contact method, and blocked time slots after testing with 16 users.",
+        "source_section": "PROJECTS"
+      },
+      {
+        "entry_type": "project",
+        "title": "Microcontroller Greenhouse Monitor",
+        "meta": "Fall 2025",
+        "subtitle": "Embedded systems lab",
+        "bullets": [
+          "Programmed an ESP32 to collect humidity, soil moisture, and light readings every 10 minutes.",
+          "Displayed sensor summaries in a simple web interface and logged threshold alerts for later calibration."
+        ],
+        "raw_text": "Microcontroller Greenhouse Monitor\nFall 2025\nEmbedded systems lab\nProgrammed an ESP32 to collect humidity, soil moisture, and light readings every 10 minutes.\nDisplayed sensor summaries in a simple web interface and logged threshold alerts for later calibration.",
+        "source_section": "PROJECTS"
+      },
+      {
+        "entry_type": "work",
+        "title": "Student App Developer, Cornell AppDev",
+        "meta": "Sep 2025-Present",
+        "subtitle": "Ithaca, NY",
+        "bullets": [
+          "Contribute bug fixes and UI polish to a campus events app used by student organizations.",
+          "Review pull requests for accessibility labels, state handling, and mobile layout regressions."
+        ],
+        "raw_text": "Student App Developer, Cornell AppDev\nSep 2025-Present\nIthaca, NY\nContribute bug fixes and UI polish to a campus events app used by student organizations.\nReview pull requests for accessibility labels, state handling, and mobile layout regressions.",
+        "source_section": "EXPERIENCE"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Student App Developer, Cornell AppDev Sep 2025-Present",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Ithaca, NY",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Contribute bug fixes and UI polish to a campus events app used by student organizations.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Review pull requests for accessibility labels, state handling, and mobile layout regressions.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra work output; possible split or section bleed",
+        "low project text overlap",
+        "parser output shape gap: raw strings lack field and section ownership",
+        "project extraction differs with start_index=0",
+        "project section missed"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Student App Developer, Cornell AppDev",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 2,
+          "best_jaccard": 0.4412,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Bike Lane Hazard Detector",
+          "source_section": "PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Meal Match",
+          "source_section": "PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Microcontroller Greenhouse Monitor",
+          "source_section": "PROJECTS",
+          "best_predicted_index": null,
+          "best_jaccard": 0.0,
+          "raw_token_coverage_across_fragments": 0.0,
+          "field_token_coverage_across_fragments": {
+            "title": 0.0,
+            "meta": 0.0,
+            "subtitle": 0.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "expected_work_count": 1,
+      "predicted_work_count": 4,
+      "best_work_overlap": 0.4412,
+      "expected_project_count": 3,
+      "predicted_project_count": 0,
+      "best_project_overlap": 0.0,
+      "work_end_index": 51,
+      "project_count_start_zero": 14
+    },
+    "projects_start_zero": [
+      "Bike Lane Hazard Detector github.com/jordankim-labs/bike-lan e",
+      "Computer vision project",
+      "Trained a YOLOv8 model on 1,800 labeled street images to identify potholes, blocked bike lanes, and construction cones.",
+      "Built a small Flask API and map view that grouped hazards by route segment for a student cycling club pilot.",
+      "Meal Match demo.jordankim.dev/meal-match",
+      "Full-stack web app",
+      "Developed a Next.js and Firebase app that matched students by dining hall preferences and overlapping free time.",
+      "Added privacy controls for preferred first name, contact method, and blocked time slots after testing with 16 users.",
+      "Microcontroller Greenhouse Monitor Fall 2025",
+      "Embedded systems lab",
+      "Programmed an ESP32 to collect humidity, soil moisture, and light readings every 10 minutes.",
+      "Displayed sensor summaries in a simple web interface and logged threshold alerts for later calibration.",
+      "TECHNICAL SKILLS",
+      "Python, C++, TypeScript, Next.js, Firebase, Flask, OpenCV, PyTorch, Arduino, Git"
+    ],
+    "excluded_section_headings": [
+      "EDUCATION",
+      "TECHNICAL SKILLS",
+      "ACTIVITIES",
+      "LEADERSHIP EXPERIENCE",
+      "COURSEWORK & AWARDS"
+    ]
+  },
+  {
+    "resume": "resume_206",
+    "input_sha256": {
+      "pdf": "7f59bdc01250f518c38dc7c74bb011cb7e928f97a0a0243d1f8fdb7c53e356fe",
+      "golden": "eb71edbae4d48fa3220b4c52372d681367e5d90e339e9d1b9d90d202bbac2313"
+    },
+    "extracted_text": "Aisha Okafor\n\naisha.okafor@example.com | +44 20 7946 0186 | London SW9 8AB, United Kingdom | linkedin.com/in/aishaokafor\n\nPROFILE\n\nCivil and transport engineer focused on bus-priority design, public-realm safety, and data-informed corridor planning across\nUK and EU contexts.\n\nSPECIALISED SKILLS\n\nTechnical: AutoCAD Civil 3D, ArcGIS Pro, QGIS, Python, TfL Healthy Streets checks, junction modelling, Excel\nLanguages: English, Yoruba, French working proficiency\n\nENGINEERING EXPERIENCE\nTransport Engineer, Meridian Mobility Partners\nMarch 2023-Present\n\nLondon, UK\n\n- Prepare concept designs for bus-priority corridors, cycle-lane tie-ins, and pedestrian crossing upgrades across three London\nboroughs.\n\n- Analyse Oyster-style passenger count extracts and turning-count surveys to identify delay hotspots during AM and PM\npeaks.\n\n- Coordinate design comments from local authority officers, accessibility advocates, and utility stakeholders.\n\nGraduate Civil Engineer, Ardent Infrastructure\nSeptember 2020-February 2023\n\nBirmingham, UK\n\n- Supported detailed design packages for drainage, kerb alignment, and temporary traffic management on high-street\nimprovement schemes.\n\n- Created GIS maps linking collision records, school entrances, and bus-stop locations for safer-routes-to-school funding bids.\n\nEDUCATION\nUniversity of Leeds\nJuly 2020\n\nMEng Civil and Structural Engineering, First Class Honours\n\n- Dissertation: Bus stop spacing and dwell-time reliability on mixed-traffic corridors\n\nCERTIFICATIONS\n\nEngineering Council UK, Engineer in Training; Construction Skills Certification Scheme card\n\nPROJECT HIGHLIGHTS\nHigh Street Bus Priority Concept Package\n2025\n\nMeridian Mobility Partners\n\n- Prepared option drawings comparing kerbside bus lanes, signal-priority changes, and loading-zone consolidation for a\nconstrained retail corridor.\n\n- Summarised tradeoffs for journey time, pedestrian delay, and disabled-parking access in a briefing used by borough officers.\n\nSchool Streets Safety Review\n2024\n\nLondon borough programme\n\n- Mapped collision records, school gate locations, and proposed modal filters to support consultation materials for three\nprimary schools.\n\n- Reviewed public comments and tagged recurring concerns around access, enforcement, and bus-stop relocation.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "442079460186"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "skills": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "education": {
+        "value": [
+          "University of Leeds",
+          "July 2020",
+          "MEng Civil and Structural Engineering, First Class Honours",
+          "- Dissertation: Bus stop spacing and dwell-time reliability on mixed-traffic corridors"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [],
+    "predicted": [],
+    "comparison": {
+      "notes": [],
+      "entry_diagnostics": [],
+      "expected_work_count": 0,
+      "predicted_work_count": 0,
+      "best_work_overlap": null,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 70,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "PROFILE",
+      "SPECIALISED SKILLS",
+      "ENGINEERING EXPERIENCE",
+      "EDUCATION",
+      "CERTIFICATIONS",
+      "PROJECT HIGHLIGHTS"
+    ]
+  },
+  {
+    "resume": "resume_207",
+    "input_sha256": {
+      "pdf": "8d44a1e951d930478d68c01c301d1499850c518a57d7ad66c327c371d6435256",
+      "golden": "6e290c595392b4875b68a295fe421bee1f692499e0a5e08662b89cc6cdce6970"
+    },
+    "extracted_text": "Leo Banerjee\n\nleo.banerjee@example.com | Seattle, WA | (206) 555-0107 | linkedin.com/in/leobanerjee | github.com/leobuilds |\nleobanerjee.dev\n\nEDUCATION\nUniversity of Washington\nJune 2025\n\nMaster of Science in Human Centered Design & Engineering\n\nOregon State University\nJune 2021\n\nBachelor of Science in Computer Science\n\nPORTFOLIO PROJECTS\nCivic Permit Tracker\ndemo.leobanerjee.dev/permits |\ngithub.com/leobuilds/permit-tracker\n\nReact, Node.js, PostgreSQL\n\n- Built a searchable dashboard for public permit records with filters for neighborhood, status, reviewer, and expected decision\ndate.\n\n- Added project-level deep links so reviewers could share a filtered permit record directly with community partners.\n\nTrail Notes Offline\ngithub.com/leobuilds/trail-notes\n\nProgressive web app\n\n- Implemented offline-first trip notes with IndexedDB, service workers, and conflict handling when mobile connectivity\nreturned.\n\n- Designed a compact route summary page after usability testing with six hikers.\n\nEXPERIENCE\nFrontend Engineering Intern, BrightCart\nJune-Sept 2025\n\nRemote\n\n- Improved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.\n- Refactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states.\n\nUX Research Assistant, UW Civic Design Lab\nOct 2024-May 2025\n\nSeattle, WA\n\n- Conducted task-based interviews with small business owners navigating city licensing forms.\n- Synthesized findings into issue labels and design recommendations for a partner engineering team.\n\nSKILLS\n\nReact, TypeScript, Node.js, PostgreSQL, Figma, Playwright, accessibility testing, GitHub Actions\n\nSELECTED DESIGN RESEARCH\nSmall Business Licensing Study\nWinter 2025\n\nUW Civic Design Lab\n\n- Interviewed business owners about permit terminology, document upload confusion, and status-notification gaps.\n- Converted research findings into user stories and acceptance criteria for a partner engineering backlog.\n\nPortfolio Accessibility Pass\n2026\n\nPersonal site\n\n- Audited project pages for heading order, keyboard navigation, color contrast, and descriptive link text.\n- Added concise case-study summaries so project links were meaningful outside the visual portfolio context.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "2065550107"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "Seattle, WA   ("
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "react",
+          "typescript",
+          "node.js",
+          "postgresql",
+          "figma",
+          "playwright",
+          "accessibility testing",
+          "github actions",
+          "selected design research",
+          "small business licensing study",
+          "winter 2025",
+          "uw civic design lab",
+          "- interviewed business owners about permit terminology",
+          "document upload confusion",
+          "and status-notification gaps.",
+          "- converted research findings into user stories and acceptance criteria for a partner engineering backlog.",
+          "portfolio accessibility pass",
+          "2026",
+          "personal site",
+          "- audited project pages for heading order",
+          "keyboard navigation",
+          "color contrast",
+          "and descriptive link text.",
+          "- added concise case-study summaries so project links were meaningful outside the visual portfolio context."
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "University of Washington",
+          "June 2025",
+          "Master of Science in Human Centered Design & Engineering",
+          "Oregon State University",
+          "June 2021",
+          "Bachelor of Science in Computer Science"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Frontend Engineering Intern, BrightCart June-Sept 2025",
+          "Remote",
+          "Improved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.",
+          "Refactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states.",
+          "UX Research Assistant, UW Civic Design Lab Oct 2024-May 2025",
+          "Seattle, WA",
+          "Conducted task-based interviews with small business owners navigating city licensing forms.",
+          "Synthesized findings into issue labels and design recommendations for a partner engineering team."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "work",
+        "title": "Frontend Engineering Intern, BrightCart",
+        "meta": "June-Sept 2025",
+        "subtitle": "Remote",
+        "bullets": [
+          "Improved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.",
+          "Refactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states."
+        ],
+        "raw_text": "Frontend Engineering Intern, BrightCart\nJune-Sept 2025\nRemote\nImproved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.\nRefactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states.",
+        "source_section": "EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "UX Research Assistant, UW Civic Design Lab",
+        "meta": "Oct 2024-May 2025",
+        "subtitle": "Seattle, WA",
+        "bullets": [
+          "Conducted task-based interviews with small business owners navigating city licensing forms.",
+          "Synthesized findings into issue labels and design recommendations for a partner engineering team."
+        ],
+        "raw_text": "UX Research Assistant, UW Civic Design Lab\nOct 2024-May 2025\nSeattle, WA\nConducted task-based interviews with small business owners navigating city licensing forms.\nSynthesized findings into issue labels and design recommendations for a partner engineering team.",
+        "source_section": "EXPERIENCE"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Frontend Engineering Intern, BrightCart June-Sept 2025",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Remote",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Improved loading states and error messages for a merchant analytics portal used by 1,200 monthly active users.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Refactored shared chart components to support keyboard focus, tooltip descriptions, and empty-data states.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "UX Research Assistant, UW Civic Design Lab Oct 2024-May 2025",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Seattle, WA",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Conducted task-based interviews with small business owners navigating city licensing forms.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Synthesized findings into issue labels and design recommendations for a partner engineering team.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra work output; possible split or section bleed",
+        "parser output shape gap: raw strings lack field and section ownership"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Frontend Engineering Intern, BrightCart",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 2,
+          "best_jaccard": 0.4737,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "UX Research Assistant, UW Civic Design Lab",
+          "source_section": "EXPERIENCE",
+          "best_predicted_index": 7,
+          "best_jaccard": 0.3514,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "expected_work_count": 2,
+      "predicted_work_count": 8,
+      "best_work_overlap": 0.4125,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 55,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "EDUCATION",
+      "PORTFOLIO PROJECTS",
+      "SKILLS",
+      "SELECTED DESIGN RESEARCH"
+    ]
+  },
+  {
+    "resume": "resume_208",
+    "input_sha256": {
+      "pdf": "58fbf0fe99be1578c2d72dc9d6ef9564cc33a1875ae216882d511cc7513cf2cc",
+      "golden": "6175a2814cd82c4ad5d58d4d65fcf5c53ecdc67633c1b3260e416efee9f598b2"
+    },
+    "extracted_text": "Priya N. Shah\n\npriya.shah@example.com | Jersey City, NJ | (201) 555-0133 | linkedin.com/in/priyanshah\n\nCORE COMPETENCIES\n\nRevenue operations, Salesforce reporting, SQL basics, customer onboarding analytics, stakeholder communication, dashboard\nQA\n\nIMPACT HIGHLIGHTS\nCustomer Expansion Analysis\n2026\n\nRevOps initiative\n\n- Merged product-usage exports with Salesforce opportunity data to identify 42 accounts showing expansion-ready activity\npatterns.\n\n- Created a review sheet used by account managers to prioritize renewal conversations before quarter close.\n\nOnboarding Health Score\n2025\n\nSelected Work\n\n- Defined a simple score combining implementation milestones, unresolved support tickets, and admin training attendance.\n- Piloted the score with 18 new customers and surfaced four delayed launches before executive escalation.\n\nPROFESSIONAL BACKGROUND\nRevenue Operations Associate, Clearpath Software\nJan 2024-Present\n\nNew York, NY\n\n- Maintain Salesforce fields, account assignment rules, and weekly pipeline dashboards for a 32-person go-to-market team.\n- Partner with customer success leaders to reconcile renewal forecasts against product adoption and support trends.\n\nCustomer Success Coordinator, HarborLearn\nJun 2021-Dec 2023\n\nHoboken, NJ\n\n- Tracked onboarding tasks for school district customers and prepared launch summaries for implementation consultants.\n- Built Excel trackers that reduced missing data in monthly customer-health reviews.\n\nACADEMIC TRAINING\nRutgers University\nMay 2021\n\nBachelor of Arts in Economics\n\n- Coursework: Econometrics, Statistics, Information Systems\n\nTECHNICAL TOOLKIT\n\nSalesforce, Excel, SQL, Tableau, Looker Studio, Zendesk, Notion\n\nSELECTED REPORTING WORK\nRenewal Forecast Hygiene\nQ4 2025\n\nClearpath Software\n\n- Compared customer-success notes, billing dates, and product-usage trends to flag renewal records with stale probability\nvalues.\n\n- Built a manager review tab that separated data-quality issues from true commercial risk.\n\nImplementation Milestone Audit\n2024\n\nClearpath Software\n\n- Reviewed 96 onboarding projects to identify where milestone labels drifted between implementation, support, and\naccount-management teams.\n\n- Proposed a smaller milestone set that made reporting easier without hiding delayed technical setup work.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "2015550133"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "Jersey City, NJ   ("
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "revenue operations",
+          "salesforce reporting",
+          "sql basics",
+          "customer onboarding analytics",
+          "stakeholder communication",
+          "dashboard",
+          "qa"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "work_experience": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [],
+    "predicted": [],
+    "comparison": {
+      "notes": [],
+      "entry_diagnostics": [],
+      "expected_work_count": 0,
+      "predicted_work_count": 0,
+      "best_work_overlap": null,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 77,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "CORE COMPETENCIES",
+      "IMPACT HIGHLIGHTS",
+      "PROFESSIONAL BACKGROUND",
+      "ACADEMIC TRAINING",
+      "TECHNICAL TOOLKIT",
+      "SELECTED REPORTING WORK"
+    ]
+  },
+  {
+    "resume": "resume_209",
+    "input_sha256": {
+      "pdf": "3799db687ec64caf1220cf53b9a5b6add82069e1c9df46dc398bea5bff9694bd",
+      "golden": "b558ac0c63380dac3be009a33b12dc3d6ab92751242a6065f52b67c5ff14acf6"
+    },
+    "extracted_text": "Omar Haddad\n\nomar.haddad@example.com | Brooklyn NY | (347) 555 0191 | github.com/ohaddad\n\nEDUCATION\nCity College of New York\nExpected Dec 2026\n\nB.S. Computer Science\n\n- GPA 3.57; SEEK peer mentor\n\nRELEVANT EXPERIENCE\nData Intern - Community Energy Co-op\nMay 2025-Aug 2025, Brooklyn, NY\n\n- Cleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.\n- Wrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups.\n\nIT Help Desk Assistant\nCCNY Student Technology\nServices | Sept 2024 - present\n\nNew York, NY\n\n- Answer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.\n- Use a shared ticket queue; sometimes update KB notes when the answer is not already there.\n\nPROJECTS\nBudget Splitter\ngithub.com/ohaddad/budget-split\n\nPython / Flask\n\n- Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.\n- Dates are stored as text because the bank export has two date formats.\n\nSKILLS & INTERESTS\n\nPython; SQL; Java; Excel; Arabic fluent; interests: pickup soccer, public libraries\n\nADDITIONAL CAMPUS WORK\nPeer Mentor\nSEEK Program, Spring 2025\n\nCity College of New York\n\n- Met biweekly with first-year students to review registration steps, tutoring resources, and common technology setup issues.\n- Maintained a shared FAQ document for account access, lab hours, and scholarship paperwork deadlines.\n\nComputer Lab Monitor\nFall 2024-Spring 2025\n\nCity College of New York\n\n- Checked equipment at opening and closing, logged broken peripherals, and helped students connect to campus printing.\n- Noted recurring account-lockout questions for the student technology services knowledge base.\n\nMORE PROJECTS\nSubway Delay Notes\nclass exercise, 2025\n\nSQL / spreadsheet cleanup\n\n- Imported a small public transit CSV and grouped delays by route, day of week, and stated cause.\n- Kept the report intentionally simple, with a short README explaining assumptions and missing fields.\n\nCOURSEWORK\n\nData Structures; Discrete Mathematics; Intro to Databases; Technical Writing; Statistics\nSmall formatting note: this resume intentionally keeps mixed capitalization and uneven date placement for benchmark\ncoverage.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "3475550191"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "skills": {
+        "value": [],
+        "confidence": 0.0
+      },
+      "education": {
+        "value": [
+          "City College of New York",
+          "Expected Dec 2026",
+          "B.S. Computer Science",
+          "- GPA 3.57; SEEK peer mentor"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Data Intern - Community Energy Co-op May 2025-Aug 2025, Brooklyn, NY",
+          "Cleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.",
+          "Wrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups.",
+          "IT Help Desk Assistant CCNY Student Technology Services | Sept 2024 - present",
+          "New York, NY",
+          "Answer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.",
+          "Use a shared ticket queue; sometimes update KB notes when the answer is not already there."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [
+          "Budget Splitter github.com/ohaddad/budget-split",
+          "Python / Flask",
+          "Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.",
+          "Dates are stored as text because the bank export has two date formats.",
+          "SKILLS & INTERESTS",
+          "Python; SQL; Java; Excel; Arabic fluent; interests: pickup soccer, public libraries",
+          "ADDITIONAL CAMPUS WORK Peer Mentor SEEK Program, Spring 2025",
+          "City College of New York",
+          "Met biweekly with first-year students to review registration steps, tutoring resources, and common technology setup issues.",
+          "Maintained a shared FAQ document for account access, lab hours, and scholarship paperwork deadlines.",
+          "Computer Lab Monitor Fall 2024-Spring 2025",
+          "City College of New York",
+          "Checked equipment at opening and closing, logged broken peripherals, and helped students connect to campus printing.",
+          "Noted recurring account-lockout questions for the student technology services knowledge base.",
+          "MORE PROJECTS Subway Delay Notes class exercise, 2025",
+          "SQL / spreadsheet cleanup",
+          "Imported a small public transit CSV and grouped delays by route, day of week, and stated cause.",
+          "Kept the report intentionally simple, with a short README explaining assumptions and missing fields.",
+          "COURSEWORK",
+          "Data Structures; Discrete Mathematics; Intro to Databases; Technical Writing; Statistics Small formatting note: this resume intentionally keeps mixed capitalization and uneven date placement for benchmark coverage."
+        ],
+        "confidence": 1.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "work",
+        "title": "Data Intern - Community Energy Co-op",
+        "meta": "May 2025-Aug 2025, Brooklyn, NY",
+        "subtitle": "",
+        "bullets": [
+          "Cleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.",
+          "Wrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups."
+        ],
+        "raw_text": "Data Intern - Community Energy Co-op\nMay 2025-Aug 2025, Brooklyn, NY\nCleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.\nWrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups.",
+        "source_section": "RELEVANT EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "IT Help Desk Assistant",
+        "meta": "CCNY Student Technology Services | Sept 2024 - present",
+        "subtitle": "New York, NY",
+        "bullets": [
+          "Answer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.",
+          "Use a shared ticket queue; sometimes update KB notes when the answer is not already there."
+        ],
+        "raw_text": "IT Help Desk Assistant\nCCNY Student Technology Services | Sept 2024 - present\nNew York, NY\nAnswer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.\nUse a shared ticket queue; sometimes update KB notes when the answer is not already there.",
+        "source_section": "RELEVANT EXPERIENCE"
+      },
+      {
+        "entry_type": "project",
+        "title": "Budget Splitter",
+        "meta": "github.com/ohaddad/budget-split",
+        "subtitle": "Python / Flask",
+        "bullets": [
+          "Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.",
+          "Dates are stored as text because the bank export has two date formats."
+        ],
+        "raw_text": "Budget Splitter\ngithub.com/ohaddad/budget-split\nPython / Flask\nSmall web app for roommates to upload CSV expenses and split recurring charges by custom percentages.\nDates are stored as text because the bank export has two date formats.",
+        "source_section": "Projects"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Data Intern - Community Energy Co-op May 2025-Aug 2025, Brooklyn, NY",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Cleaned member signup records in Airtable and matched 1,600 accounts against utility-zone eligibility lists.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Wrote SQL queries for weekly enrollment counts; shared results with outreach staff in Monday standups.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "IT Help Desk Assistant CCNY Student Technology Services | Sept 2024 - present",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "New York, NY",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Answer walk-up requests for account resets, classroom projector issues, and loaner laptop returns.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Use a shared ticket queue; sometimes update KB notes when the answer is not already there.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Budget Splitter github.com/ohaddad/budget-split",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Python / Flask",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Dates are stored as text because the bank export has two date formats.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "SKILLS & INTERESTS",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Python; SQL; Java; Excel; Arabic fluent; interests: pickup soccer, public libraries",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "ADDITIONAL CAMPUS WORK Peer Mentor SEEK Program, Spring 2025",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "City College of New York",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Met biweekly with first-year students to review registration steps, tutoring resources, and common technology setup issues.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Maintained a shared FAQ document for account access, lab hours, and scholarship paperwork deadlines.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Computer Lab Monitor Fall 2024-Spring 2025",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "City College of New York",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Checked equipment at opening and closing, logged broken peripherals, and helped students connect to campus printing.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Noted recurring account-lockout questions for the student technology services knowledge base.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "MORE PROJECTS Subway Delay Notes class exercise, 2025",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "SQL / spreadsheet cleanup",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Imported a small public transit CSV and grouped delays by route, day of week, and stated cause.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Kept the report intentionally simple, with a short README explaining assumptions and missing fields.",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "COURSEWORK",
+        "source_section": null
+      },
+      {
+        "entry_type": "project",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Data Structures; Discrete Mathematics; Intro to Databases; Technical Writing; Statistics Small formatting note: this resume intentionally keeps mixed capitalization and uneven date placement for benchmark coverage.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra project output; possible split or section bleed",
+        "extra work output; possible split or section bleed",
+        "parser output shape gap: raw strings lack field and section ownership",
+        "possible section bleed: Additional Campus Work, Coursework, More Projects, SKILLS & INTERESTS"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Data Intern - Community Energy Co-op",
+          "source_section": "RELEVANT EXPERIENCE",
+          "best_predicted_index": 1,
+          "best_jaccard": 0.3902,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": null
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "IT Help Desk Assistant",
+          "source_section": "RELEVANT EXPERIENCE",
+          "best_predicted_index": 6,
+          "best_jaccard": 0.3721,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "project",
+          "title": "Budget Splitter",
+          "source_section": "Projects",
+          "best_predicted_index": 2,
+          "best_jaccard": 0.4444,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "expected_work_count": 2,
+      "predicted_work_count": 7,
+      "best_work_overlap": 0.3812,
+      "expected_project_count": 1,
+      "predicted_project_count": 20,
+      "best_project_overlap": 0.4444,
+      "work_end_index": 28,
+      "project_count_start_zero": 20
+    },
+    "projects_start_zero": [
+      "Budget Splitter github.com/ohaddad/budget-split",
+      "Python / Flask",
+      "Small web app for roommates to upload CSV expenses and split recurring charges by custom percentages.",
+      "Dates are stored as text because the bank export has two date formats.",
+      "SKILLS & INTERESTS",
+      "Python; SQL; Java; Excel; Arabic fluent; interests: pickup soccer, public libraries",
+      "ADDITIONAL CAMPUS WORK Peer Mentor SEEK Program, Spring 2025",
+      "City College of New York",
+      "Met biweekly with first-year students to review registration steps, tutoring resources, and common technology setup issues.",
+      "Maintained a shared FAQ document for account access, lab hours, and scholarship paperwork deadlines.",
+      "Computer Lab Monitor Fall 2024-Spring 2025",
+      "City College of New York",
+      "Checked equipment at opening and closing, logged broken peripherals, and helped students connect to campus printing.",
+      "Noted recurring account-lockout questions for the student technology services knowledge base.",
+      "MORE PROJECTS Subway Delay Notes class exercise, 2025",
+      "SQL / spreadsheet cleanup",
+      "Imported a small public transit CSV and grouped delays by route, day of week, and stated cause.",
+      "Kept the report intentionally simple, with a short README explaining assumptions and missing fields.",
+      "COURSEWORK",
+      "Data Structures; Discrete Mathematics; Intro to Databases; Technical Writing; Statistics Small formatting note: this resume intentionally keeps mixed capitalization and uneven date placement for benchmark coverage."
+    ],
+    "excluded_section_headings": [
+      "EDUCATION",
+      "SKILLS & INTERESTS",
+      "Additional Campus Work",
+      "More Projects",
+      "Coursework"
+    ]
+  },
+  {
+    "resume": "resume_210",
+    "input_sha256": {
+      "pdf": "1e073864c15e53581314ca08694f3d525e019a3fe6e29a077814c446c77fdb02",
+      "golden": "795b19b782f28efbfed7fe433f3e3bde5dfb8d5a1683f0b052e5a00c17cac7cb"
+    },
+    "extracted_text": "Hannah Weiss\n\nhannah.weiss@example.com | Minneapolis, MN | (612) 555-0126 | github.com/hweiss-ml\n\nMACHINE LEARNING PROJECTS\nRetail Demand Forecasting\nJan-Apr 2026\n\nPython, scikit-learn, LightGBM\n\n- Built baseline and gradient-boosted forecasting models for 48 store-item pairs using calendar, price, and promotion features.\n- Compared MAE across sparse and high-volume products and wrote a short model-card-style summary of failure modes.\n\nSupport Ticket Classifier\nOct-Dec 2025\n\nNLP project\n\n- Fine-tuned a small transformer model to route simulated support tickets into billing, login, integration, and bug categories.\n- Added confidence thresholds so low-confidence tickets were flagged for human review rather than auto-routed.\n\nTECHNICAL SKILLS\n\nPython, pandas, scikit-learn, PyTorch, SQL, MLflow, Jupyter, Git, Tableau\n\nWORK EXPERIENCE\nBusiness Intelligence Analyst, Prairie Market Foods\nJuly 2023-Present\n\nMinneapolis, MN\n\n- Maintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.\n- Partner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.\n- Automated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes.\n\nCategory Analyst Intern, Prairie Market Foods\nMay-Aug 2022\n\nMinneapolis, MN\n\n- Reviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews.\n\nEDUCATION\nUniversity of Minnesota\nMay 2023\n\nBachelor of Science in Statistics\n\n- Minor in Computer Science\n\nSELECTED COURSEWORK\n\nMachine Learning, Regression Analysis, Database Systems, Experimental Design, Data Visualization\n\nANALYTICS PROJECTS AT WORK\nPromotion Lift Review\n2025\n\nPrairie Market Foods\n\n- Compared promoted and non-promoted product families across store clusters to identify where assumed lift overstated\nactual demand.\n\n- Created a Tableau view that let category managers inspect outliers before finalizing seasonal buy plans.\n\nStore Clustering Experiment\n2024\n\nInternal analysis\n\n- Grouped stores by basket size, weekday traffic, and seasonal category mix to improve peer comparisons in weekly\ndashboards.\n\n- Documented limitations around rural stores and new locations with incomplete historical data.\n",
+    "parsed": {
+      "name": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "emails": {
+        "value": "",
+        "confidence": 0.0
+      },
+      "phones": {
+        "value": [
+          "6125550126"
+        ],
+        "confidence": 1.0
+      },
+      "locations": {
+        "value": [
+          "Minneapolis, MN   ("
+        ],
+        "confidence": 1.0
+      },
+      "skills": {
+        "value": [
+          "python",
+          "pandas",
+          "scikit-learn",
+          "pytorch",
+          "sql",
+          "mlflow",
+          "jupyter",
+          "git",
+          "tableau"
+        ],
+        "confidence": 1.0
+      },
+      "education": {
+        "value": [
+          "University of Minnesota",
+          "May 2023",
+          "Bachelor of Science in Statistics",
+          "- Minor in Computer Science"
+        ],
+        "confidence": 1.0
+      },
+      "work_experience": {
+        "value": [
+          "Business Intelligence Analyst, Prairie Market Foods July 2023-Present",
+          "Minneapolis, MN",
+          "Maintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.",
+          "Partner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.",
+          "Automated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes.",
+          "Category Analyst Intern, Prairie Market Foods May-Aug 2022",
+          "Minneapolis, MN",
+          "Reviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews."
+        ],
+        "confidence": 1.0
+      },
+      "project_experience": {
+        "value": [],
+        "confidence": 0.0
+      }
+    },
+    "expected": [
+      {
+        "entry_type": "work",
+        "title": "Business Intelligence Analyst, Prairie Market Foods",
+        "meta": "July 2023-Present",
+        "subtitle": "Minneapolis, MN",
+        "bullets": [
+          "Maintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.",
+          "Partner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.",
+          "Automated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes."
+        ],
+        "raw_text": "Business Intelligence Analyst, Prairie Market Foods\nJuly 2023-Present\nMinneapolis, MN\nMaintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.\nPartner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.\nAutomated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes.",
+        "source_section": "WORK EXPERIENCE"
+      },
+      {
+        "entry_type": "work",
+        "title": "Category Analyst Intern, Prairie Market Foods",
+        "meta": "May-Aug 2022",
+        "subtitle": "Minneapolis, MN",
+        "bullets": [
+          "Reviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews."
+        ],
+        "raw_text": "Category Analyst Intern, Prairie Market Foods\nMay-Aug 2022\nMinneapolis, MN\nReviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews.",
+        "source_section": "WORK EXPERIENCE"
+      }
+    ],
+    "predicted": [
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Business Intelligence Analyst, Prairie Market Foods July 2023-Present",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Minneapolis, MN",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Maintain weekly sales dashboards for merchandising managers covering 86 stores and 14 product categories.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Partner with replenishment planners to investigate outlier stockouts and promotion lift assumptions.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Automated recurring CSV cleanup steps with Python, reducing dashboard prep from four hours to 45 minutes.",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Category Analyst Intern, Prairie Market Foods May-Aug 2022",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Minneapolis, MN",
+        "source_section": null
+      },
+      {
+        "entry_type": "work",
+        "title": null,
+        "meta": null,
+        "subtitle": null,
+        "bullets": [],
+        "raw_text": "Reviewed seasonal sales trends and created Excel summaries for bakery and frozen-food category reviews.",
+        "source_section": null
+      }
+    ],
+    "comparison": {
+      "notes": [
+        "extra work output; possible split or section bleed",
+        "parser output shape gap: raw strings lack field and section ownership"
+      ],
+      "entry_diagnostics": [
+        {
+          "entry_type": "work",
+          "title": "Business Intelligence Analyst, Prairie Market Foods",
+          "source_section": "WORK EXPERIENCE",
+          "best_predicted_index": 4,
+          "best_jaccard": 0.32,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "entry_type": "work",
+          "title": "Category Analyst Intern, Prairie Market Foods",
+          "source_section": "WORK EXPERIENCE",
+          "best_predicted_index": 7,
+          "best_jaccard": 0.5833,
+          "raw_token_coverage_across_fragments": 1.0,
+          "field_token_coverage_across_fragments": {
+            "title": 1.0,
+            "meta": 1.0,
+            "subtitle": 1.0
+          },
+          "bullet_token_coverage_across_fragments": [
+            1.0
+          ]
+        }
+      ],
+      "expected_work_count": 2,
+      "predicted_work_count": 8,
+      "best_work_overlap": 0.4517,
+      "expected_project_count": 0,
+      "predicted_project_count": 0,
+      "best_project_overlap": null,
+      "work_end_index": 42,
+      "project_count_start_zero": 0
+    },
+    "projects_start_zero": [],
+    "excluded_section_headings": [
+      "MACHINE LEARNING PROJECTS",
+      "TECHNICAL SKILLS",
+      "EDUCATION",
+      "SELECTED COURSEWORK",
+      "ANALYTICS PROJECTS AT WORK"
+    ]
+  }
+]
