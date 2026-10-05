@@ -77,7 +77,7 @@ libelle/
 
 ### Backend
 
-- Python 3.11+
+- Python 3.11 (supported contributor runtime)
 - FastAPI / Uvicorn
 - Google Sheets API
 - Google Drive API
@@ -149,13 +149,18 @@ Libelle uses Google services for storage and operational workflows:
 ```bash
 cd backend
 cp .env.example .env
-python3 -m venv .venv
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel 
-pip install -r requirements.txt
+python -m pip install --only-binary=PyMuPDF -r requirements.txt
 uvicorn main:app --reload
 ```
-> Note: if PyMuPDF fails to install on a newer macOS or Python environment, do not fight local C/C++ build tooling first. Check the current dependency guidance in `docs/deployment/staging_deployment.md` or open an issue. The staging environment has successfully used a newer PyMuPDF version where older pins failed to install.
+PyMuPDF remains pinned to `1.22.5`. Use Python 3.11; Python 3.12 is not yet
+supported because the newer PyMuPDF candidate changes extraction and fails
+semantic regression tests. No SWIG installation is needed on platforms with
+a compatible wheel. The binary-only option fails clearly otherwise. See the
+[compatibility review and benchmark setup](docs/pymupdf-compatibility.md)
+for platform limits, troubleshooting, and validation evidence.
 
 Backend runs at:
 

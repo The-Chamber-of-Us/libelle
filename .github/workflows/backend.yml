@@ -24,7 +24,7 @@ jobs:
             backend/requirements-dev.txt
 
       - name: Install dependencies
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: python -m pip install --only-binary=PyMuPDF -r requirements.txt -r requirements-dev.txt
 
       - name: Run tests
         run: pytest tests -q
