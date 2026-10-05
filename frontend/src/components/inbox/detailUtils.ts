@@ -78,6 +78,7 @@ export function formatErrorState(state: SnapshotErrorState) {
 export function getSubmissionHealthTone(
   state: SubmissionHealthState
 ): SnapshotTone {
+  if (state === 'coordination_only') return 'neutral'
   if (state === 'complete' || state === 'no_resume_ok') return 'success'
   if (state === 'partial_success' || state === 'pending_processing') {
     return 'warning'

@@ -28,9 +28,10 @@ Dashboard read endpoints may be available locally without reviewer identity, but
 * `POST /ops/update`
 * `POST /submissions/{submission_id}/ops`
 * `PATCH /submissions/{submission_id}/ops`
+* `POST /submissions/{submission_id}/coordination`
 * `GET /resumes/{submission_id}`
 
-In deployed environments, the actor is derived exclusively from a single valid `cf-access-authenticated-user-email` header supplied by the protected ingress under the [trusted proxy identity contract](deployment/internal_actor_trust.md). `cf-access-jwt-assertion` is ignored and cannot establish identity. Missing, malformed, or duplicate email headers fail closed; these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Write payload actor fields such as `updated_by` or `actor_email` are ignored; the backend-derived actor is the only value used for `ops.updated_by` and `ops_events.actor_email`.
+In deployed environments, the actor is derived exclusively from a single valid `cf-access-authenticated-user-email` header supplied by the protected ingress under the [trusted proxy identity contract](deployment/internal_actor_trust.md). `cf-access-jwt-assertion` is ignored and cannot establish identity. Missing, malformed, or duplicate email headers fail closed; these endpoints return `401` with `INTERNAL_ACTOR_REQUIRED`. Workflow payload actor fields such as `updated_by` or `actor_email` are ignored; the strict coordination request instead rejects client-supplied actor/timestamp fields; the backend-derived actor is the only value used for `ops.updated_by`, `coordination.decided_by` and `ops_events.actor_email`.
 
 For local UI testing, see [Local Dashboard Write Testing](local-dev-dashboard-writes.md).
 
@@ -164,7 +165,10 @@ Each snapshot record always includes these top-level domains:
 | Field | Required | Nullable | Meaning |
 | ----- | -------- | -------- | ------- |
 | `submission_id` | Yes | No | Stable submission identifier. |
-| `submission_health_state` | Yes | No | Backend-derived health enum: `complete`, `partial_success`, `no_resume_ok`, `parser_failed`, `resolver_failed`, `pending_processing`, or `broken_pipeline`. |
+| `submission_health_state` | Yes | No | Backend-derived health enum: `complete`, `partial_success`, `no_resume_ok`, `parser_failed`, `resolver_failed`, `pending_processing`, `broken_pipeline`, or `coordination_only`. |
+| `source_state` | Yes | No | `present` when intake exists, otherwise `unavailable` for an ops-only root. Absence does not prove physical erasure. |
+| `coordination_state` | Yes | No | `unassessed`, `active`, `ended`, or `malformed`. Separate from workflow status and parser health. |
+| `coordination` | Yes | Yes | Validated current `ops.coordination` content, or `null` for unassessed/malformed/duplicate lifecycle authority. |
 | `raw` | Yes | No | Intake/submission fields. Missing sheet values are represented as `""`. |
 | `parsed` | Yes | No | Parser read model. Always present, even when the parser has not run or failed. |
 | `resolved` | Yes | No | Resolver read model. Always present, even when resolver output is unavailable. |
@@ -181,23 +185,72 @@ Partial pipeline states are explicit:
 | Domain | Field | Values | Semantics |
 | ------ | ----- | ------ | --------- |
 | `parsed` | `parser_state` | `pending`, `complete` | Legacy dashboard state retained for compatibility. |
-| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available` | Distinguishes parser not run, parser failed, intentionally skipped, successful empty output, and successful non-empty output. |
+| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available`, `source_unavailable` | Distinguishes parser not run, parser failed, intentionally skipped, successful empty output, successful non-empty output, and unavailable source evidence. |
 | `resolved` | `resolver_state` | `not_run`, `resolved`, `zero_matches` | Legacy dashboard state retained for compatibility. |
-| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available` | Distinguishes resolver not run, resolver failed, unavailable because parser output is missing/failed, successful empty output, and successful non-empty output. |
+| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available`, `source_unavailable` | Distinguishes resolver not run, resolver failed, unavailable because parser output is missing/failed, successful empty output, successful non-empty output, and unavailable source evidence. |
 | `parser_job` | `parser_job_status` | `queued`, `running`, `retry_scheduled`, `succeeded`, `failed`, `enqueue_failed`, `unknown` | Durable parser job status from backend storage. `unknown` means the stored status is malformed or unsupported. |
 | `parser_job` | `is_stale` | `true`, `false`, `null` | Derived by the backend when a running job's persisted lease has expired. `null` means stale state cannot be determined from the stored lease. This does not mutate or reclaim the job. |
 | `parser_job` | `parser_job_state_quality` | `valid`, `malformed` | Indicates whether operational fields parsed cleanly or contain unknown/corrupted state. |
 | `errors` | `error_state` | `none`, `present`, `unavailable` | Distinguishes no matching error rows, one or more matching error rows, and an unavailable error source. |
 
+Snapshot roots are the union of submission IDs and ops IDs, joined only by
+`submission_id`. For an ops-only record, the backend returns
+`source_state="unavailable"`, `submission_health_state="coordination_only"`, blank
+raw fields, `source_unavailable` for both result-state fields, `parser_job=null`,
+and `errors.error_state="unavailable"` with blank summaries. It does not join
+leftover parser results, jobs or errors. Legacy `parser_state="pending"` and
+`resolver_state="not_run"` remain compatibility placeholders in this case; they
+must not be interpreted as pending processing. Parser Results excludes these
+records before counts, sorting and filters; Inbox and Ops retain them with a
+neutral coordination-only health tone. Unavailable source evidence is distinct
+from an intake where no resume was supplied.
+
+Current responses emit all lifecycle fields. For compatibility, the response
+model defaults omitted `source_state` to `present`, `coordination_state` to
+`unassessed`, and `coordination` to null; clients receiving older responses can
+continue treating them as intake records.
+
+A non-null `coordination` object contains `state` (`active` or `ended`), `purpose`,
+`takeaway`, `why`, `next_action`, `revisit` (ISO date or null), `display_name`,
+`contact`, `purpose_started_at`, `purpose_ended_at` (timestamp or null), and
+`decided_by`. Lifecycle timestamps are timezone-aware and backend-owned.
+`purpose_ended_at` is non-null only for ended purpose. STATE remains `ops.status`;
+workflow edits and REVISIT do not change lifecycle timestamps. Malformed or
+ambiguous stored lifecycle metadata is projected as `coordination_state=malformed`
+and null content rather than repaired by the read path.
+
 When `parser_job` is present, it may include `submission_id`, `parser_job_status`, `attempt_count`, `max_attempts`, `parser_run_id`, `is_stale`, `parser_job_state_quality`, `last_error_code`, `last_error_summary`, `available_at`, `parser_started_at`, `created_at`, and `updated_at`. `attempt_count`, `max_attempts`, and `is_stale` may be `null` when persisted operational state is malformed rather than silently converted into a valid-looking value. For `succeeded` jobs, `parser_run_id`, `parsed`, and `resolved` follow `parser_jobs.authoritative_parser_run_id`; if that authority is blank or cannot be resolved to a parser result, the snapshot fails closed with `parser_job_state_quality: "malformed"` and does not substitute another parser attempt. Non-succeeded jobs may fall back to `last_parser_run_id` for current/latest attempt visibility. Storage and lease internals such as `drive_file_id`, Drive URLs, `resume_filename`, `locked_by`, `locked_at`, and `lock_expires_at` are not exposed. Persisted parser-job `last_error_summary` values are restricted at the repository write boundary to known coarse summaries for the associated `last_error_code`.
 
 Legacy parser/resolver payload fields such as `parsed_skills_raw`, `resolved_skill_ids`, and `unknown_skills` are sheet-backed strings. A blank string means no stored value for that field. JSON array strings such as `"[]"` represent stored empty lists, but older parser-only rows also contain these placeholders: empty Resolver lists alone do not prove Resolver ran. The backend recognizes Resolver output from nonblank Resolver metadata or coverage (including zero), or nonempty resolved/unknown skill output. A completed zero-match result is `resolver_state="zero_matches"` with `resolver_result_state="empty_success"`. Without output evidence, a latest `RESOLVER_FAILED` error produces `resolver_result_state="failed"` while the legacy `resolver_state` remains `"not_run"`. Consumers must use explicit result-state fields rather than infer execution from payload strings.
 
-`error_state="unavailable"` is supported by the pure snapshot composer when its `error_rows` argument is `None`. Its accompanying `has_error=false` and blank summaries mean no error evidence was available to compose, not proof that no errors occurred. The live `get_snapshot_records()` loader calls `load_error_rows()` directly; it does not catch an error-source read failure and convert it to `None`. This state therefore does not promise graceful snapshot delivery during a Sheets error-source outage.
+`error_state="unavailable"` is supported by the pure snapshot composer when its `error_rows` argument is `None`. Ops-only records also deliberately suppress error evidence with this state. Its accompanying `has_error=false` and blank summaries mean no error evidence was available to compose, not proof that no errors occurred. The live `get_snapshot_records()` loader calls `load_error_rows()` directly; it does not catch an error-source read failure and convert it to `None`. This state therefore does not promise graceful snapshot delivery during a Sheets error-source outage.
 
 Date/time fields are strings. `raw.created_at` and `parsed.created_at` use the timestamp format stored by their source row, normally ISO-like `YYYY-MM-DDTHH:MM:SS`; `ops.updated_at` may use the existing UTC sheet format `MM-DD-YYYY HH:MM:SS UTC`. Blank string means no timestamp is available for that nested domain.
 
 Confidence fields retain backward-compatible string values in `parsed.parser_confidence` and `resolved.resolver_coverage`. Numeric siblings `parsed.parser_confidence_score` and `resolved.resolver_coverage_score` are `number | null` and, when present, are bounded from `0.0` to `1.0`.
+
+### `POST /submissions/{submission_id}/coordination`
+
+Records explicit human coordination intent using the protected internal actor.
+The request requires `action` (`preserve` or `end`), nonblank `purpose` (maximum
+500 characters), and `context_reviewed: true`. Optional fields are `takeaway`
+(1000), `why` (500), `next_action` (500), `display_name` (200), `contact` (300),
+and `revisit` (ISO date or null). This is a full-content update: omitted optional
+text becomes blank. Client-supplied actor, timestamps and other extra fields are
+rejected. Existing workflow STATE is unchanged.
+
+A valid request returns 200 with the structured coordination object described in
+[GET /snapshot](#get-snapshot). Invalid payloads return 422; unusable actor identity
+returns 401 / `INTERNAL_ACTOR_REQUIRED`; missing roots, malformed metadata,
+duplicate ops rows and invalid lifecycle transitions return 409. First preservation
+requires an existing submission or ops root; ending requires existing coordination.
+
+First preservation starts a purpose; further saves during that purpose retain its
+start time. Ending sets the end time once. Explicit preservation after ending
+starts a new purpose. Every successful write attempts a best-effort
+`coordination_intent` event recording only the previous/new coordination state.
+See [coordination lifecycle](architecture/coordination_lifecycle.md) and
+[ops event history](architecture/ops_event_history.md) for retention and history rules.
 
 ### `POST /api/upload`
 Uploads a resume and submits a volunteer application.
@@ -299,21 +352,3 @@ If the backend health check fails, surface a clear UI state to the user preventi
 
 ## Maintainer
 [The Chamber of Us](https://www.thechamberofus.org/)
-
-
-## Coordination lifecycle (#408)
-
-`POST /submissions/{submission_id}/coordination` records an explicit purpose
-through the trusted internal actor boundary. Request fields and lifecycle rules
-are defined in [coordination lifecycle](architecture/coordination_lifecycle.md).
-A valid write returns the current structured coordination record; invalid input
-returns 422 and missing/duplicate/malformed lifecycle roots return 409. Timestamps
-and attribution are server-owned. This full-content update does not alter STATE.
-
-`GET /snapshot` additionally exposes `source_state` (`present` or `unavailable`),
-`coordination_state` (`unassessed`, `active`, `ended`, `malformed`), and validated
-`coordination` (or null). Ops IDs survive as snapshot roots without submissions.
-Such records have `submission_health_state=coordination_only`, blank raw fields,
-`source_unavailable` parser/Resolver result states, no parser job and unavailable
-error evidence. Missing source does not prove erasure or mean no resume was ever
-provided. Existing workflow writeback remains available for retained ops IDs.
