@@ -12,26 +12,30 @@ No production parser or existing benchmark scoring was changed.
 From the repository root:
 
 ```sh
-backend/.venv/bin/python scripts/benchmark_experience.py
-backend/.venv/bin/python -m pytest backend/tests/test_experience_eval.py backend/tests/test_benchmark_parser_path.py -q
+backend/.venv/bin/python scripts/benchmark_experience.py --out /tmp/issue303-experience
+backend/.venv/bin/python -m pytest backend/tests/test_experience_eval.py backend/tests/test_benchmark_parser_path.py backend/benchmarks/v2_evaluation/tests/test_v2_evaluation.py -q
 ```
 
 The default sample is all ten public synthetic V2 PDF/golden pairs,
 `resume_201`–`resume_210`, under `resumes/v2` and `golden_json/v2`. This is a
 synthetic sample, not a real-resume population estimate. The runner requires
-exact nonempty filename pairing and uses
+valid, nonempty V2 PDF/golden pairing via the existing V2 validator and uses
 `extract_text_from_pdf_path(pdf) → parse_resume(text)`. That is the requested
 flattened-text path. The existing canonical PDF benchmark uses
 `parse_resume_pdf`, including skill projection; experience currently consumes
 flattened text in both paths. This spike does not evaluate Resolver output.
 
-[experience_report.csv](experience_report.csv) contains counts and diagnostic
-labels. [experience_summary.json](experience_summary.json) records the source
-revision and results. [experience_traces.json](experience_traces.json) retains
+Generated `experience_report.csv` contains counts and diagnostic labels.
+`experience_summary.json` records the source revision, results, aggregate
+accounting, and every unmapped heading with its item count.
+`experience_traces.json` retains
 PDF/golden SHA-256 hashes, extracted source text, actual parser output,
 expected/predicted entries, field coverage, excluded headings, and the separate
-start-at-zero project probe. The revision identifies the parser checkout;
-prototype code and artifacts are additional working-tree files.
+start-at-zero project probe. Artifacts are generated on demand in the explicit
+output directory and are not source-controlled evidence. The source revision
+identifies the checkout used for that run, so it changes at subsequent PR heads.
+`--out` is required; running without it cannot recreate artifacts beside this
+report.
 
 The existing `scripts/benchmark.py` formally scores skills, skills_resolved, and
 location. The V2 evaluator also evaluates supported top-level fields and
@@ -54,23 +58,42 @@ source_section: string | null
 section separately, preserving ordering and repeated sections. Dict items retain
 title/meta/subtitle/bullets; raw text joins those fields with newlines. String
 items remain raw text with null fields and empty bullets. Missing `sections[]`
-raises an error rather than masquerading as zero annotated entries.
+raises an error rather than masquerading as zero annotated entries. The helper
+reuses canonical V2 section validation, including required structured fields
+and nonempty titles, and additionally rejects blank item text. The runner
+validates the full paired corpus before PDF parsing, including missing pairs,
+malformed JSON, non-V2 fixtures, filename/ID mismatches, and malformed fields.
+Validation failures abort the run before reports are written.
 
 Heading normalization collapses whitespace, lowercases, expands `&` to `and`,
 and removes trailing colons. Work headings are experience, work experience,
 professional experience, employment, employment history, relevant experience,
-job experience, career history, and work history. Project headings are projects,
-project experience, technical projects, selected projects, and additional
-projects. Unmapped headings are excluded and retained in each trace; `unknown`
-is reserved in the schema, not included in work/project counts.
+job experience, career history, work history, research experience, engineering
+experience, and professional background. The added research heading follows
+the role/lab/responsibility guidance in [labeling_rules_v2.md](../labeling_rules_v2.md);
+the canonical [V2 annotation spec](../v2_annotation_spec.md) also supports
+structured professional-background, research, and portfolio entries. Project
+headings are projects, project experience, technical projects, selected projects,
+additional projects, portfolio projects, project highlights, more projects,
+machine learning projects, and analytics projects at work. These explicit
+categories include the named project sections present in this slice.
+
+Unmapped headings are excluded from type-specific counts and separately
+accounted for by heading and item count in the summary and traces. This inventory
+includes unrelated sections such as education; it does not label every unmapped
+item as eligible experience. `unknown` is reserved in the schema. Mixed headings
+such as `SELECTED REPORTING WORK` and `Additional Campus Work` remain visible
+for taxonomy review rather than disappearing from the evidence.
 
 `extract_predicted_experience_entries` unwraps parser `{value, confidence}`
 fields or accepts direct lists. Each parser string becomes one entry under its
 output field's type, with raw text preserved. Title/meta/subtitle/source_section
 are null and bullets empty: the parser has lost these boundaries. Empty bullets
 here mean unavailable structure, not proof of no bullet content. Unsupported
-field/item shapes raise errors. No titles, employers, dates, or bullet ownership
-are inferred.
+field/item shapes and blank entries raise errors. Both prediction fields must
+exist; missing fields or wrappers without `value` are instrumentation errors.
+Explicit empty lists remain valid zero-output predictions. No titles, employers,
+dates, or bullet ownership are inferred.
 
 ## Comparison method
 
@@ -105,18 +128,25 @@ resume has no work or projects under other headings. Overlap is rounded.
 | 201 | 1/4 | 4/0 | .3590 | .0000 | 8 |
 | 202 | 3/15 | 0/0 | .3319 | — | 0 |
 | 203 | 2/9 | 2/0 | .3360 | .0000 | 0 |
-| 204 | 0/0 | 0/0 | — | — | 0 |
+| 204 | 2/0 | 0/0 | .0000 | — | 0 |
 | 205 | 1/4 | 3/0 | .4412 | .0000 | 14 |
-| 206 | 0/0 | 0/0 | — | — | 0 |
-| 207 | 2/8 | 0/0 | .4125 | — | 0 |
-| 208 | 0/0 | 0/0 | — | — | 0 |
-| 209 | 2/7 | 1/20 | .3812 | .4444 | 20 |
-| 210 | 2/8 | 0/0 | .4517 | — | 0 |
+| 206 | 2/0 | 2/0 | .0000 | .0000 | 0 |
+| 207 | 2/8 | 2/0 | .4125 | .0000 | 0 |
+| 208 | 2/0 | 0/0 | .0000 | — | 0 |
+| 209 | 2/7 | 2/20 | .3812 | .4384 | 20 |
+| 210 | 2/8 | 4/0 | .4517 | .0000 | 0 |
 
-There are 13 mapped work entries versus 55 parser strings, and 10 mapped project
-entries versus 20 parser strings. All seven work-bearing mapped fixtures have
-excess output counts. Three of the four project-bearing mapped fixtures have
-no predicted project entries. These totals mix fragments and complete annotated
+There are **19 mapped work entries across all ten fixtures**, versus 55 parser
+strings. Seven of ten fixtures have excess work output counts; the other three
+(204, 206, 208) miss their work sections entirely. The previous narrow map counted
+13 work entries across seven fixtures and excluded those three misses; its 7/7
+fragmentation observation was not a corpus-level result.
+
+There are **19 mapped project entries across seven fixtures**, versus 20 parser
+strings. Six of seven project-bearing fixtures (201, 203, 205, 206, 207, 210)
+have no project predictions. Fixture 209 produces excess output and section
+bleed. Remaining mixed/unmapped sections are separately inventoried rather than
+treated as valid negatives. These totals mix fragments and complete annotated
 entries and must not be interpreted as true/false positives.
 
 Representative evidence checked against goldens, extracted PDF text, and parser
@@ -139,23 +169,33 @@ output in the traces:
 - **205: `work_end` sensitivity.** Three expected projects produce zero actual
   strings; index zero produces 14 strings. The probe establishes sensitivity,
   not successful structured recovery or a proposed production fix.
-- **209: verified section bleed.** One mapped `PROJECTS` entry, Budget Splitter,
-  produces 20 strings. Source text shows `SKILLS & INTERESTS`,
+- **204/206/208: complete work-section misses.** Two research roles, two
+  engineering roles, and two professional-background roles are annotated in
+  the respective goldens and present in source text, but produce no work output.
+- **209: verified section bleed.** Two mapped entries, Budget Splitter under
+  `PROJECTS` and Subway Delay Notes under `More Projects`, correspond to 20
+  project strings. Source text shows `SKILLS & INTERESTS`,
   `ADDITIONAL CAMPUS WORK`, `MORE PROJECTS`, and `COURSEWORK` after that entry;
   the project output includes their content. These headings are not recognized
-  as general parser stop boundaries. The overlap cue correctly prompts
+  as general parser stop boundaries. `More Projects` is now an expected project
+  section rather than an unrelated-section bleed label. The cue correctly prompts
   inspection here, but its union coverage alone would not prove bleed.
 
 ## Gaps and next steps
 
-The goldens contain useful structure, but the initial map excludes plausible
-experience headings: `Research Experience` (204), `ENGINEERING EXPERIENCE` and
-`PROJECT HIGHLIGHTS` (206), `PORTFOLIO PROJECTS` (207), `PROFESSIONAL BACKGROUND`
-and `SELECTED REPORTING WORK` (208), `More Projects` and `Additional Campus Work`
-(209), and `MACHINE LEARNING PROJECTS` / `ANALYTICS PROJECTS AT WORK` (210).
-Thus 204/206/208 are map gaps, not successful negative examples. Other sections
-such as leadership, research, selected impact, and analytics work require
-explicit annotation policy rather than automatic employment inference.
+The map now includes unambiguous work/project headings in this slice. Mixed
+sections such as `SELECTED REPORTING WORK` (208, two items), `Additional Campus
+Work` (209, two items), leadership, selected impact, and design research still
+require explicit type policy. Their headings and item counts remain in the
+unmapped inventory. No conclusion claims complete semantic classification of
+all V2 items.
+
+Focused regressions protect the corrected aggregate accounting, newly included
+work misses, 202's full text coverage with fragmentation, 203's unsupported
+heading, 205's separate index-zero diagnostic, and 209's bleed and additional
+project accounting. Invalid input tests distinguish instrumentation failures
+from valid empty parser output, and the CLI requires an explicit output directory.
+Targeted validation: **50 tests passed**.
 
 Next, agree on section-type labels (including mixed/research/volunteer cases)
 and fixture eligibility; preserve source section and entry/bullet boundaries in

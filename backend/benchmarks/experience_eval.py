@@ -5,6 +5,8 @@ import re
 import unicodedata
 from typing import Literal, TypedDict
 
+from .v2_evaluation.validate_v2_goldens import validate_v2_sections
+
 
 class ExperienceEntryV1(TypedDict):
     entry_type: Literal["work", "project", "unknown"]
@@ -20,10 +22,13 @@ WORK_SECTION_HEADINGS = {
     "experience", "work experience", "professional experience", "employment",
     "employment history", "relevant experience", "job experience",
     "career history", "work history",
+    "research experience", "engineering experience", "professional background",
 }
 PROJECT_SECTION_HEADINGS = {
     "projects", "project experience", "technical projects", "selected projects",
     "additional projects",
+    "portfolio projects", "project highlights", "more projects",
+    "machine learning projects", "analytics projects at work",
 }
 
 
@@ -56,6 +61,8 @@ def flatten_section_item(item: object) -> str:
 
 def _entry(item: object, kind: str, source: str | None) -> ExperienceEntryV1:
     raw = flatten_section_item(item)
+    if not raw.strip():
+        raise ValueError("experience entry must contain non-empty text")
     fields = item if isinstance(item, dict) else {}
     return dict(entry_type=kind, title=fields.get("title"), meta=fields.get("meta"),
                 subtitle=fields.get("subtitle"), bullets=list(fields.get("bullets", [])),
@@ -63,27 +70,48 @@ def _entry(item: object, kind: str, source: str | None) -> ExperienceEntryV1:
 
 
 def extract_expected_experience_entries(golden: dict) -> list[ExperienceEntryV1]:
-    if not isinstance(golden.get("sections"), list):
-        raise ValueError("V2 sections[] required; missing annotation is not zero entries")
+    if not isinstance(golden, dict):
+        raise ValueError("V2 golden must be an object")
+    issues = validate_v2_sections(golden.get("sections"), fixture_id=golden.get("resume_id", "experience"))
+    if issues:
+        raise ValueError("Invalid V2 sections:\n" + "\n".join(issue.format() for issue in issues))
     entries = []
     for section in golden["sections"]:
         heading = section["heading"]
         kind = section_type(heading)
+        for index, item in enumerate(section["items"]):
+            if not flatten_section_item(item).strip():
+                raise ValueError(f"{heading}.items[{index}]: section item must contain non-empty text")
         if kind != "unknown":
             entries.extend(_entry(item, kind, heading) for item in section["items"])
     return entries
 
 
 def extract_predicted_experience_entries(parsed: dict) -> list[ExperienceEntryV1]:
+    if not isinstance(parsed, dict):
+        raise ValueError("parser output must be an object")
     entries = []
     for kind in ("work", "project"):
-        value = parsed.get(f"{kind}_experience", [])
-        if isinstance(value, dict) and "value" in value:
+        field = f"{kind}_experience"
+        if field not in parsed:
+            raise ValueError(f"missing required prediction field: {field}")
+        value = parsed[field]
+        if isinstance(value, dict):
+            if "value" not in value:
+                raise ValueError(f"{field} wrapper is missing value")
             value = value["value"]
         if not isinstance(value, list):
             raise ValueError(f"{kind}_experience must contain an entry list")
         # A parser field identifies the type, not the original section heading.
-        entries.extend(_entry(item, kind, None) for item in value)
+        for index, item in enumerate(value):
+            try:
+                if isinstance(item, dict):
+                    issues = validate_v2_sections([{"heading": field, "items": [item]}], fixture_id="prediction")
+                    if issues:
+                        raise ValueError("; ".join(issue.format() for issue in issues))
+                entries.append(_entry(item, kind, None))
+            except ValueError as exc:
+                raise ValueError(f"{field}[{index}]: {exc}") from exc
     return entries
 
 
