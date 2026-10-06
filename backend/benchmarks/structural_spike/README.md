@@ -16,18 +16,16 @@ Python 3.11.8. Two fresh Libelle-only runs completed without parser errors:
 | Root benchmark directory (10 V1-shaped, 10 V2-shaped) | 20 | 0.655 | 0.670 | 0.733 |
 | `resumes/v2` and matching goldens | 10 | 0.644 | 0.644 | 0.824 |
 
-Reviewed artifacts are retained for each run: root
-[report.csv](evidence/root/report.csv), [summary.md](evidence/root/summary.md),
-[summary.json](evidence/root/summary.json), [examples.md](evidence/root/examples.md),
-[run_log.json](evidence/root/run_log.json); V2
-[report.csv](evidence/v2/report.csv), [summary.md](evidence/v2/summary.md),
-[summary.json](evidence/v2/summary.json), [examples.md](evidence/v2/examples.md),
-[run_log.json](evidence/v2/run_log.json).
+The reproduction commands below generate `report.csv`, `summary.md`,
+`summary.json`, `examples.md`, and `run_log.json` for each benchmark run.
+These reports and the per-fixture diagnostic traces are generated outputs, not
+checked-in files; the compact results and representative observations are retained
+here.
 The runner does not recurse into `v2`, hence separate runs. These scores are
 baselines, not improvements or a controlled comparison between corpora.
 
 Cases were selected from scored errors plus V2 goldens with projects before
-work, nonstandard headings, and multiple work entries. Each linked trace records
+work, nonstandard headings, and multiple work entries. Each generated trace records
 the source PDF/golden paths and hashes, extracted section lines, heading decisions,
 projected skill text, and current parser output. Only repository benchmark
 fixtures were used; no private resumes or external services were accessed. Initial
@@ -45,15 +43,15 @@ is treated as a hypothesis to recheck, not a current result.
 Counts below are **TP / FP / FN for raw skills**, except the location row.
 Labels identify the demonstrated cause, not every possible contributor.
 
-| Case and trace | Counts | Label | Source → current output and diagnosis |
+| Fixture | Counts | Label | Source → current output and diagnosis |
 | --- | --- | --- | --- |
-| [dense_skills_01](evidence/traces/dense_skills_01.json) | 37 / 46 / 12 | section overlap or bleed | The visible two-column PDF is classified `SINGLE_COLUMN`. Projected skills interleave `Key Skills` content with `JUL 2018 – FEB 2021`, employer text and work descriptions. Output includes `clayburn apps` and `account creation by 35%.`. Ownership is lost before skill tokenization; wrapped phrases also cause misses. |
-| [dense_skills_02](evidence/traces/dense_skills_02.json) | 0 / 0 / 22 | section ended too early | `AMBIGUOUS` layout falls back to flattened order: `SKILLS`, blank, `WORK EXPERIENCE`, then interleaved content. The legitimate adjacent-column work header stops skill capture before `Content Strategy`. Projection contains only `SKILLS`; no skills reach the resolver. This is not a missed skills header or a false header. |
-| [resume_204](evidence/traces/resume_204.json) | 4 / 22 / 3 | missed section header; skills section bleed | After the real skill list, `METHODS TRAINING` and `PROFESSIONAL SERVICE` are neither general nor skill-stop headers. Both sections enter projection and output, including `graduate methods sequence` and `2025-2026`. Golden `sections[]` separates them. The three skill misses also involve qualifiers/combined languages, so not every error in this row is structural. |
-| [multi_col_02](evidence/traces/multi_col_02.json) | 6 / 11 / 6 | final field-output error unrelated to section boundaries | Current `MULTI_COLUMN` projection contains skill-column text, not the historical employer/date bleed. `Environmental Testing` + `Procedures` and `Compound and Stereo` + `Microscopy` become separate skills. The source phrases span lines; `extract_skills()` tokenizes each line independently. The general `_group_into_entries()` helper is not involved in skills. |
-| [header_contact_01](evidence/traces/header_contact_01.json) | 14 / 16 / 16 | final field-output error; canonicalization/scoring effect | Projection retains the correct skill column, but `Confidentiality & FERPA` / `Compliance` split apart. Parentheses spanning lines survive as fragments (`calendar)`). Resolved scoring changes counts to 17 / 13 / 13 even though resolver coverage is zero: punctuation normalization can match fragments without recovering phrases or resolving aliases. |
-| [embed_link_01](evidence/traces/embed_link_01.json) | 7 / 0 / 3 | final field-output error unrelated to structure; golden mismatch | The complete projected line `Data visualization (Matplotlib, Tableau, PowerBI)` reaches `extract_skills()`, which removes parenthesized content. The three misses are `matplotlib`, `powerbi`, and golden spelling `tableu`. No section was missed; fixing boundaries alone cannot recover these, and `Tableau` versus `tableu` is a separate annotation/normalization concern. |
-| [non_usa_01](evidence/traces/non_usa_01.json) | location: 0 / 0 / 1 | final field-output error unrelated to structure | Source contact line says `LVIV, UKRAINE`; output location is empty. `extract_location()` checks early lines for US state codes or remote/hybrid, independently of sections. Skills score 6 / 0 / 0. |
+| `dense_skills_01` | 37 / 46 / 12 | section overlap or bleed | The visible two-column PDF is classified `SINGLE_COLUMN`. Projected skills interleave `Key Skills` content with `JUL 2018 – FEB 2021`, employer text and work descriptions. Output includes `clayburn apps` and `account creation by 35%.`. Ownership is lost before skill tokenization; wrapped phrases also cause misses. |
+| `dense_skills_02` | 0 / 0 / 22 | section ended too early | `AMBIGUOUS` layout falls back to flattened order: `SKILLS`, blank, `WORK EXPERIENCE`, then interleaved content. The legitimate adjacent-column work header stops skill capture before `Content Strategy`. Projection contains only `SKILLS`; no skills reach the resolver. This is not a missed skills header or a false header. |
+| `resume_204` | 4 / 22 / 3 | missed section header; skills section bleed | After the real skill list, `METHODS TRAINING` and `PROFESSIONAL SERVICE` are neither general nor skill-stop headers. Both sections enter projection and output, including `graduate methods sequence` and `2025-2026`. Golden `sections[]` separates them. The three skill misses also involve qualifiers/combined languages, so not every error in this row is structural. |
+| `multi_col_02` | 6 / 11 / 6 | final field-output error unrelated to section boundaries | Current `MULTI_COLUMN` projection contains skill-column text, not the historical employer/date bleed. `Environmental Testing` + `Procedures` and `Compound and Stereo` + `Microscopy` become separate skills. The source phrases span lines; `extract_skills()` tokenizes each line independently. The general `_group_into_entries()` helper is not involved in skills. |
+| `header_contact_01` | 14 / 16 / 16 | final field-output error; canonicalization/scoring effect | Projection retains the correct skill column, but `Confidentiality & FERPA` / `Compliance` split apart. Parentheses spanning lines survive as fragments (`calendar)`). Resolved scoring changes counts to 17 / 13 / 13 even though resolver coverage is zero: punctuation normalization can match fragments without recovering phrases or resolving aliases. |
+| `embed_link_01` | 7 / 0 / 3 | final field-output error unrelated to structure; golden mismatch | The complete projected line `Data visualization (Matplotlib, Tableau, PowerBI)` reaches `extract_skills()`, which removes parenthesized content. The three misses are `matplotlib`, `powerbi`, and golden spelling `tableu`. No section was missed; fixing boundaries alone cannot recover these, and `Tableau` versus `tableu` is a separate annotation/normalization concern. |
+| `non_usa_01` | location: 0 / 0 / 1 | final field-output error unrelated to structure | Source contact line says `LVIV, UKRAINE`; output location is empty. `extract_location()` checks early lines for US state codes or remote/hybrid, independently of sections. Skills score 6 / 0 / 0. |
 
 The first three rows demonstrate structural involvement in scored skill errors.
 The next four prevent over-attributing tokenization, normalization, golden spelling,
@@ -61,11 +59,11 @@ and geographic coverage problems to header detection.
 
 ## Supporting V2 observations — no structural scores
 
-| Case and trace | Label | Golden/source → current output |
+| Fixture | Label | Golden/source → current output |
 | --- | --- | --- |
-| [resume_201](evidence/traces/resume_201.json) | work/project boundary observation | Golden `PROJECTS` precedes `EXPERIENCE`. Production starts project search at the work-end `SKILLS` line, returning `[]`. Calling the existing project extractor from index zero yields eight coarse strings, proving recognizable project content was excluded by the start index. Those eight strings are not eight correctly extracted projects; the golden has two items under `PROJECTS`. |
-| [resume_202](evidence/traces/resume_202.json) | entry grouping problem | Golden `EXPERIENCE` has three jobs. Current output contains 15 strings: titles/dates, standalone cities, and individual bullets. Extracted blank lines and bullet prefixes trigger `_group_into_entries()` flushes; `Austin, TX` and `Reduced incident response time by 38%...` become separate entries. This establishes fragmentation without defining a replacement model. |
-| [resume_203](evidence/traces/resume_203.json) | missed section header; work/project boundary observation | Golden `TECHNICAL PROJECTS` has two items before `EXPERIENCE`. Production returns no projects. The heading is not recognized by `_is_section_header()` or the project's start patterns; even searching from index zero returns `[]`. Both heading vocabulary and search ordering are relevant, unlike the ordering-only demonstration in resume_201. |
+| `resume_201` | work/project boundary observation | Golden `PROJECTS` precedes `EXPERIENCE`. Production starts project search at the work-end `SKILLS` line, returning `[]`. Calling the existing project extractor from index zero yields eight coarse strings, proving recognizable project content was excluded by the start index. Those eight strings are not eight correctly extracted projects; the golden has two items under `PROJECTS`. |
+| `resume_202` | entry grouping problem | Golden `EXPERIENCE` has three jobs. Current output contains 15 strings: titles/dates, standalone cities, and individual bullets. Extracted blank lines and bullet prefixes trigger `_group_into_entries()` flushes; `Austin, TX` and `Reduced incident response time by 38%...` become separate entries. This establishes fragmentation without defining a replacement model. |
+| `resume_203` | missed section header; work/project boundary observation | Golden `TECHNICAL PROJECTS` has two items before `EXPERIENCE`. Production returns no projects. The heading is not recognized by `_is_section_header()` or the project's start patterns; even searching from index zero returns `[]`. Both heading vocabulary and search ordering are relevant, unlike the ordering-only demonstration in resume_201. |
 
 These are observations about coarse string output, not formal work/project recall
 or accuracy. The scored skill mismatches in these fixtures are separate: for
@@ -95,7 +93,7 @@ be misleading. See [parser.py](../../parser.py),
 
 The main benchmark scores only skills, skills_resolved, and location. Its adapter
 drops work/project/education output; failure examples are truncated samples and
-do not explain boundary decisions. The attached traces supply observation data,
+do not explain boundary decisions. The generated traces supply observation data,
 not new scoring. `skills_resolved` normalizes both predicted and golden sets with
 alias lookup and fallback keys; it is not the count of skills successfully
 resolved by Resolver V1. The 14-alias map and low coverage must not be interpreted
@@ -118,13 +116,24 @@ architecture.
 
 ## Reproduce
 
-From the repository root, using the existing backend environment:
+From the repository root, using the existing backend environment. To reproduce
+these historical results, use the baseline commit listed above for the parser,
+benchmark runner, fixtures, and goldens, with this diagnostic script available.
+Running against later revisions may produce different results:
 
 ```bash
 backend/.venv/bin/python scripts/benchmark.py --out /tmp/issue301-root
 backend/.venv/bin/python scripts/benchmark.py --pdf_dir backend/benchmarks/resumes/v2 --golden_dir backend/benchmarks/golden_json/v2 --out /tmp/issue301-v2
 backend/.venv/bin/python backend/benchmarks/structural_spike/inspect_current.py --out /tmp/issue301-traces
 ```
+
+The benchmark commands create timestamped run directories under
+`/tmp/issue301-root/` and `/tmp/issue301-v2/`, each containing the five report
+files listed above. The diagnostic command writes ten `<fixture_id>.json` files
+directly under `/tmp/issue301-traces/`; the fixture IDs in the tables identify the
+corresponding traces. Source PDFs and goldens are in `backend/benchmarks/resumes/`
+and `backend/benchmarks/golden_json/`, with `resume_201`–`resume_204` in their
+respective `v2/` subdirectories.
 
 The trace probe calls current parser helpers and the canonical PDF parser; it
 does not reproduce their logic. Source hashes allow checking fixture drift.
