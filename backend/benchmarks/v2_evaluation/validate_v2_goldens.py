@@ -120,6 +120,13 @@ def _validate_sections(
                         issues.append(_issue(fixture_id, f"{item_prefix}.bullets[{bullet_index}]", "expected string"))
 
 
+def validate_v2_sections(sections: Any, *, fixture_id: str) -> List[ValidationIssue]:
+    """Validate section-only inputs using the canonical V2 item contract."""
+    issues: List[ValidationIssue] = []
+    _validate_sections(issues, fixture_id, sections)
+    return issues
+
+
 def validate_v2_golden(
     golden: Dict[str, Any],
     *,
