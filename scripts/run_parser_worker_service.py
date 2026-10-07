@@ -11,7 +11,6 @@ import signal
 import socket
 import sys
 import threading
-import time
 
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
 LOCK_FILE = Path("/var/lib/libelle-parser-worker/worker.lock")
@@ -30,7 +29,7 @@ def settings() -> tuple[str, float, int]:
     return identity, poll, lease
 
 
-def serve(worker, poll: float, stop: threading.Event | _SignalStop) -> None:
+def serve(worker, poll: float, stop: threading.Event) -> None:
     emit("started")
     while not stop.is_set():
         try:
@@ -47,29 +46,8 @@ def serve(worker, poll: float, stop: threading.Event | _SignalStop) -> None:
     emit("stopped")
 
 
-class _SignalStop:
-    """Signal handlers only assign a flag; never acquire a threading lock."""
-
-    def __init__(self):
-        self.requested = False
-
-    def set(self):
-        self.requested = True
-
-    def is_set(self):
-        return self.requested
-
-    def wait(self, timeout):
-        deadline = time.monotonic() + timeout
-        while not self.requested:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                break
-            time.sleep(min(remaining, 0.05))
-
-
 def main() -> int:
-    stop = _SignalStop()
+    stop = threading.Event()
     for signum in (signal.SIGTERM, signal.SIGINT):
         signal.signal(signum, lambda *_: stop.set())
     sys.path.insert(0, str(BACKEND))

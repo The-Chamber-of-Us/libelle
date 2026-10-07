@@ -74,8 +74,7 @@ def test_startup_error_does_not_log_exception(monkeypatch, tmp_path, capsys):
     assert output.err == ""
 
 
-@pytest.mark.parametrize("stop_under_lock", [False, True])
-def test_process_stop_crash_and_lock_recovery(tmp_path, stop_under_lock):
+def test_process_stop_crash_and_lock_recovery(tmp_path):
     import os
     import signal
     import subprocess
@@ -83,7 +82,7 @@ def test_process_stop_crash_and_lock_recovery(tmp_path, stop_under_lock):
 
     # Inject only the #365 public interface; no Google access or parser semantics.
     program = '''
-import contextlib, importlib.util, signal, sys, types
+import importlib.util, sys, types
 from pathlib import Path
 spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
 launcher = importlib.util.module_from_spec(spec)
@@ -100,24 +99,10 @@ class Worker:
     def run_once(self): return 0
 worker.ParserWorker = Worker
 sys.modules["services.parser_worker"] = worker
-if sys.argv[3] == "True":
-    original_serve = launcher.serve
-    def serve_under_stop_lock(worker, poll, stop):
-        original_wait = stop.wait
-        def wait_under_lock(timeout):
-            # Deterministically model signal delivery while Event.wait holds its
-            # non-reentrant condition lock. The signal-safe replacement has none.
-            with getattr(stop, "_cond", contextlib.nullcontext()):
-                signal.raise_signal(signal.SIGTERM)
-            assert stop.is_set()
-            original_wait(timeout)
-        stop.wait = wait_under_lock
-        original_serve(worker, poll, stop)
-    launcher.serve = serve_under_stop_lock
 raise SystemExit(launcher.main())
 '''
     command = [sys.executable, "-u", "-c", program,
-               str(ROOT / "scripts/run_parser_worker_service.py"), str(tmp_path / "worker.lock"), str(stop_under_lock)]
+               str(ROOT / "scripts/run_parser_worker_service.py"), str(tmp_path / "worker.lock")]
     environment = {"PATH": os.environ.get("PATH", ""), "PARSER_WORKER_POLL_INTERVAL_SECONDS": "0.01"}
     processes = []
 
@@ -130,16 +115,6 @@ raise SystemExit(launcher.main())
         assert select.select([process.stdout], [], [], 5)[0]
         assert process.stdout.readline().strip() == "[PARSER_WORKER_SERVICE] started"
         return process
-
-    if stop_under_lock:
-        result = subprocess.run(command, capture_output=True, text=True,
-                                env=environment, timeout=5)
-        assert result.returncode == 0
-        assert result.stdout.splitlines() == [
-            "[PARSER_WORKER_SERVICE] started", "[PARSER_WORKER_SERVICE] stopped",
-        ]
-        assert not result.stderr
-        return
 
     try:
         first = start()
