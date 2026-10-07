@@ -301,8 +301,9 @@ It is also becoming a real internal tool: one that helps TCUS receive volunteer 
 
 Welcome to the mission.
 
-Volunteer data supports explicit administrator deletion and monthly orphan cleanup.
-Automatic age-based expiry is deferred until intake evidence and contributor
-relationship lifecycles can be represented reliably. See the [retention and deletion runbook](docs/deployment/volunteer_data_retention.md)
+Volunteer data supports explicit administrator deletion, monthly orphan cleanup,
+and separately scoped source/coordination expiry under approved policy. Explicit
+coordination intent is retained in ops after source removal; age, row edits and
+workflow status alone do not authorize expiry. No automatic age-based sweep is enabled. See the [retention and deletion runbook](docs/deployment/volunteer_data_retention.md)
 for the data inventory, request handling, offline deletion command, restricted
 recovery manifests, orphan cleanup, and required log/backup controls before production.

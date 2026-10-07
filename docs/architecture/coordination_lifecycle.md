@@ -6,8 +6,8 @@ The current intake is immutable `submissions`, with a Drive PDF, parser jobs,
 parser/Resolver results and errors. Current reviewer state is `ops`; event
 history is optional and best-effort. Before this change, snapshot composition
 started exclusively from submissions. Deleting that root hid surviving ops.
-The offline deletion/recovery executor from local `volunteer-data-retention`
-commit `dc170b7` is integrated here and calls the domain policy for source expiry,
+The final offline deletion/recovery executor merged by #407 (`6df419a`) is the
+base for this integration and calls the domain policy for source expiry,
 coordination expiry and explicit full deletion. The existing maintenance-only
 execution contract is retained; live deployment and isolation still require
 operational verification.
