@@ -293,7 +293,7 @@ def _render_pdf(env: Environment, css: str, template_name: str, profile: Profile
     HTML(string=html).write_pdf(target=str(out_path))
 
 
-def main() -> int:
+def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--count", type=int, default=30)
@@ -301,9 +301,8 @@ def main() -> int:
     ap.add_argument("--annotation-version", choices=["v1", "v2"], default="v1",
                      help="Benchmark annotation schema to derive gold.json in (#348).")
     ap.add_argument("--validate", action="store_true",
-                     help="Run consistency + canonical corpus validation (#344/#349) after generation "
-                          "and exit non-zero if the corpus isn't benchmark-ready.")
-    args = ap.parse_args()
+                     help="Compatibility flag: consistency + canonical corpus validation always run.")
+    args = ap.parse_args(argv)
 
     OUT_PDF.mkdir(parents=True, exist_ok=True)
     OUT_GOLD.mkdir(parents=True, exist_ok=True)
@@ -350,11 +349,10 @@ def main() -> int:
     print(f"PDFs:  {OUT_PDF}")
     print(f"Gold:  {OUT_GOLD}")
 
-    if args.validate:
-        from validate_generated import validate_generated
-        print()
-        if not validate_generated(OUT_PDF, OUT_GOLD):
-            return 1
+    from validate_generated import validate_generated
+    print()
+    if not validate_generated(OUT_PDF, OUT_GOLD):
+        return 1
 
     return 0
 

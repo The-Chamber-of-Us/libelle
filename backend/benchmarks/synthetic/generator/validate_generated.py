@@ -13,7 +13,6 @@ reuses both existing validators rather than duplicating their logic --
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import List, Tuple
@@ -51,8 +50,8 @@ def run_consistency(pdf_dir: Path, gold_dir: Path) -> Tuple[bool, List[str]]:
             continue
         try:
             case_id, issues = check_one(pdf, gold_path)
-        except (json.JSONDecodeError, OSError) as exc:
-            failures.append(f"{pdf.stem}: could not read gold.json ({exc})")
+        except (OSError, UnicodeError, ValueError, TypeError, AttributeError, RuntimeError) as exc:
+            failures.append(f"{pdf.stem}: consistency check could not inspect PDF/annotation pair ({type(exc).__name__}: {exc})")
             continue
         for issue in issues:
             failures.append(f"{case_id}: {issue}")
