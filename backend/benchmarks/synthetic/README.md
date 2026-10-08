@@ -35,7 +35,7 @@ python3.11 -m venv .venv
 # macOS WeasyPrint system deps:
 brew install pango cairo gdk-pixbuf libffi
 
-# Generate 30 cases (20 known + 10 adversarial — one per adversarial template).
+# Generate and validate 30 cases (20 known + 10 adversarial — one per adversarial template).
 # DYLD_FALLBACK_LIBRARY_PATH lets cffi find Homebrew's pango/cairo on Apple Silicon.
 DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
   .venv/bin/python backend/benchmarks/synthetic/generator/generate.py \
@@ -116,8 +116,10 @@ its source profile while still violating the benchmark corpus contract
 (missing fields, ID/filename mismatch, malformed JSON, etc). A generated
 corpus is only *benchmark-ready* when it passes both.
 
-`validate_generated.py` runs both boundaries and reuses the existing
-validators rather than reimplementing either:
+`generate.py` runs both boundaries automatically after writing the corpus and
+returns exit code 1 if either fails. `validate_generated.py` applies the same
+gate to an existing corpus and supports `--pdf-dir` and `--gold-dir` for CI
+or alternate output directories. Both reuse the existing validators:
 
 ```bash
 DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
@@ -125,17 +127,28 @@ DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
 # -> BENCHMARK-READY, or NOT BENCHMARK-READY with per-fixture diagnostics
 ```
 
-Or run it automatically as part of generation with `--validate` (exits
-non-zero if the generated corpus isn't benchmark-ready — safe to use in CI):
+Generation runs the gate by default (safe to invoke in CI):
 
 ```bash
 DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib \
   .venv/bin/python backend/benchmarks/synthetic/generator/generate.py \
-    --seed 42 --count 30 --annotation-version v2 --validate
+    --seed 42 --count 30 --annotation-version v2
 ```
 
-`--validate` is opt-in; omitting it preserves `generate.py`'s prior
-default behavior exactly.
+`--validate` remains accepted as a compatibility flag; validation always runs.
+Failed artifacts remain on disk for inspection, but are reported as
+`NOT BENCHMARK-READY` and generation exits non-zero. The gate validates the
+entire output directory pair, including artifacts left by an earlier run.
+
+Canonical preflight reuses `validate_v2_golden()` for required V2 fields and
+`sections[]` structure, and checks pairing and filename/internal ID alignment
+for both versions. Schema identification follows the annotation spec's
+V1/V2 shapes; existing fixtures need no new metadata field. If an annotation
+includes `schema_version`, it must be `"v1"` or `"v2"` and agree with its shape.
+Conflicting `submission_id`/`resume_id` identities are rejected. Diagnostics
+identify the fixture, offending field or rule, expected contract, and observed
+value or condition. The existing PDF text consistency check remains a separate
+boundary; canonical schema validity cannot substitute for rendering consistency.
 
 ## Determinism
 
