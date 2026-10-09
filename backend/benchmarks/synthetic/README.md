@@ -8,6 +8,11 @@ it through `scripts/benchmark.py` to determine whether the cheap path
 already produces useful parser/resolver signal — before committing to the
 heavier MCP/agent architecture in epic #138.
 
+For BettyAnn's separate Faker/MLX/RenderCV artifacts, see the
+[issue #238 review and integration plan](findings/REVIEW_238.md). It recommends
+reviewed artifact imports and a small gold-filename compatibility change while
+keeping that generator experimental.
+
 ## Layout
 
 ```
