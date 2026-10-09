@@ -11,6 +11,7 @@ import signal
 import socket
 import sys
 import threading
+import time
 
 BACKEND = Path(__file__).resolve().parents[1] / "backend"
 LOCK_FILE = Path("/var/lib/libelle-parser-worker/worker.lock")
@@ -29,7 +30,30 @@ def settings() -> tuple[str, float, int]:
     return identity, poll, lease
 
 
-def serve(worker, poll: float, stop: threading.Event) -> None:
+class _SignalStop:
+    """A shutdown flag whose signal handler never acquires a thread lock."""
+
+    def __init__(self) -> None:
+        self._requested = False
+
+    def set(self) -> None:
+        self._requested = True
+
+    def is_set(self) -> bool:
+        return self._requested
+
+    def wait(self, timeout: float) -> bool:
+        deadline = time.monotonic() + timeout
+        while not self._requested:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return False
+            # Bound shutdown latency without changing the worker poll interval.
+            time.sleep(min(remaining, 0.1))
+        return True
+
+
+def serve(worker, poll: float, stop: threading.Event | _SignalStop) -> None:
     emit("started")
     while not stop.is_set():
         try:
@@ -47,7 +71,7 @@ def serve(worker, poll: float, stop: threading.Event) -> None:
 
 
 def main() -> int:
-    stop = threading.Event()
+    stop = _SignalStop()
     for signum in (signal.SIGTERM, signal.SIGINT):
         signal.signal(signum, lambda *_: stop.set())
     sys.path.insert(0, str(BACKEND))
