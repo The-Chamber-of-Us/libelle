@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from .v2_evaluation.validate_v2_goldens import validate_v2_golden
+
 
 @dataclass
 class PreflightIssue:
@@ -24,14 +26,12 @@ class PreflightIssue:
     found: Optional[str] = None
 
     def format(self) -> str:
-        lines = [f"Fixture: {self.fixture_id}", ""]
+        lines = [f"Fixture: {self.fixture_id}", "", self.message]
         if self.expected is not None or self.found is not None:
             if self.expected is not None:
                 lines.append(f"Expected ID: {self.expected}")
             if self.found is not None:
                 lines.append(f"Found ID: {self.found}")
-        else:
-            lines.append(self.message)
         return "\n".join(lines)
 
 
@@ -62,7 +62,7 @@ def _load_json(path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
             data = json.load(f)
     except json.JSONDecodeError as exc:
         return None, f"malformed JSON: {exc.msg} at line {exc.lineno}, column {exc.colno}"
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         return None, f"could not read JSON: {exc}"
 
     if not isinstance(data, dict):
@@ -84,6 +84,19 @@ def _schema_version(golden: Dict[str, Any]) -> str:
     if "submission_id" in golden and "skills" in golden:
         return "v1"
     return "unsupported"
+
+
+def _observed_field(golden: Dict[str, Any], field: str) -> str:
+    """Describe the offending field, including missing parents, for diagnostics."""
+    value: Any = golden
+    for part in field.replace("[", ".").replace("]", "").split("."):
+        if isinstance(value, dict) and part in value:
+            value = value[part]
+        elif isinstance(value, list) and part.isdigit() and int(part) < len(value):
+            value = value[int(part)]
+        else:
+            return f"missing or inaccessible field ({field})"
+    return repr(value)
 
 
 def run_preflight(
@@ -134,10 +147,11 @@ def run_preflight(
                     severity=missing_severity,
                 )
             )
-        if pdf_path is None or golden_path is None:
+        if golden_path is None:
             continue
 
-        matched_count += 1
+        if pdf_path is not None:
+            matched_count += 1
 
         golden, error = _load_json(golden_path)
         if error:
@@ -174,6 +188,20 @@ def run_preflight(
 
         version = _schema_version(golden)
         schema_versions[version] += 1
+        if "schema_version" in golden:
+            declared = golden["schema_version"]
+            if not isinstance(declared, str) or declared not in ("v1", "v2") or declared != version:
+                issues.append(PreflightIssue(
+                    fixture_id=stem,
+                    message=f"schema_version: expected '{version}' matching annotation shape "
+                            f"(supported versions: v1, v2); observed {declared!r}",
+                ))
+        if "submission_id" in golden and "resume_id" in golden:
+            issues.append(PreflightIssue(
+                fixture_id=stem,
+                message="ambiguous schema identity: expected one of submission_id (V1) or "
+                        "resume_id (V2); observed both fields",
+            ))
         if version == "unsupported":
             issues.append(
                 PreflightIssue(
@@ -186,6 +214,14 @@ def run_preflight(
                 issues.append(PreflightIssue(fixture_id=stem, message="missing required 'skills' array"))
             if not isinstance(golden.get("location"), dict):
                 issues.append(PreflightIssue(fixture_id=stem, message="missing required 'location' object"))
+
+        elif version == "v2":
+            for issue in validate_v2_golden(golden, fixture_key=stem, golden_path=golden_path):
+                # Keep the filename identity even when the annotation ID is malformed.
+                issues.append(PreflightIssue(
+                    fixture_id=stem,
+                    message=f"{issue.field}: {issue.message}; observed {_observed_field(golden, issue.field)}",
+                ))
 
     known_versions = [v for v in schema_versions if v != "unsupported"]
     if len(known_versions) > 1:
