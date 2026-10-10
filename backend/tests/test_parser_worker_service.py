@@ -228,3 +228,47 @@ def test_service_preserves_real_worker_retry_and_private_errors(monkeypatch, cap
     assert errors[0]["error_code"] == "PARSER_FAILED"
     output = capsys.readouterr()
     assert "private" not in output.out + output.err
+
+
+def test_sigterm_during_wait_lock_does_not_deadlock(tmp_path):
+    import subprocess
+    import sys
+
+    program = '''
+import importlib.util, sys, types
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
+launcher = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(launcher)
+launcher.LOCK_FILE = Path(sys.argv[2])
+sys.modules["config"] = types.ModuleType("config")
+validator = types.ModuleType("validator")
+validator.validate_sheet_schema = lambda: None
+sys.modules["validator"] = validator
+worker = types.ModuleType("services.parser_worker")
+worker.ParserWorkerConfig = lambda **kwargs: kwargs
+class Worker:
+    def __init__(self, config): pass
+    def run_once(self): return 0
+worker.ParserWorker = Worker
+sys.modules["services.parser_worker"] = worker
+import os, signal, threading
+def serve(worker, poll, stop):
+    # The legacy Event has a non-reentrant condition lock. SIGTERM used to
+    # reacquire that lock in Event.set() and hang the main thread.
+    condition = getattr(stop, "_cond", threading.Condition(threading.Lock()))
+    with condition:
+        os.kill(os.getpid(), signal.SIGTERM)
+    assert stop.is_set()
+    print("shutdown_completed", flush=True)
+launcher.serve = serve
+raise SystemExit(launcher.main())
+'''
+    result = subprocess.run(
+        [sys.executable, "-u", "-c", program,
+         str(ROOT / "scripts/run_parser_worker_service.py"), str(tmp_path / "worker.lock")],
+        capture_output=True, text=True, timeout=5,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stdout.strip() == "shutdown_completed"
+    assert not result.stderr
