@@ -117,6 +117,7 @@ export default function ParserResults() {
                 </h1>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
                   Snapshot view of parser and resolver output for inspection.
+                  Coordination-only records remain available in Inbox and Ops.
                 </p>
               </div>
               <button
@@ -225,7 +226,7 @@ export default function ParserResults() {
           )}
 
           {state.status === 'ready' && state.submissions.length === 0 && (
-            <div className="px-5 py-10 text-sm text-slate-600">No submissions yet.</div>
+            <div className="px-5 py-10 text-sm text-slate-600">No intake records available for parser inspection.</div>
           )}
 
           {state.status === 'ready' &&
@@ -574,7 +575,14 @@ async function fetchParserResultsState(
 
   return {
     status: 'ready',
-    submissions: data as ReviewerSubmissionSnapshot[]
+    // Legacy pending/not_run fields do not imply work remains after source expiry.
+    // Filter before counting, sorting, searching or applying parser-state filters.
+    submissions: (data as ReviewerSubmissionSnapshot[]).filter(submission =>
+      submission.source_state !== 'unavailable' &&
+      submission.submission_health_state !== 'coordination_only' &&
+      submission.parsed.parser_result_state !== 'source_unavailable' &&
+      submission.resolved.resolver_result_state !== 'source_unavailable'
+    )
   }
 }
 

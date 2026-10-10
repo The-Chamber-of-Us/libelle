@@ -279,7 +279,8 @@ for path in \
   /snapshot \
   /ops/statuses \
   /resumes/$SID \
-  /submissions/$SID/ops
+  /submissions/$SID/ops \
+  /submissions/$SID/coordination
 do
   echo ""
   echo "=== $path ==="
@@ -293,7 +294,8 @@ Expected behavior:
 - `/snapshot` returns JSON
 - `/ops/statuses` returns JSON
 - `/resumes/{submission_id}` reaches the backend and enforces actor identity
-- `/submissions/{submission_id}/ops` reaches the backend and allows POST only
+- `/submissions/{submission_id}/ops` reaches the backend and allows POST/PATCH (GET returns 405)
+- `/submissions/{submission_id}/coordination` reaches the backend and allows POST (GET returns 405)
 
 ## Ops Writeback Smoke Test
 
@@ -326,6 +328,29 @@ and a JSON response with:
 ```
 
 The updated ops state should appear in `/snapshot`.
+
+### Coordination write smoke test
+
+Use a synthetic staging submission and the same local trusted-process simulation
+only after adding `ops.coordination` to the Sheet schema. POST to
+`/submissions/{submission_id}/coordination` with the same local actor header and:
+
+```json
+{"action":"preserve","purpose":"Staging coordination verification","context_reviewed":true}
+```
+
+Expect 200, `state=active` and backend-derived `decided_by`, then verify
+`coordination_state=active` and the structured content in `/snapshot`. When the
+optional events tab is available, verify a `coordination_intent` event with
+`field_changed=coordination_state` and the same actor. Repeat with no actor header
+against the trusted local backend and expect 401 without a write.
+
+The deployed Access policy must protect `/submissions/*/coordination` alongside
+`/submissions/*/ops` and `/ops/*`; a shared nginx `/submissions/` proxy location
+alone does not establish authentication. Perform the unauthenticated, forged-header,
+alternate-hostname/direct-origin and authenticated-spoofing checks in the
+[trust contract](internal_actor_trust.md) against the deployed SHA. Local header
+simulation and successful route forwarding do not replace those checks.
 
 ## Public Cloudflare Access Verification
 

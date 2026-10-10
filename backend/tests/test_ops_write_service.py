@@ -124,6 +124,7 @@ def test_create_first_ops_workflow_state_appends_schema_aligned_ops_row(monkeypa
                         "call",
                         "05-26-2026 10:00:00 UTC",
                         "reviewer@example.org",
+                        "",
                     ]
                 ]
             },
@@ -223,6 +224,7 @@ def test_update_existing_ops_workflow_state_updates_row_in_place(monkeypatch) ->
     )
 
     assert updated == {
+        "coordination": "",
         "submission_id": "sub_001",
         "status": "reviewed",
         "notes": "Looks good",
@@ -239,7 +241,7 @@ def test_update_existing_ops_workflow_state_updates_row_in_place(monkeypatch) ->
     assert fake_sheet.values_api.update_calls == [
         {
             "spreadsheetId": "test-sheet-id",
-            "range": "ops!A2:G2",
+            "range": "ops!A2:H2",
             "valueInputOption": "RAW",
             "body": {
                 "values": [
@@ -251,6 +253,7 @@ def test_update_existing_ops_workflow_state_updates_row_in_place(monkeypatch) ->
                         "email",
                         "05-26-2026 10:00:00 UTC",
                         "reviewer@example.org",
+                        "",
                     ]
                 ]
             },
@@ -359,6 +362,7 @@ def test_update_or_create_ops_workflow_state_creates_missing_status_row(monkeypa
                         "",
                         "05-26-2026 10:00:00 UTC",
                         "reviewer@example.org",
+                        "",
                     ]
                 ]
             },

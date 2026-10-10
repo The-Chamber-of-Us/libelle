@@ -10,6 +10,8 @@ from core.state_contract import (
     ResumeState,
     derive_submission_health_state,
 )
+from core.coordination_lifecycle import read_coordination
+from services.dashboard_ops_state import _updated_at_sort_value
 from services.dashboard_errors import summarize_submission_errors
 from services.dashboard_ops_state import compose_current_ops_state
 from services.dashboard_parser_results import select_parser_result
@@ -88,10 +90,26 @@ def assemble_snapshot_records(
     """
     records: List[SnapshotRecord] = []
 
+    # Ops remains an existence root after source removal. Never rejoin orphaned
+    # parser artifacts into a coordination-only record.
+    current_ops = {}
+    duplicate_ops_ids = set()
+    for row in ops_rows:
+        key = str(row.get("submission_id", "")).strip()
+        if key in current_ops:
+            duplicate_ops_ids.add(key)
+        if key and (key not in current_ops or _updated_at_sort_value(row.get("updated_at")) >
+                    _updated_at_sort_value(current_ops[key].get("updated_at"))):
+            current_ops[key] = row
+    normalized_submissions = {str(key).strip(): value for key, value in submissions_by_id.items()
+                              if str(key).strip()}
+    roots = dict(normalized_submissions)
+    for key in current_ops:
+        roots.setdefault(key, {})
     keyed_submissions = sorted(
         (
             (str(submission_id).strip(), submission)
-            for submission_id, submission in submissions_by_id.items()
+            for submission_id, submission in roots.items()
             if str(submission_id).strip()
         ),
         key=lambda item: item[0],
@@ -100,6 +118,32 @@ def assemble_snapshot_records(
     observed_at = _normalize_datetime(now or datetime.now(timezone.utc))
 
     for submission_id, submission in keyed_submissions:
+        source_present = submission_id in normalized_submissions
+        coordination = None
+        coordination_state = "unassessed"
+        try:
+            if submission_id in duplicate_ops_ids:
+                raise ValueError("Ambiguous coordination authority")
+            coordination = read_coordination(current_ops.get(submission_id, {}).get("coordination", ""))
+            if coordination:
+                coordination_state = coordination.state
+        except ValueError:
+            coordination_state = "malformed"
+        if not source_present:
+            records.append({
+                "submission_id": submission_id,
+                "source_state": "unavailable",
+                "coordination_state": coordination_state,
+                "coordination": coordination.model_dump(mode="json") if coordination else None,
+                "submission_health_state": "coordination_only",
+                "raw": _compose_raw_layer({}),
+                "parsed": dict(_compose_parsed_layer({}, None, {}), parser_result_state="source_unavailable"),
+                "resolved": dict(_compose_resolved_layer({}, None), resolver_result_state="source_unavailable"),
+                "parser_job": None,
+                "ops": compose_current_ops_state(submission_id, [dict(current_ops[submission_id])]),
+                "errors": _compose_errors_layer(submission_id, None),
+            })
+            continue
         parser_job = parser_jobs_by_submission_id.get(submission_id)
         matching_parser_rows = [
             dict(row)
@@ -122,6 +166,9 @@ def assemble_snapshot_records(
         records.append(
             {
                 "submission_id": submission_id,
+                "source_state": "present",
+                "coordination_state": coordination_state,
+                "coordination": coordination.model_dump(mode="json") if coordination else None,
                 "submission_health_state": _compose_submission_health_state(
                     submission,
                     selected_parser_row,

@@ -41,6 +41,7 @@ OPS_HEADERS = [
     "contact_tracking",
     "updated_at",
     "updated_by",
+    "coordination",
 ]
 
 ERRORS_HEADERS = [

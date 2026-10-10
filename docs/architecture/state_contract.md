@@ -6,7 +6,7 @@ operations, and audit/error records.
 
 This contract defines pure validators, reviewer-facing health derivation, and the state
 matrix. Snapshot health derivation is now wired: `backend/services/dashboard_service.py`
-calls `derive_submission_health_state()` when assembling `/snapshot`. This does not mean
+calls `derive_submission_health_state()` for intake-backed `/snapshot` records. This does not mean
 every transition helper or historical parser-job state mapping is used by runtime paths.
 Start with the [current architecture map](contributor_architecture_map.md) for execution
 boundaries; this document owns the pure state contract.
@@ -118,10 +118,26 @@ interpretation occurs through the state contract rather than ad hoc application 
 
 ## Derived Health View
 
-Snapshot materialization derives one reviewer-facing `SubmissionHealthState` from
+For intake-backed records, snapshot materialization derives one reviewer-facing `SubmissionHealthState` from
 `ResumeState`, `ParserState`, and `ResolverState`.
 
-The health derivation matrix is:
+Ops-only records bypass this pipeline derivation. The snapshot composer emits
+`submission_health_state=coordination_only` and `source_state=unavailable`, with
+blank raw data, `source_unavailable` parser/Resolver result states, no parser job
+and unavailable error evidence. `coordination_only` is a snapshot-level lifecycle
+projection, not a new value produced by the pure pipeline helper or a parser
+failure. Consumers must not interpret legacy `pending`/`not_run` placeholders as
+work to run. Parser Results excludes these records; other reviewer views use a
+neutral health tone.
+
+`coordination_state` reports `unassessed`, `active`, `ended` or `malformed`.
+`coordination` contains validated human context and lifecycle timestamps, or null
+when unassessed/malformed. Its transitions are owned by
+[`core/coordination_lifecycle.py`](../../backend/core/coordination_lifecycle.py)
+and the [coordination lifecycle contract](coordination_lifecycle.md), independently
+of workflow status and the pipeline state matrix below.
+
+The intake health derivation matrix is:
 
 | ResumeState | ParserState | ResolverState | SubmissionHealthState |
 | --- | --- | --- | --- |
@@ -164,7 +180,8 @@ parser or resolver events.
 
 `backend/services/dashboard_service.py` maps persisted submission, selected parser result,
 error, and parser-job data into the state domains and calls
-`derive_submission_health_state()`. `/snapshot` exposes the resulting
+`derive_submission_health_state()` for intake-backed records. Ops-only roots use
+`coordination_only` directly as described above. `/snapshot` exposes the resulting
 `submission_health_state`; the frontend should display it without recomputing the matrix.
 
 Incoming reviewer status is validated through `backend/ops_schema.py`, not this

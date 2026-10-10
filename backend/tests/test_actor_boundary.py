@@ -17,6 +17,7 @@ _forged_jwt = f"header.{_payload}.signature"
     ("POST", "/submissions/sub_001/ops", {"status": "new"}),
     ("PATCH", "/submissions/sub_001/ops", {"notes": "test"}),
     ("GET", "/resumes/sub_001", None),
+    ("POST", "/submissions/sub_001/coordination", {"action": "preserve", "purpose": "Ongoing project", "context_reviewed": True}),
 ])
 @pytest.mark.parametrize("headers", [
     {},
@@ -28,7 +29,7 @@ def test_invalid_identity_never_reaches_service(monkeypatch, method, path, body,
     def unexpected(*args, **kwargs):
         pytest.fail("Invalid identity reached protected service")
 
-    for name in ["create_first_ops_workflow_state", "update_existing_ops_workflow_state", "update_or_create_ops_workflow_state"]:
+    for name in ["set_coordination_intent", "create_first_ops_workflow_state", "update_existing_ops_workflow_state", "update_or_create_ops_workflow_state"]:
         monkeypatch.setattr(dashboard, name, unexpected)
     monkeypatch.setattr(resumes, "get_mediated_resume", unexpected)
     app = FastAPI()

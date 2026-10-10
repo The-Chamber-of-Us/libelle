@@ -22,6 +22,7 @@ authoritative when assembling one record from many sources.
 | Parser output | Selected `parser_results` row per `submission_id` | Follow explicit authority; require it for succeeded jobs. Latest-result fallback is allowed only as described below. Display alongside raw submitted values. |
 | Resolver output | resolver-owned columns of the selected `parser_results` row | Derived normalization. Unresolved values stay visible in `unknown_skills`; resolver output never hides raw parser output. |
 | Reviewer workflow status | `ops` tab | Current reviewer-owned workflow state, one row per `submission_id`. |
+| Coordination lifecycle | `ops.coordination` | Validated explicit purpose, human context and backend lifecycle timestamps. Missing metadata is unassessed; malformed or duplicate authority is not inferred from status or edit time. |
 | Reviewer notes | `ops` tab (current text); `ops_events` tab (best-effort authorship/history) | The current `ops` row shows latest state; append-only events provide non-transactional history when event writes succeed. |
 | Errors/failures | `errors` tab | Failure evidence tied to `submission_id`. Informs health state; never removes a submission from view. |
 | Snapshot | `/snapshot` response | Derived read model only. Never a source of truth, never written back to any tab. |
@@ -85,7 +86,7 @@ repairing the stored row. A displayed `new` therefore does not prove that no
 reviewer action has occurred.
 
 **8. What should `/snapshot` display when sources are partial or degraded?**
-Every source it has, each labeled by origin, plus a derived
+For intake-backed records, every source it has, each labeled by origin, plus a derived
 `SubmissionHealthState` that is honest about degradation. Missing derived
 data is shown as missing. Explicit result states distinguish absent, failed,
 and successful empty Resolver output; legacy empty arrays alone do not prove
@@ -95,7 +96,9 @@ row is still a complete, displayable record.
 The top-level snapshot domains (`raw`, `parsed`, `resolved`, `ops`, and
 `errors`) are always present and are never `null`. Stage availability is
 represented with explicit nested state fields rather than by omitting domains.
-`parser_job` is also always present but is `null` when no job exists. Its safe
+`coordination` is always present but nullable when lifecycle authority is unassessed
+or malformed. `parser_job` is also always present but is `null` when no job exists
+or source evidence is unavailable. Its safe
 projection preserves unknown/malformed status, counts, and lease-derived staleness;
 a succeeded job with missing or unresolvable authority is malformed and cannot
 supply healthy-looking parser success. See the [API](../api-spec.md#get-snapshot)
@@ -105,8 +108,8 @@ Result-state fields:
 
 | Domain | Explicit state field | States |
 | ------ | -------------------- | ------ |
-| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available` |
-| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available` |
+| `parsed` | `parser_result_state` | `not_yet_run`, `failed`, `skipped`, `empty_success`, `available`, `source_unavailable` |
+| `resolved` | `resolver_result_state` | `not_yet_run`, `failed`, `unavailable_upstream`, `empty_success`, `available`, `source_unavailable` |
 | `errors` | `error_state` | `none`, `present`, `unavailable` |
 
 Within these domains, `""` means the source row has no stored scalar value for
@@ -117,22 +120,32 @@ value is available. Consumers should not infer pipeline state from blank
 payload fields; they should read the explicit state fields and
 `submission_health_state`.
 
+`coordination_state` (`unassessed`, `active`, `ended`, `malformed`) and validated
+`coordination` content are distinct from workflow and pipeline state. In ops-only
+records, legacy pending/not-run placeholders do not imply queued parser work.
+Parser Results excludes unavailable-source records; Inbox and Ops keep them with
+neutral health presentation. See the [API contract](../api-spec.md#get-snapshot).
+
 ## Assembly rules for `/snapshot`
 
-1. Start from `submissions` — it defines which records exist. Every
-   submission row appears in the read model regardless of the state of any
-   other tab.
+1. Start from the union of `submissions` and `ops` IDs. Every submission
+   remains visible regardless of derived state; retained ops remains visible
+   after intake removal. An ops-only root is coordination context, not pending intake.
 2. Join other tabs by `submission_id` only. No email-based or positional
    joins.
-3. Read canonical logical jobs through `list_parser_jobs()` and select parser
+3. For intake-backed records, read canonical logical jobs through `list_parser_jobs()` and select parser
    results by explicit authority as described in decision 2. Succeeded jobs
    must not fall back when authority is blank or unresolvable. Latest-result
    fallback applies only without required or supplied authority. Results from
    different attempts remain separate and are not merged.
 4. Never let a derived source shadow a canonical one: parsed/resolved fields
    are presented as their own fields, not folded into submitted fields.
-5. Derive health via `derive_submission_health_state` rather than storing
-   it. Snapshot output is never persisted back to Sheets.
+5. For intake-backed records, derive health via `derive_submission_health_state`
+   rather than storing it. For ops-only roots, the snapshot composer emits
+   `source_state=unavailable` and `submission_health_state=coordination_only`,
+   blanks raw fields and exposes `source_unavailable` result states. It suppresses
+   residual parser jobs/results and errors rather than joining them. Snapshot
+   output is never persisted back to Sheets.
 6. Pipeline contradictions remain visible through backend health derivation.
    Reviewer workflow is a separate source: an ops row can legitimately coexist
    with a degraded pipeline and does not repair parser or Resolver state.

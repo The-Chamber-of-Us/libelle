@@ -1,12 +1,14 @@
 export type ParserState = 'pending' | 'complete'
 export type ResolverState = 'not_run' | 'resolved' | 'zero_matches'
 export type ParserResultState =
+  | 'source_unavailable'
   | 'not_yet_run'
   | 'failed'
   | 'skipped'
   | 'empty_success'
   | 'available'
 export type ResolverResultState =
+  | 'source_unavailable'
   | 'not_yet_run'
   | 'failed'
   | 'unavailable_upstream'
@@ -22,6 +24,7 @@ export type ParserJobStatus =
   | 'enqueue_failed'
   | 'unknown'
 export type SubmissionHealthState =
+  | 'coordination_only'
   | 'complete'
   | 'partial_success'
   | 'no_resume_ok'
@@ -111,7 +114,24 @@ export interface SnapshotErrorsData {
   latest_error_code: string
 }
 
+export interface CoordinationRecord {
+  state: 'active' | 'ended'
+  purpose: string
+  takeaway: string
+  why: string
+  next_action: string
+  revisit: string | null
+  display_name: string
+  contact: string
+  purpose_started_at: string
+  purpose_ended_at: string | null
+  decided_by: string
+}
+
 export interface ReviewerSubmissionSnapshot {
+  source_state?: 'present' | 'unavailable'
+  coordination_state?: 'unassessed' | 'active' | 'ended' | 'malformed'
+  coordination?: CoordinationRecord | null
   submission_id: string
   submission_health_state: SubmissionHealthState
   raw: SnapshotRawData

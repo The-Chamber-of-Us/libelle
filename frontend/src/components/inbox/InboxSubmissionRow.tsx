@@ -54,7 +54,7 @@ export default function InboxSubmissionRow({
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-base font-semibold leading-6 text-slate-950">
-            {submission.raw.full_name || 'Unnamed submission'}
+            {submission.raw.full_name || submission.coordination?.display_name || 'Coordination record'}
           </h2>
           {submission.errors.has_error && (
             <span
