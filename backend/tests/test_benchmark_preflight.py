@@ -151,7 +151,11 @@ def test_mixed_schema_versions_warn_not_fail(tmp_path):
     _write_pdf(pdf_dir / "resume_201.pdf")
     _write_json(
         golden_dir / "resume_201.json",
-        {"resume_id": "resume_201", "skills": ["python"], "sections": []},
+        {
+            "resume_id": "resume_201", "source_persona": "synthetic", "persona": "known",
+            "name": None, "email": None, "phone": None, "location": None,
+            "links": [], "skills": ["python"], "notes": None, "sections": [],
+        },
     )
 
     result = run_preflight(pdf_dir, golden_dir)
@@ -187,3 +191,32 @@ def test_format_report_failure(tmp_path):
     assert "Fixture: multi_col_04" in report
     assert "Expected ID: multi_col_04" in report
     assert "Found ID: multi_col_05" in report
+
+
+@pytest.mark.parametrize("version", ["v3", "", None, 2, "v2"])
+def test_explicit_schema_version_must_match_supported_shape(tmp_path, version):
+    gold = _v1_golden()
+    gold["schema_version"] = version
+    _write_pdf(tmp_path / "pdfs/resume_01.pdf")
+    _write_json(tmp_path / "gold/resume_01.json", gold)
+    result = run_preflight(tmp_path / "pdfs", tmp_path / "gold")
+    assert not result.ok
+    assert any("schema_version" in issue.message and "observed" in issue.message for issue in result.errors)
+
+
+def test_unpaired_annotation_is_still_schema_validated(tmp_path):
+    _write_json(tmp_path / "gold/resume_01.json", {"resume_id": "resume_01", "sections": [42]})
+    result = run_preflight(tmp_path / "pdfs", tmp_path / "gold", allow_missing=True)
+    assert not result.ok
+    assert result.matched_count == 0
+    assert any("sections[0]: expected section object" in issue.message for issue in result.errors)
+
+
+def test_conflicting_identity_fields_fail(tmp_path):
+    gold = _v1_golden()
+    gold["resume_id"] = "other"
+    _write_pdf(tmp_path / "pdfs/resume_01.pdf")
+    _write_json(tmp_path / "gold/resume_01.json", gold)
+    result = run_preflight(tmp_path / "pdfs", tmp_path / "gold")
+    assert not result.ok
+    assert any("ambiguous schema identity" in issue.message for issue in result.errors)
