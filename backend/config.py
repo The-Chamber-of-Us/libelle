@@ -39,3 +39,18 @@ INTAKE_RATE_LIMIT_PER_EMAIL_PER_HOUR = _int_env("INTAKE_RATE_LIMIT_PER_EMAIL_PER
 INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE = _int_env("INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE", "120")
 INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS = _csv_env("INTAKE_TRUSTED_CLOUDFLARE_PROXY_CIDRS")
 INTAKE_TRUSTED_FORWARD_PROXY_CIDRS = _csv_env("INTAKE_TRUSTED_FORWARD_PROXY_CIDRS")
+
+# Public PDF processing ceilings. Invalid/nonpositive limits fail at startup.
+def _positive_pdf_limit(name: str, default: str) -> int:
+    value = _int_env(name, default)
+    if value <= 0:
+        raise ValueError(f"{name} must be positive")
+    return value
+
+MAX_PDF_PAGES = _positive_pdf_limit("MAX_PDF_PAGES", "50")
+MAX_PDF_TEXT_BYTES = _positive_pdf_limit("MAX_PDF_TEXT_BYTES", "1048576")
+PDF_EXTRACTION_TIMEOUT_SECONDS = _positive_pdf_limit("PDF_EXTRACTION_TIMEOUT_SECONDS", "10")
+PDF_EXTRACTION_MEMORY_MB = _positive_pdf_limit("PDF_EXTRACTION_MEMORY_MB", "512")
+PDF_EXTRACTION_MAX_CONCURRENT = _positive_pdf_limit("PDF_EXTRACTION_MAX_CONCURRENT", "2")
+if MAX_PDF_MB <= 0:
+    raise ValueError("MAX_PDF_MB must be positive")

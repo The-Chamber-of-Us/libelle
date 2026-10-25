@@ -5,7 +5,10 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
+from starlette.concurrency import run_in_threadpool
+
 from config import (
+    MAX_PDF_MB,
     ENABLE_INTAKE_RATE_LIMITING,
     INTAKE_RATE_LIMIT_GLOBAL_PER_MINUTE,
     INTAKE_RATE_LIMIT_PER_EMAIL_PER_HOUR,
@@ -123,8 +126,9 @@ async def upload_volunteer_application(
                 },
                 headers={"Retry-After": str(decision.retry_after_seconds)},
             )
-        pdf_bytes = await file.read() if file else None
-        result = finalize_submission(
+        pdf_bytes = await file.read(MAX_PDF_MB * 1024 * 1024 + 1) if file else None
+        result = await run_in_threadpool(
+            finalize_submission,
             pdf_bytes=pdf_bytes,
             original_filename=file.filename if file else None,
             content_type=file.content_type if file else None,

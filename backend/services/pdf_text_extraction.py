@@ -17,6 +17,14 @@ from typing import Tuple
 import fitz  # PyMuPDF
 
 
+class PDFResourceLimitError(ValueError):
+    """A public PDF exceeded a configured processing ceiling."""
+
+    def __init__(self, code):
+        super().__init__(code)
+        self.code = code
+
+
 class PasswordProtectedPDFError(ValueError):
     """Raised when an uploaded PDF requires a password to open."""
 
@@ -49,7 +57,9 @@ class ExtractedPdfText:
     positioned_pages: Tuple[PositionedTextPage, ...]
 
 
-def _extract_pdf_text_from_fitz_doc(doc: fitz.Document) -> ExtractedPdfText:
+def _extract_pdf_text_from_fitz_doc(
+    doc: fitz.Document, *, max_pages=None, max_text_bytes=None,
+) -> ExtractedPdfText:
     """
     Internal helper: extract and spatially sort text blocks from an open
     PyMuPDF document.
@@ -63,6 +73,9 @@ def _extract_pdf_text_from_fitz_doc(doc: fitz.Document) -> ExtractedPdfText:
     Only text blocks (block type 0) are included — image blocks (type 1)
     are skipped.
     """
+    if max_pages is not None and doc.page_count > max_pages:
+        raise PDFResourceLimitError("PDF_TOO_MANY_PAGES")
+    text_size = 0
     pages_text = []
     positioned_pages = []
     for page in doc:
@@ -70,7 +83,11 @@ def _extract_pdf_text_from_fitz_doc(doc: fitz.Document) -> ExtractedPdfText:
         # filter to text blocks only, then sort within this page
         text_blocks = [block for block in blocks if block[6] == 0]
         text_blocks.sort(key=lambda block: (block[1], block[0]))
-        pages_text.append("\n".join(block[4] for block in text_blocks))
+        page_text = "\n".join(block[4] for block in text_blocks)
+        text_size += len(page_text.encode("utf-8")) + bool(pages_text)
+        if max_text_bytes is not None and text_size > max_text_bytes:
+            raise PDFResourceLimitError("PDF_TEXT_TOO_LARGE")
+        pages_text.append(page_text)
         positioned_pages.append(
             PositionedTextPage(
                 width=float(page.rect.width),
@@ -99,14 +116,9 @@ def _extract_text_from_fitz_doc(doc: fitz.Document) -> str:
 
 
 def extract_pdf_text_from_bytes(pdf_bytes: bytes) -> ExtractedPdfText:
-    """Extract flattened text and the internal skill-layout sidecar in one pass."""
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    try:
-        if doc.needs_pass:
-            raise PasswordProtectedPDFError("Password-protected PDFs are not supported")
-        return _extract_pdf_text_from_fitz_doc(doc)
-    finally:
-        doc.close()
+    """Extract public PDF bytes within a killable, resource-limited process."""
+    from services.pdf_extraction_boundary import extract_bounded
+    return extract_bounded(pdf_bytes)
 
 
 def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
