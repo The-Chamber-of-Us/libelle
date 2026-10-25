@@ -109,7 +109,7 @@ def test_oversized_upload_keeps_413_contract(monkeypatch):
 
 def test_oversized_worker_output_is_controlled(monkeypatch, tmp_path):
     worker = tmp_path / 'large_output.py'
-    worker.write_text('import sys\nfrom pathlib import Path\nPath(sys.argv[2]).write_bytes(b"x" * (int(sys.argv[7]) + 1))\n')
+    worker.write_text('import sys\nfrom pathlib import Path\nPath(sys.argv[2]).write_bytes(b"x" * (int(sys.argv[6]) + 1))\n')
     monkeypatch.setattr(boundary, '_WORKER', worker)
     monkeypatch.setattr(boundary, 'MAX_PDF_TEXT_BYTES', 10)
     monkeypatch.setattr(boundary, 'MAX_PDF_PAGES', 1)
