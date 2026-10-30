@@ -9,6 +9,7 @@ import fitz  # PyMuPDF
 from config import MAX_PDF_MB
 from services.pdf_text_extraction import (
     PasswordProtectedPDFError,
+    PDFResourceLimitError,
     extract_text_from_pdf_bytes,
 )
 
@@ -96,6 +97,11 @@ def validate_resume_upload(
 
     try:
         extracted_text = extract_text_from_pdf_bytes(file_bytes)
+    except PDFResourceLimitError as exc:
+        raise ResumeFileValidationError(
+            exc.code, "The resume PDF exceeds processing limits. Please use a simpler PDF.",
+            status_code=503 if exc.code == "PDF_EXTRACTION_BUSY" else 400,
+        ) from exc
     except (fitz.FileDataError, PasswordProtectedPDFError):
         raise ResumeFileValidationError(
             "INVALID_PDF",
