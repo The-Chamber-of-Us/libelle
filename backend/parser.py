@@ -209,6 +209,12 @@ def extract_location(text: str) -> Tuple[List[str], float]:
 
     return [], 0.0
 
+# •/·/;/| and comma are always delimiters. -/—/* only act as bullet
+# delimiters when standalone (whitespace or line edges on both sides), so
+# compound skill names like "front-end" or "full-stack" are not split.
+_SKILL_DELIMITER_RE = re.compile(r'[•,·;|]|(?<!\S)[-—*](?!\S)')
+
+
 def _split_skill_line(line: str) -> List[str]:
     if '/' in line and '://' not in line:
         parts = [p.strip() for p in line.split('/')]
@@ -216,7 +222,7 @@ def _split_skill_line(line: str) -> List[str]:
                 and not any(re.search(r'\b[A-Z]{1,3}$', p) for p in parts)
                 and not any(re.match(r'^[A-Z]{1,3}$', p) for p in parts)):  # catches CI, CD, AB etc
             return parts
-    return re.split(r'[•,·;|]', line)
+    return _SKILL_DELIMITER_RE.split(line)
 
 def extract_skills(text: str) -> Tuple[List[str], float]:
     lines = _get_lines(text)
