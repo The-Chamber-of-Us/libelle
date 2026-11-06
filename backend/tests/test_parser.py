@@ -78,6 +78,29 @@ def test_no_slash_falls_back_to_standard_delimiters():
     assert _split_skill_line("Python • Java • Go") == ["Python ", " Java ", " Go"]
 
 
+def test_standalone_hyphen_bullet_splits_to_empty():
+    """A lone hyphen bullet marker should not survive as a fragment."""
+    assert [p.strip() for p in _split_skill_line("- Python")] == ["", "Python"]
+    assert [p.strip() for p in _split_skill_line("-")] == ["", ""]
+
+
+def test_inline_hyphen_bullet_separators_split():
+    """Hyphen used as an inline bullet separator should split like other delimiters."""
+    assert [p.strip() for p in _split_skill_line("Python - Java - Go")] == ["Python", "Java", "Go"]
+
+
+def test_hyphen_in_compound_skill_name_not_split():
+    """A hyphen inside a compound word should not be treated as a bullet delimiter."""
+    assert _split_skill_line("full-stack") == ["full-stack"]
+    assert [p.strip() for p in _split_skill_line("full-stack, front-end")] == ["full-stack", "front-end"]
+
+
+def test_em_dash_and_asterisk_bullets_split():
+    """Em-dash and asterisk bullet markers behave like other bullet delimiters."""
+    assert [p.strip() for p in _split_skill_line("— Python")] == ["", "Python"]
+    assert [p.strip() for p in _split_skill_line("* Python")] == ["", "Python"]
+
+
 def test_location_contact_line_email_and_location():
     text = "Maya Chen\nmaya.chen@example.com | Ithaca, NY"
     locs, conf = extract_location(text)
@@ -154,6 +177,49 @@ def test_extract_skills_stops_at_soft_skills_header():
     skills, confidence = extract_skills(text)
     assert confidence == 1.0
     assert skills == ["python", "sql"]
+
+
+def test_extract_skills_bulleted_list_strips_bullet_markers():
+    text = "Skills\n• Python\n• React\n• PostgreSQL"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "react", "postgresql"]
+
+
+def test_extract_skills_standalone_bullet_yields_no_skills():
+    text = "Skills\n•"
+    skills, confidence = extract_skills(text)
+    assert skills == []
+    assert confidence == 0.0
+
+
+def test_extract_skills_inline_bullet_separators_strip_cleanly():
+    text = "Skills\nPython • Java • Go"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "java", "go"]
+
+
+def test_extract_skills_hyphen_bulleted_list_strips_bullet_markers():
+    """Hyphen bullets, common in real resumes, should strip the same as •."""
+    text = "Skills\n- Python\n- React\n- PostgreSQL"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["python", "react", "postgresql"]
+
+
+def test_extract_skills_standalone_hyphen_bullet_yields_no_skills():
+    text = "Skills\n-"
+    skills, confidence = extract_skills(text)
+    assert skills == []
+    assert confidence == 0.0
+
+
+def test_extract_skills_hyphen_compound_names_not_broken():
+    text = "Skills\nfull-stack, front-end development"
+    skills, confidence = extract_skills(text)
+    assert confidence == 1.0
+    assert skills == ["full-stack", "front-end development"]
 
 
 def test_projects_is_not_treated_as_skills_section():
