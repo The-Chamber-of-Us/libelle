@@ -426,14 +426,15 @@ export const IntakeForm: React.FC = () => {
 
             <div className="sm:col-span-2">
               <Input
-                label="Current Location"
+                label="Your Location"
                 name="location"
                 type="text"
                 required
-                placeholder="City, State, or Country"
+                placeholder="e.g., Charlotte, NC"
                 value={formData.location}
                 onChange={handleInputChange}
                 error={errors.location}
+                helperText="Used to understand time zone, local context, and possible project fit."
                 disabled={isSubmitting}
               />
             </div>
@@ -448,6 +449,11 @@ export const IntakeForm: React.FC = () => {
             Experience & Details
           </h2>
 
+          <p className="mb-6 text-sm leading-relaxed text-gray-500">
+            We use your interests, skills, availability, and location to identify possible TCUS
+            project matches. A real person reviews submissions before outreach.
+          </p>
+
           <div className="mb-6 grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <Input
@@ -459,6 +465,7 @@ export const IntakeForm: React.FC = () => {
                 value={formData.availability}
                 onChange={handleInputChange}
                 error={errors.availability}
+                helperText="Examples: weekday evenings, Saturday mornings, 5-10 hours/week, project-based."
                 disabled={isSubmitting}
               />
             </div>
@@ -486,7 +493,9 @@ export const IntakeForm: React.FC = () => {
                     ${errors.experienceLevel ? 'border-libelle-rose ring-libelle-rose focus:ring-libelle-rose' : ''}
                   `}
                   aria-invalid={!!errors.experienceLevel}
-                  aria-describedby={errors.experienceLevel ? 'experienceLevel-error' : undefined}
+                  aria-describedby={
+                    errors.experienceLevel ? 'experienceLevel-error' : 'experienceLevel-helper'
+                  }
                 >
                   <option value="" disabled>
                     Select your level
@@ -496,9 +505,14 @@ export const IntakeForm: React.FC = () => {
                   <option value="Senior">Senior</option>
                 </select>
 
-                {errors.experienceLevel && (
+                {errors.experienceLevel ? (
                   <p className="mt-1 text-sm text-libelle-rose" id="experienceLevel-error">
                     {errors.experienceLevel}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-400" id="experienceLevel-helper">
+                    Choose the level that best describes your comfort today. Prior nonprofit
+                    experience is not required.
                   </p>
                 )}
               </div>

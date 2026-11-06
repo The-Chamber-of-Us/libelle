@@ -9,6 +9,7 @@ type Props = {
   value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   error?: string
+  helperText?: string
   autoComplete?: string
   disabled?: boolean
 }
@@ -22,10 +23,12 @@ export function Input({
   value,
   onChange,
   error,
+  helperText,
   autoComplete,
   disabled
 }: Props) {
   const hasError = Boolean(error)
+  const helperId = `${name}-helper`
 
   return (
     <div className="w-full">
@@ -50,11 +53,19 @@ export function Input({
           hasError ? 'ring-libelle-rose focus:ring-libelle-rose' : ''
         ].join(' ')}
         aria-invalid={hasError}
-        aria-describedby={hasError ? `${name}-error` : undefined}
+        aria-describedby={
+          [hasError ? `${name}-error` : null, helperText ? helperId : null].filter(Boolean).join(' ') ||
+          undefined
+        }
       />
       {hasError ? (
         <p className="mt-1 text-sm text-libelle-rose" id={`${name}-error`}>
           {error}
+        </p>
+      ) : null}
+      {helperText ? (
+        <p className="mt-1 text-xs text-gray-400" id={helperId}>
+          {helperText}
         </p>
       ) : null}
     </div>
